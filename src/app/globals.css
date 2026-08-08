@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+:root {
+  --background: #FAFBFC;
+  --foreground: #4A4E51;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+
+  --color-primary: #5A8BA3;
+  --color-primary-light: #72a2ba;
+  --color-secondary: #F7D1BA;
+  --color-accent: #8FB9A3;
+  --color-neutral: #4A4E51;
+  --color-card: #FFFFFF;
+  --color-border: #E9EEF2;
+
+  --shadow-soft: 0 10px 40px -10px rgba(90, 139, 163, 0.08);
+  --shadow-float: 0 20px 40px -15px rgba(90, 139, 163, 0.12);
+
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-3xl: 28px;
+
+  /* Adjusting Poppins font weights to be less bold globally */
+  --font-weight-medium: 400;
+  --font-weight-semibold: 500;
+  --font-weight-bold: 600;
+  --font-weight-extrabold: 700;
+  --font-weight-black: 700;
+}
+
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Hide scrollbar for horizontal scrolling elements but keep functionality */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
