@@ -11,6 +11,7 @@ export interface UserProfile {
   phone: string;
   role: string;
   address?: string;
+  avatar?: string;
   [key: string]: unknown;
 }
 
@@ -27,7 +28,7 @@ export async function getUserProfile() {
  * Update user profile
  * PUT /api/users/profile
  */
-export async function updateUserProfile(data: Partial<UserProfile>) {
+export async function updateUserProfile(data: Partial<UserProfile> | FormData) {
   const response = await apiClient.put("/users/profile", data);
   return response.data;
 }

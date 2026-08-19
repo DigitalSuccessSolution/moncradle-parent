@@ -2,22 +2,24 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Header } from "@/components/layout/Header/Header";
 
-import { Footer } from "@/components/layout/Footer/Footer";
+
+
 
 import { HeroSection } from "@/components/home/HeroSection/HeroSection";
 import { QuickActions } from "@/components/home/QuickActions/QuickActions";
 import { GrowthOverview } from "@/components/home/GrowthOverview/GrowthOverview";
 import { ProductRecommendations } from "@/components/home/ProductRecommendations/ProductRecommendations";
+import { MealRecommendations } from "@/components/home/MealRecommendations/MealRecommendations";
 import { SmartParentingBanner } from "@/components/home/SmartParentingBanner/SmartParentingBanner";
+import { ExpertConsultation } from "@/components/home/ExpertConsultation/ExpertConsultation";
 import { Articles } from "@/components/home/Articles/Articles";
-import { NewsletterSection } from "@/components/home/NewsletterSection/NewsletterSection";
 import { HealthRecords } from "@/components/home/HealthRecords/HealthRecords";
 import { SplashScreen } from "@/components/onboarding/SplashScreen";
 import { AuthScreen } from "@/components/auth/AuthScreen";
 import { BabyProfileSetup } from "@/components/onboarding/BabyProfileSetup";
 import { useAuth } from "@/context/AuthContext";
+import { getBabies } from "@/lib/api/babiesApi";
 
 export default function HomePage() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -29,22 +31,47 @@ export default function HomePage() {
   useEffect(() => {
     setIsMounted(true);
     setHasSeenSplash(!!localStorage.getItem("hasSeenOnboarding"));
-    setHasSetBabyProfile(!!localStorage.getItem("hasSetBabyProfile"));
   }, []);
+
+  useEffect(() => {
+    const checkBabyProfile = async () => {
+      // Don't check if we are not authenticated yet
+      if (!isAuthenticated) return;
+
+      const localStatus = localStorage.getItem("hasSetBabyProfile");
+      if (localStatus) {
+        setHasSetBabyProfile(true);
+      } else {
+        const token = localStorage.getItem("token");
+        if (token) {
+          try {
+            const res = await getBabies();
+            if (res.data && res.data.length > 0) {
+              localStorage.setItem("hasSetBabyProfile", "true");
+              setHasSetBabyProfile(true);
+            }
+          } catch (error) {
+            console.error("Failed to fetch babies", error);
+          }
+        }
+      }
+    };
+    checkBabyProfile();
+  }, [isAuthenticated]);
 
   if (!isMounted || isLoading) return null;
 
   return (
-    <div className="min-h-screen bg-[var(--color-background)] font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-[var(--color-background)] font-sans overflow-x-hidden relative">
       <SplashScreen onComplete={() => setHasSeenSplash(true)} />
-      
+
       {!isAuthenticated && hasSeenSplash && <AuthScreen />}
 
       {isAuthenticated && hasSeenSplash && !hasSetBabyProfile && (
         <BabyProfileSetup onComplete={() => setHasSetBabyProfile(true)} />
       )}
 
-      <Header />
+      
 
       <HeroSection />
 
@@ -53,31 +80,20 @@ export default function HomePage() {
         {/* <HealthRecords /> */}
         <GrowthOverview />
         <ProductRecommendations />
-        
+        <MealRecommendations />
+
         <SmartParentingBanner />
-        
+
+        <ExpertConsultation />
+
         <Articles />
-        
-        <NewsletterSection />
       </main>
 
-      <Footer />
       
-      {/* Temporary Reset Button for Testing */}
-      <div className="flex justify-center pb-24 pt-4">
-        <button 
-          onClick={() => {
-            localStorage.removeItem("hasSeenOnboarding");
-            localStorage.removeItem("hasSetBabyProfile");
-            window.location.reload();
-          }}
-          className="text-xs bg-red-100 text-red-600 px-4 py-2 rounded-full font-bold shadow-sm"
-        >
-          Reset App State (Testing)
-        </button>
-      </div>
 
-      
+
+
+
     </div>
   );
 }

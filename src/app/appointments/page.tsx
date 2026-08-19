@@ -1,99 +1,41 @@
 "use client";
 
+import { useAppSelector } from "@/store/hooks";
 import { useState, useEffect } from "react";
-import { Header } from "@/components/layout/Header/Header";
 
-import { Footer } from "@/components/layout/Footer/Footer";
+
+
 import { Button } from "@/components/ui/Button";
+import ReviewModal from "@/components/ui/ReviewModal";
 import Image from "next/image";
 import Link from "next/link";
-import { 
-  ArrowLeft, Calendar as CalendarIcon, Clock, 
-  Video, CheckCircle2, XCircle, FileText, Plus, X
-} from "lucide-react";
+import {  ChevronLeft, Calendar as CalendarIcon, Clock, Video, CheckCircle2, XCircle, FileText, Plus, X, MapPin, Phone, Banknote, Bell, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, Variants } from "framer-motion";
-
-// Dummy data matching backend: appointment.model.js
-const MOCK_APPOINTMENTS = [
-  {
-    _id: "60d5ec49f1b2c8a14c8b4567",
-    doctorId: {
-      _id: "doc1",
-      name: "Dr. Ananya Sharma",
-      specialization: "Pediatrician",
-      image: "/images/doctor_profile.png"
-    },
-    babyId: {
-      _id: "baby1",
-      name: "Aarav Sharma"
-    },
-    date: "2026-08-15",
-    time: "10:30",
-    status: "scheduled",
-    meetingLink: "https://meet.google.com/abc-defg-hij",
-    notes: ""
-  },
-  {
-    _id: "60d5ec49f1b2c8a14c8b4568",
-    doctorId: {
-      _id: "doc2",
-      name: "Dr. Rahul Verma",
-      specialization: "Child Nutritionist",
-      image: "/images/doctor_profile.png" // using same dummy image for now
-    },
-    babyId: {
-      _id: "baby1",
-      name: "Aarav Sharma"
-    },
-    date: "2026-08-20",
-    time: "14:00",
-    status: "scheduled",
-    meetingLink: "", // In-person or not generated yet
-    notes: ""
-  },
-  {
-    _id: "60d5ec49f1b2c8a14c8b4569",
-    doctorId: {
-      _id: "doc1",
-      name: "Dr. Ananya Sharma",
-      specialization: "Pediatrician",
-      image: "/images/doctor_profile.png"
-    },
-    babyId: {
-      _id: "baby1",
-      name: "Aarav Sharma"
-    },
-    date: "2026-07-28",
-    time: "09:15",
-    status: "completed",
-    meetingLink: "",
-    notes: "Aarav is doing great. Keep up with the current diet plan. Next vaccination due in 2 months."
-  },
-  {
-    _id: "60d5ec49f1b2c8a14c8b4570",
-    doctorId: {
-      _id: "doc3",
-      name: "Dr. Smriti Gupta",
-      specialization: "Dermatologist",
-      image: "/images/doctor_profile.png"
-    },
-    babyId: {
-      _id: "baby1",
-      name: "Aarav Sharma"
-    },
-    date: "2026-07-15",
-    time: "16:00",
-    status: "cancelled",
-    meetingLink: "",
-    notes: ""
-  }
-];
-
+import { apiClient } from "@/lib/apiClient";
+import Swal from 'sweetalert2';
 export default function AppointmentsPage() {
+  const unreadNotificationsCount = useAppSelector(state => state.notifications.unreadCount);
+
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"upcoming" | "past">("upcoming");
   const [selectedApp, setSelectedApp] = useState<any>(null);
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [reviewTarget, setReviewTarget] = useState<any>(null);
+  // Track submitted ratings: { [appointmentId]: number }
+  const [reviewedAppointments, setReviewedAppointments] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    apiClient.get('/appointments')
+      .then(res => {
+        if (res.data.success) {
+          setAppointments(res.data.data);
+        }
+      })
+      .catch(err => console.error("Failed to fetch appointments:", err))
+      .finally(() => setLoading(false));
+  }, []);
 
   useEffect(() => {
     if (selectedApp) {
@@ -119,8 +61,41 @@ export default function AppointmentsPage() {
     show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
   };
 
-  const upcomingAppointments = MOCK_APPOINTMENTS.filter(app => app.status === "scheduled");
-  const pastAppointments = MOCK_APPOINTMENTS.filter(app => app.status === "completed" || app.status === "cancelled");
+  const upcomingAppointments = appointments.filter(app => app.status === "scheduled");
+  const pastAppointments = appointments.filter(app => app.status === "completed" || app.status === "cancelled");
+
+  const handleSubmitReview = (rating: number) => {
+    if (reviewTarget) {
+      setReviewedAppointments(prev => ({ ...prev, [reviewTarget._id]: rating }));
+      setReviewTarget(null);
+    }
+  };
+
+  const handleCancelAppointment = async (appointmentId: string) => {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "Do you want to cancel this appointment?",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#9ca3af',
+      confirmButtonText: 'Yes, cancel it!'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const res = await apiClient.patch(`/appointments/${appointmentId}/status`, { status: "cancelled" });
+        if (res.data.success) {
+          setAppointments(prev => prev.map(app => app._id === appointmentId ? { ...app, status: "cancelled" } : app));
+          setSelectedApp(null);
+          Swal.fire('Cancelled!', 'Your appointment has been cancelled.', 'success');
+        }
+      } catch (err) {
+        console.error("Failed to cancel appointment", err);
+        Swal.fire('Error!', 'Failed to cancel appointment. Please try again.', 'error');
+      }
+    }
+  };
 
   const formatDate = (dateStr: string) => {
     const options: Intl.DateTimeFormatOptions = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
@@ -128,6 +103,10 @@ export default function AppointmentsPage() {
   };
 
   const formatTime = (timeStr: string) => {
+    if (!timeStr) return "";
+    if (timeStr.toLowerCase().includes('am') || timeStr.toLowerCase().includes('pm')) {
+      return timeStr;
+    }
     const [hourStr, minute] = timeStr.split(':');
     let hour = parseInt(hourStr, 10);
     const ampm = hour >= 12 ? 'PM' : 'AM';
@@ -138,36 +117,53 @@ export default function AppointmentsPage() {
 
   return (
     <div className="min-h-screen bg-[var(--color-background)] font-sans pb-24 md:pb-0 relative">
-      <Header />
+      
 
-      {/* Mobile Back Header */}
-      <div className="md:hidden flex items-center justify-between px-6 py-4 sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-gray-100">
-        <div className="flex items-center">
-          <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all">
-            <ArrowLeft className="w-5 h-5 text-gray-700" />
-          </button>
-          <h1 className="text-lg font-bold text-gray-900 ml-2">Appointments</h1>
-        </div>
-      </div>
-
-      <main className="max-w-[1200px] mx-auto px-4 md:px-8 py-6 md:py-10 space-y-6">
+      <main className="max-w-[1200px] mx-auto px-4 md:px-8 py-4 md:py-8 space-y-6">
         
-        {/* Desktop Header */}
+        {/* Mobile Back Header */}
+        <div className="md:hidden flex items-center justify-between px-4 py-3 -mx-4 -mt-4 sticky top-0 z-40 bg-white mb-4">
+          <div className="flex items-center">
+            <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all">
+              <ChevronLeft className="w-6 h-6" strokeWidth={2} />
+            </button>
+            <h1 className="text-[17px] font-medium text-[#0F172A] ml-1">Appointments</h1>
+          </div>
+          <div className="flex items-center gap-1">
+            <button onClick={() => router.push('/notifications')} className="relative p-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors cursor-pointer group">
+              <Bell className="w-6 h-6 text-gray-800 group-hover:text-black transition-colors" />
+              {unreadNotificationsCount > 0 && <span className="absolute top-1.5 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white shadow-sm"></span>}
+            </button>
+          </div>
+        </div>
+
+        {/* Desktop Navigation */}
         <motion.div 
-          initial={{ opacity: 0, y: -10 }} 
-          animate={{ opacity: 1, y: 0 }} 
-          className="hidden md:flex items-center justify-between mb-8"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="hidden md:flex items-center mb-2 -ml-3 md:ml-0"
         >
+          <button 
+            onClick={() => router.back()} 
+            className="flex items-center gap-1 px-3 py-2 rounded-full text-gray-700 hover:bg-gray-100 hover:text-[var(--color-primary)] transition-colors"
+          >
+            <ChevronLeft className="w-6 h-6" />
+            <span className="font-semibold text-[15px]">Back</span>
+          </button>
+        </motion.div>
+
+        {/* Desktop Header */}
+        <div className="hidden md:flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 px-1">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">My Appointments</h1>
-            <p className="text-sm text-gray-500 font-medium mt-1">Manage your baby's clinic visits and appointments.</p>
+            <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">My Appointments</h1>
+            <p className="text-sm text-gray-500 font-medium mt-1">Manage your baby&apos;s clinic visits and appointments.</p>
           </div>
           <Link href="/doctor/book">
             <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
               Book Appointment
             </Button>
           </Link>
-        </motion.div>
+        </div>
 
         {/* Tabs & Mobile Book Button */}
         <motion.div 
@@ -193,7 +189,7 @@ export default function AppointmentsPage() {
           
           <div className="md:hidden flex-shrink-0 ml-auto pl-2 border-l border-gray-100">
             <Link href="/doctor/book">
-              <Button variant="primary" className="rounded-full whitespace-nowrap px-3 text-[11px] font-bold h-8 gap-1" leftIcon={<Plus className="w-3 h-3" />}>
+              <Button variant="primary" className="rounded-full whitespace-nowrap px-3 text-[11px] font-semibold h-8 gap-1" leftIcon={<Plus className="w-3 h-3" />}>
                 Book Appointment
               </Button>
             </Link>
@@ -201,6 +197,13 @@ export default function AppointmentsPage() {
         </motion.div>
 
         {/* Content */}
+        {loading && (
+          <div className="flex justify-center py-20">
+             <div className="w-8 h-8 border-4 border-gray-100 border-t-[var(--color-primary)] rounded-full animate-spin"></div>
+          </div>
+        )}
+        
+        {!loading && (
         <motion.div 
           variants={containerVariants}
           initial="hidden"
@@ -214,35 +217,35 @@ export default function AppointmentsPage() {
               <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CalendarIcon className="w-8 h-8 text-gray-300" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-1">No Upcoming Appointments</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">No Upcoming Appointments</h3>
               <p className="text-sm text-gray-500 font-medium">You have no scheduled visits at the moment.</p>
             </div>
           )}
 
           {activeTab === "upcoming" && upcomingAppointments.map((app) => (
-            <motion.div key={app._id} variants={itemVariants} className="bg-white rounded-lg p-5 border border-gray-100 shadow-[var(--shadow-soft)] hover:border-gray-200 transition-colors group flex flex-col justify-between">
+            <motion.div key={app._id} variants={itemVariants} className="bg-white rounded-xl shadow-sm p-5 border border-gray-100 hover:shadow-md hover:border-[var(--color-primary)]/30 transition-all group flex flex-col justify-between">
               <div className="flex flex-col gap-5">
                 
                 {/* Doctor Info */}
                 <div className="flex items-center gap-4 relative">
                   {/* Status Badge */}
                   <div className="absolute top-0 right-0">
-                    <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
+                    <span className="flex items-center gap-1 text-[10px] font-semibold text-[var(--pastel-green)] bg-[var(--pastel-green)]/10 px-2 py-0.5 rounded-md">
                       <CheckCircle2 className="w-3 h-3" /> Confirmed
                     </span>
                   </div>
 
                   <div className="w-14 h-14 rounded-full overflow-hidden border border-gray-100 bg-gray-50 flex-shrink-0">
-                    <Image src={app.doctorId.image} alt={app.doctorId.name} width={56} height={56} className="object-cover" />
+                    <Image src={app.doctorId?.avatar || "/images/doctor_profile.png"} alt={app.doctorId?.name || "Doctor"} width={56} height={56} className="object-cover" />
                   </div>
                   <div className="pr-20">
-                    <h3 className="text-base font-bold text-gray-900 group-hover:text-[var(--color-primary)] transition-colors">{app.doctorId.name}</h3>
+                    <h3 className="text-base font-semibold text-gray-900 group-hover:text-[var(--color-primary)] transition-colors">{app.doctorId.name}</h3>
                     <p className="text-xs font-semibold text-gray-500 mb-1">{app.doctorId.specialization}</p>
                     <div className="flex gap-2 flex-wrap">
-                      <p className="text-[10px] font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-2 py-0.5 rounded-md inline-block">
+                      <p className="text-[10px] font-semibold text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-2 py-0.5 rounded-md inline-block">
                         For: {app.babyId.name}
                       </p>
-                      <p className="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md flex items-center gap-1">
+                      <p className="text-[10px] font-semibold text-[var(--pastel-orange)] bg-[var(--pastel-orange)]/10 px-2 py-0.5 rounded-md flex items-center gap-1">
                         In-Clinic
                       </p>
                     </div>
@@ -253,7 +256,7 @@ export default function AppointmentsPage() {
                 <div className="flex justify-between items-center pt-2">
                   <div className="flex items-center gap-2 text-gray-700">
                     <CalendarIcon className="w-4 h-4 text-[var(--color-primary)]" />
-                    <span className="text-sm font-bold">{formatDate(app.date)}</span>
+                    <span className="text-sm font-semibold">{formatDate(app.date)}</span>
                   </div>
                   <div className="flex items-center gap-2 text-gray-600">
                     <Clock className="w-4 h-4 text-orange-500" />
@@ -263,7 +266,7 @@ export default function AppointmentsPage() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 pt-2">
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => alert("Reschedule Flow")}>
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => router.push(`/doctor/book?doctorId=${app.doctorId?._id || app.doctorId}&rescheduleId=${app._id}`)}>
                     Reschedule
                   </Button>
                   <Button variant="primary" size="sm" className="flex-1" fullWidth onClick={() => setSelectedApp(app)}>
@@ -276,25 +279,25 @@ export default function AppointmentsPage() {
           ))}
 
           {activeTab === "past" && pastAppointments.map((app) => (
-            <motion.div key={app._id} variants={itemVariants} className="bg-white rounded-lg p-5 border border-gray-100 shadow-[var(--shadow-soft)] opacity-90 h-full flex flex-col justify-between">
+            <motion.div key={app._id} variants={itemVariants} className="bg-white rounded-xl shadow-sm p-5 border border-gray-100 opacity-90 h-full flex flex-col justify-between">
               <div className="flex flex-col gap-4">
                 
                 {/* Doctor Info */}
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-100 bg-gray-50 flex-shrink-0 grayscale">
-                    <Image src={app.doctorId.image} alt={app.doctorId.name} width={48} height={48} className="object-cover" />
+                    <Image src={app.doctorId?.avatar || "/images/doctor_profile.png"} alt={app.doctorId?.name || "Doctor"} width={48} height={48} className="object-cover" />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-gray-900">{app.doctorId.name}</h3>
+                    <h3 className="text-base font-semibold text-gray-900">{app.doctorId?.name || "Doctor"}</h3>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-xs font-semibold text-gray-500">{formatDate(app.date)}</span>
                       <span className="w-1 h-1 rounded-full bg-gray-300"></span>
                       {app.status === "completed" ? (
-                        <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
+                        <span className="flex items-center gap-1 text-[10px] font-semibold text-[var(--pastel-blue)] bg-[var(--pastel-blue)]/10 px-2 py-0.5 rounded-md">
                           <CheckCircle2 className="w-3 h-3" /> Completed
                         </span>
                       ) : (
-                        <span className="flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-md">
+                        <span className="flex items-center gap-1 text-[10px] font-semibold text-[var(--pastel-coral)] bg-[var(--pastel-coral)]/10 px-2 py-0.5 rounded-md">
                           <XCircle className="w-3 h-3" /> Cancelled
                         </span>
                       )}
@@ -307,7 +310,7 @@ export default function AppointmentsPage() {
                   <div className="bg-gray-50 rounded-xl p-3 flex gap-3">
                     <FileText className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="text-xs font-bold text-gray-700 mb-1">Doctor's Notes</h4>
+                      <h4 className="text-xs font-semibold text-gray-700 mb-1">Doctor&apos;s Notes</h4>
                       <p className="text-[13px] text-gray-600 font-medium leading-relaxed">{app.notes}</p>
                     </div>
                   </div>
@@ -318,7 +321,24 @@ export default function AppointmentsPage() {
                   <Button variant="outline" size="sm" className="flex-1" onClick={() => alert("View Prescription")}>
                     Records
                   </Button>
-                  <Button variant="primary" size="sm" className="flex-1" onClick={() => alert("Book Again")}>
+                  {app.status === "completed" && (
+                    reviewedAppointments[app._id] ? (
+                      <div className="flex items-center gap-0.5 px-3 py-2 rounded-xl border border-amber-100 bg-amber-50">
+                        {[1,2,3,4,5].map(s => (
+                          <Star key={s} className={`w-3.5 h-3.5 ${s <= reviewedAppointments[app._id] ? 'fill-amber-400 text-amber-400' : 'text-gray-200 fill-gray-100'}`} />
+                        ))}
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setReviewTarget(app)}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-amber-200 bg-amber-50 text-amber-600 text-[13px] font-semibold hover:bg-amber-100 transition-colors active:scale-95"
+                      >
+                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                        Rate
+                      </button>
+                    )
+                  )}
+                  <Button variant="primary" size="sm" className="flex-1" onClick={() => router.push(`/doctor/book?doctorId=${app.doctorId?._id || app.doctorId}`)}>
                     Book Again
                   </Button>
                 </div>
@@ -327,10 +347,26 @@ export default function AppointmentsPage() {
           ))}
 
         </motion.div>
+        )}
       </main>
 
-      <Footer />
       
+      {/* Doctor Review Modal */}
+      {reviewTarget && (
+        <ReviewModal
+          isOpen={!!reviewTarget}
+          onClose={() => setReviewTarget(null)}
+          onSuccess={(rating) => {
+            setReviewedAppointments(prev => ({ ...prev, [reviewTarget._id]: rating }));
+            setReviewTarget(null);
+          }}
+          targetType="doctor"
+          targetName={reviewTarget.doctorId?.name || "Doctor"}
+          targetSubtitle={`${reviewTarget.doctorId?.specialization || ""} · ${formatDate(reviewTarget.date)}`}
+          doctorId={reviewTarget.doctorId?._id || reviewTarget.doctorId}
+          appointmentId={reviewTarget._id}
+        />
+      )}
 
       {/* Appointment Details Modal */}
       <AnimatePresence>
@@ -356,7 +392,7 @@ export default function AppointmentsPage() {
             >
               {/* Header */}
               <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-white">
-                <h2 className="text-xl font-bold text-gray-900">Appointment Details</h2>
+                <h2 className="text-xl font-semibold text-gray-900">Appointment Details</h2>
                 <button 
                   onClick={() => setSelectedApp(null)}
                   className="p-2 bg-gray-50 text-gray-500 rounded-full hover:bg-gray-100 transition-colors active:scale-95"
@@ -370,12 +406,41 @@ export default function AppointmentsPage() {
                 
                 {/* Doctor Section */}
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-full overflow-hidden border border-gray-100 bg-gray-50">
-                    <Image src={selectedApp.doctorId.image} alt={selectedApp.doctorId.name} width={64} height={64} className="object-cover" />
+                  <div className="w-16 h-16 rounded-full overflow-hidden border border-gray-100 bg-gray-50 flex-shrink-0">
+                    <Image src={selectedApp.doctorId?.avatar || "/images/doctor_profile.png"} alt={selectedApp.doctorId?.name || "Doctor"} width={64} height={64} className="object-cover" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900">{selectedApp.doctorId.name}</h3>
-                    <p className="text-sm font-medium text-gray-500">{selectedApp.doctorId.specialization}</p>
+                    <h3 className="text-lg font-semibold text-gray-900">{selectedApp.doctorId?.name || "Doctor"}</h3>
+                    <p className="text-sm font-medium text-[var(--color-primary)]">{selectedApp.doctorId?.specialization || "Consultant"}</p>
+                    {selectedApp.doctorId?.experienceYears && (
+                      <p className="text-xs text-gray-500 mt-0.5">{selectedApp.doctorId.experienceYears} Years Experience</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Extended Doctor Info */}
+                <div className="bg-gray-50 p-4 rounded-2xl flex flex-col gap-3 border border-gray-100">
+                  {selectedApp.doctorId?.clinicName && (
+                    <div className="flex items-start gap-3">
+                      <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-semibold text-gray-700">{selectedApp.doctorId.clinicName}</p>
+                        <p className="text-xs text-gray-500 leading-tight mt-1">{selectedApp.doctorId.clinicAddress}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-2">
+                      <Banknote className="w-4 h-4 text-gray-400" />
+                      <p className="text-sm font-semibold text-gray-700">₹{selectedApp.doctorId?.consultationFee || 0}</p>
+                    </div>
+                    {selectedApp.doctorId?.phone && (
+                       <div className="flex items-center gap-2">
+                         <Phone className="w-4 h-4 text-gray-400" />
+                         <p className="text-sm font-semibold text-gray-700">{selectedApp.doctorId.phone}</p>
+                       </div>
+                    )}
                   </div>
                 </div>
 
@@ -384,9 +449,9 @@ export default function AppointmentsPage() {
                   <div className="bg-gray-50 p-4 rounded-2xl">
                     <div className="flex items-center gap-2 mb-1">
                       <CalendarIcon className="w-4 h-4 text-gray-400" />
-                      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Date</span>
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</span>
                     </div>
-                    <p className="text-sm font-bold text-gray-900">
+                    <p className="text-sm font-semibold text-gray-900">
                       {(() => {
                         const d = new Date(selectedApp.date);
                         return `${d.getDate()} ${d.toLocaleString('default', { month: 'short' })}, ${d.getFullYear()}`;
@@ -396,9 +461,9 @@ export default function AppointmentsPage() {
                   <div className="bg-gray-50 p-4 rounded-2xl">
                     <div className="flex items-center gap-2 mb-1">
                       <Clock className="w-4 h-4 text-gray-400" />
-                      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Time</span>
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Time</span>
                     </div>
-                    <p className="text-sm font-bold text-gray-900">{formatTime(selectedApp.time)}</p>
+                    <p className="text-sm font-semibold text-gray-900">{formatTime(selectedApp.time)}</p>
                   </div>
                 </div>
 
@@ -406,11 +471,11 @@ export default function AppointmentsPage() {
                 <div className="space-y-4 pt-2">
                   <div className="flex justify-between items-center py-3 border-b border-gray-50">
                     <span className="text-sm font-medium text-gray-500">Patient</span>
-                    <span className="text-sm font-bold text-gray-900">{selectedApp.babyId.name}</span>
+                    <span className="text-sm font-semibold text-gray-900">{selectedApp.babyId?.name || selectedApp.parentId?.name || "You"}</span>
                   </div>
                   <div className="flex justify-between items-center py-3 border-b border-gray-50">
                     <span className="text-sm font-medium text-gray-500">Status</span>
-                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md uppercase tracking-wider">
+                    <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md uppercase tracking-wider">
                       {selectedApp.status}
                     </span>
                   </div>
@@ -425,17 +490,44 @@ export default function AppointmentsPage() {
                 </Button>
                 {selectedApp.status === "scheduled" && (
                   <Button variant="primary" size="sm" className="bg-red-500 hover:bg-red-600 border-transparent text-white" fullWidth onClick={() => {
-                     alert("Cancel appointment flow");
-                     setSelectedApp(null);
+                     handleCancelAppointment(selectedApp._id);
                   }}>
                     Cancel Visit
                   </Button>
+                )}
+                {selectedApp.status === "completed" && (
+                  reviewedAppointments[selectedApp._id] ? (
+                    <div className="flex-1 flex items-center justify-center gap-2 bg-amber-50 border border-amber-100 rounded-xl px-4 py-2">
+                      {[1,2,3,4,5].map(s => (
+                        <Star key={s} className={`w-4 h-4 ${s <= reviewedAppointments[selectedApp._id] ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} />
+                      ))}
+                      <span className="text-xs font-semibold text-amber-600 ml-1">Rated!</span>
+                    </div>
+                  ) : (
+                    <Button variant="primary" size="sm" fullWidth leftIcon={<Star className="w-3.5 h-3.5" />} onClick={() => setReviewTarget(selectedApp)}>
+                      Rate Doctor
+                    </Button>
+                  )
                 )}
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
+
+      {/* Doctor Review Modal */}
+      {reviewTarget && (
+        <ReviewModal
+          isOpen={!!reviewTarget}
+          onClose={() => setReviewTarget(null)}
+          onSuccess={handleSubmitReview}
+          targetType="doctor"
+          targetName={reviewTarget.doctorId?.name || "Doctor"}
+          targetSubtitle={reviewTarget.doctorId?.specialization || "Consultant"}
+          doctorId={reviewTarget.doctorId?._id || reviewTarget.doctorId}
+          appointmentId={reviewTarget._id}
+        />
+      )}
 
     </div>
   );

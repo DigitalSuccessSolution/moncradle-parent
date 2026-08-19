@@ -32,15 +32,15 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
-    const baseStyles = "inline-flex items-center justify-center font-bold transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100 group cursor-pointer";
+    const baseStyles = "inline-flex items-center justify-center font-semibold transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100 group cursor-pointer";
     
     const variants = {
-      primary: "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-light)] shadow-lg shadow-[var(--color-primary)]/20",
-      secondary: "bg-gray-100 text-gray-900 hover:bg-gray-200",
-      outline: "border-2 border-gray-200 bg-transparent text-gray-700 hover:bg-gray-50 hover:text-gray-900",
-      ghost: "bg-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900",
-      danger: "bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/20",
-      white: "bg-white text-gray-900 border border-gray-100 hover:bg-gray-50 shadow-sm",
+      primary: "bg-[var(--color-primary)] text-white hover:opacity-90",
+      secondary: "bg-gray-100 text-gray-900 hover:bg-gray-200/80",
+      outline: "border border-gray-200 bg-transparent text-gray-700 hover:bg-gray-50 hover:text-gray-900",
+      ghost: "bg-transparent text-gray-600 hover:bg-gray-100/50 hover:text-gray-900",
+      danger: "bg-red-500 text-white hover:bg-red-600",
+      white: "bg-white text-gray-900 border border-gray-200 hover:bg-gray-50",
     };
     
     const sizes = {

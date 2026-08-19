@@ -6,6 +6,8 @@ import { Calendar, MoreVertical, LogOut } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { createBaby } from "@/lib/api/babiesApi";
 
+const COMMON_ALLERGIES = ["Milk", "Eggs", "Peanuts", "Tree Nuts", "Soy", "Wheat", "Fish", "Shellfish"];
+
 interface BabyProfileSetupProps {
   onComplete: () => void;
 }
@@ -20,6 +22,16 @@ export function BabyProfileSetup({ onComplete }: BabyProfileSetupProps) {
   const [dob, setDob] = useState("");
   const [gender, setGender] = useState<"Boy" | "Girl" | "Private" | "">("");
   const [diet, setDiet] = useState<"Veg" | "Veg + Egg" | "Non-Veg" | "">("");
+  const [allergies, setAllergies] = useState("");
+
+  const toggleAllergy = (allergy: string) => {
+    const list = allergies.split(',').map(a => a.trim()).filter(a => a);
+    if (list.includes(allergy)) {
+      setAllergies(list.filter(a => a !== allergy).join(', '));
+    } else {
+      setAllergies([...list, allergy].join(', '));
+    }
+  };
 
   const handleContinue = async () => {
     if (!name || !dob || !gender || !diet) return;
@@ -42,6 +54,7 @@ export function BabyProfileSetup({ onComplete }: BabyProfileSetupProps) {
         gender: gender.toLowerCase() as "boy" | "girl" | "private",
         diet: diet.toLowerCase() as "veg" | "veg + egg" | "non-veg",
         ageInMonths,
+        allergies: allergies ? allergies.split(",").map(a => a.trim()).filter(a => a) : [],
       });
 
       localStorage.setItem("hasSetBabyProfile", "true");
@@ -65,7 +78,7 @@ export function BabyProfileSetup({ onComplete }: BabyProfileSetupProps) {
         
         {/* Header */}
         <div className="flex justify-between items-center mb-8 relative">
-          <h1 className="text-[22px] font-bold text-gray-800">
+          <h1 className="text-[22px] font-semibold text-gray-800">
             Please fill your Baby's Details
           </h1>
           <button onClick={() => setShowMenu(!showMenu)} className="text-gray-400 p-1 relative z-10">
@@ -90,7 +103,7 @@ export function BabyProfileSetup({ onComplete }: BabyProfileSetupProps) {
                       logout();
                       setShowMenu(false);
                     }}
-                    className="w-full text-left px-4 py-3 text-sm text-red-600 font-bold flex items-center gap-2 hover:bg-red-50 transition-colors"
+                    className="w-full text-left px-4 py-3 text-sm text-red-600 font-semibold flex items-center gap-2 hover:bg-red-50 transition-colors"
                   >
                     <LogOut className="w-4 h-4" />
                     Logout
@@ -173,6 +186,33 @@ export function BabyProfileSetup({ onComplete }: BabyProfileSetupProps) {
               </button>
             </div>
           </div>
+
+          {/* Allergies Field */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700 ml-1">Allergies (Optional)</label>
+            <input 
+              type="text"
+              placeholder="e.g. Peanuts, Dairy"
+              value={allergies}
+              onChange={(e) => setAllergies(e.target.value)}
+              className="w-full bg-transparent border border-gray-300 rounded-xl px-4 py-3.5 text-gray-900 placeholder:text-gray-400 outline-none focus:border-[var(--color-primary)] transition-colors"
+            />
+            <div className="flex flex-wrap gap-2 mt-3">
+              {COMMON_ALLERGIES.map(allergy => {
+                const isSelected = allergies.split(',').map(a => a.trim()).includes(allergy);
+                return (
+                  <button
+                    key={allergy}
+                    type="button"
+                    onClick={() => toggleAllergy(allergy)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors cursor-pointer ${isSelected ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
+                  >
+                    {isSelected ? '✓ ' : '+ '}{allergy}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
         </div>
 
         {/* Error Message */}
@@ -185,7 +225,7 @@ export function BabyProfileSetup({ onComplete }: BabyProfileSetupProps) {
           <button
             onClick={handleContinue}
             disabled={!name || !dob || !gender || !diet || isLoading}
-            className="w-full text-white py-4 rounded-full font-bold text-base transition-all disabled:bg-gray-300 disabled:opacity-100 bg-gray-900 active:scale-95 disabled:active:scale-100 shadow-md flex justify-center items-center"
+            className="w-full text-white py-4 rounded-full font-semibold text-base transition-all disabled:bg-gray-300 disabled:opacity-100 bg-gray-900 active:scale-95 disabled:active:scale-100 shadow-md flex justify-center items-center"
           >
             {isLoading ? (
               <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

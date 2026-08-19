@@ -1,6 +1,9 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { requestForToken, setupMessageListener } from "@/lib/firebase";
+import toast from "react-hot-toast";
 
 interface User {
   _id?: string;
@@ -8,6 +11,7 @@ interface User {
   email?: string;
   phone?: string;
   role?: string;
+  avatar?: string;
   [key: string]: unknown; // Allow extra fields from API
 }
 
@@ -28,6 +32,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  const pathname = usePathname();
+  const router = useRouter();
+
+  // List of routes that require authentication
+  const protectedRoutes = [
+    "/growth", 
+    "/nutrition", 
+    "/wallet", 
+    "/account", 
+    "/address",
+    "/appointments", 
+    "/baby-profile", 
+    "/health-records", 
+    "/orders", 
+    "/profile", 
+    "/settings", 
+    "/subscriptions", 
+    "/notifications",
+    "/shop/cart",
+    "/shop/wishlist",
+    "/doctor/book"
+  ];
+
+  // Global protection: Redirect unauthenticated users trying to access protected routes
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      const isProtected = protectedRoutes.some(route => pathname === route || pathname.startsWith(route + '/'));
+      if (isProtected) {
+        router.push("/login");
+      }
+    }
+  }, [isLoading, isAuthenticated, pathname, router]);
+
   useEffect(() => {
     // Check if user is already authenticated on mount
     const savedToken = localStorage.getItem("token");
@@ -44,9 +81,68 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.removeItem("user");
         }
       }
+
+      // Fetch the latest user profile to ensure data like avatar is up to date
+      import("@/lib/api/usersApi")
+        .then(({ getUserProfile, updateUserProfile }) => {
+          getUserProfile().then(latestUser => {
+            const userData = latestUser.data || latestUser.user || latestUser;
+            setUser(userData);
+            localStorage.setItem("user", JSON.stringify(userData));
+          });
+          // Industry Standard: Only request FCM token automatically on load if permission is already granted.
+          // If not granted, we shouldn't spam the user with prompts on every page load.
+          // Instead, we should show a button in UI to let the user opt-in manually.
+          if ('Notification' in window && Notification.permission === 'granted') {
+            requestForToken().then(fcmToken => {
+              if (fcmToken) {
+                updateUserProfile({ fcmToken }).catch(console.error);
+              }
+            }).catch(console.error);
+          }
+        })
+        .catch(console.error);
     }
     setIsLoading(false);
   }, []);
+
+  // Listen for foreground push notifications
+  useEffect(() => {
+    let unsubscribe: any;
+    
+    if (isAuthenticated) {
+      setupMessageListener((payload) => {
+        const title = payload.notification?.title || "New Notification";
+        const options = {
+          body: payload.notification?.body || "",
+          icon: '/moncradle-icon.png',
+        };
+        
+        // Show native browser notification even when app is open
+        if ('Notification' in window && Notification.permission === 'granted') {
+          const notification = new Notification(title, options);
+          
+          notification.onclick = function() {
+            window.focus();
+            if (payload.data?.url) {
+              router.push(payload.data.url);
+            } else {
+              router.push('/notifications');
+            }
+            this.close();
+          };
+        }
+      }).then(unsub => {
+        unsubscribe = unsub;
+      });
+    }
+
+    return () => {
+      if (unsubscribe && typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
+  }, [isAuthenticated, router]);
 
   const login = (newToken: string, newUser: User) => {
     localStorage.setItem("token", newToken);
@@ -54,6 +150,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(newToken);
     setUser(newUser);
     setIsAuthenticated(true);
+
+    // Fetch the latest user profile immediately to ensure full data (name, avatar, etc.) is loaded
+    import("@/lib/api/usersApi")
+      .then(({ getUserProfile, updateUserProfile }) => {
+        getUserProfile().then(latestUser => {
+          const userData = latestUser.data || latestUser.user || latestUser;
+          setUser(userData);
+          localStorage.setItem("user", JSON.stringify(userData));
+        });
+        
+        // Industry Standard: Only request FCM token automatically after login if permission is already granted.
+        if ('Notification' in window && Notification.permission === 'granted') {
+          requestForToken().then(fcmToken => {
+            if (fcmToken) {
+              updateUserProfile({ fcmToken }).catch(console.error);
+            }
+          }).catch(console.error);
+        }
+      })
+      .catch(console.error);
   };
 
   const logout = () => {

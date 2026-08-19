@@ -28,8 +28,18 @@ export interface Product {
  * Get all products
  * GET /api/products
  */
-export async function getProducts() {
-  const response = await apiClient.get("/products");
+export async function getProducts(params: Record<string, string | number> = {}) {
+  const query = new URLSearchParams({ limit: "100", ...Object.fromEntries(Object.entries(params).map(([k,v]) => [k, String(v)])) }).toString();
+  const response = await apiClient.get(`/products?${query}`);
+  return response.data;
+}
+
+/**
+ * Get dynamic product filters (categories, ageGroups)
+ * GET /api/products/filters
+ */
+export async function getProductFilters() {
+  const response = await apiClient.get('/products/filters');
   return response.data;
 }
 

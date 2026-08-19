@@ -1,14 +1,17 @@
 "use client";
 
-import { Header } from "@/components/layout/Header/Header";
-import { Footer } from "@/components/layout/Footer/Footer";
+
+
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, ShoppingCart, CheckCircle2, Star, Plus, Minus } from "lucide-react";
+import { ChevronLeft, ShoppingCart, CheckCircle2, Star, Plus, Minus } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 import { getProductById } from "@/lib/api/productsApi";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { addToCartAsync } from "@/store/slices/cartSlice";
+import toast from "react-hot-toast";
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -29,10 +32,11 @@ export default function ProductDetailPage() {
           price: `₹${data.discountedPrice || data.price}`,
           discount: data.discountedPrice && data.discountedPrice < data.price ? `${Math.round(((data.price - data.discountedPrice) / data.price) * 100)}% OFF` : "",
           tag: data.isFeatured ? "Featured" : "",
-          img: data.imageUrl || "/images/meal_food.png",
+          img: data.imageUrl || (data.images && data.images.length > 0 ? data.images[0] : "/images/meal_food.png"),
+          images: data.images && data.images.length > 0 ? data.images : (data.imageUrl ? [data.imageUrl] : ["/images/meal_food.png"]),
           desc: data.description || "Premium quality product for your baby.",
           brand: data.brand || "",
-          category: data.category || "",
+          category: data.category ? data.category.charAt(0).toUpperCase() + data.category.slice(1) : "",
           ageGroup: data.ageGroup || "",
           stockQuantity: data.stockQuantity || 0,
           rating: 4.9, // Hardcoded rating as per requirement
@@ -49,8 +53,24 @@ export default function ProductDetailPage() {
   }, [productId]);
   
   const [activeImgIdx, setActiveImgIdx] = useState(0);
-  const [quantity, setQuantity] = useState(0);
-  const images = product ? [product.img] : [];
+  
+  const dispatch = useAppDispatch();
+  const cartMap = useAppSelector(state => state.cart.cartMap);
+  const cartTotalCount = useAppSelector(state => state.cart.totalCount);
+  const cartQuantity = cartMap[productId]?.qty || 0;
+
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await dispatch(addToCartAsync({ itemId: productId, itemType: "product" })).unwrap();
+      toast.success(`${product ? product.name : 'Product'} added to cart!`);
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to add to cart');
+    }
+  };
+
+  const images: string[] = product ? (product.images || [product.img]) : [];
 
   const carouselRef = useRef<HTMLDivElement>(null);
 
@@ -83,33 +103,45 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-background)] font-sans">
-      <Header />
+    <div className="min-h-screen bg-[var(--color-background)] font-sans pb-24 md:pb-0 relative">
+      
 
-      <main className="max-w-[1200px] mx-auto px-4 md:px-8 pt-2 pb-36 md:pt-4 md:pb-10">
+      <main className="max-w-[1200px] mx-auto px-4 md:px-8 pt-4 pb-24 md:py-8">
         
-        {/* Navigation (Mobile Only) */}
+        {/* Mobile Back Header */}
+        <div className="md:hidden flex items-center justify-between px-4 py-3 -mx-4 -mt-4 sticky top-0 z-40 bg-white">
+          <div className="flex items-center gap-2">
+            <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all">
+              <ChevronLeft className="w-6 h-6" strokeWidth={2} />
+            </button>
+            <h1 className="text-[17px] font-medium text-[#0F172A] ml-1">Back</h1>
+          </div>
+          <button onClick={() => router.push('/shop/cart')} className="relative text-[#0F172A] active:scale-95 transition-transform mr-1">
+            <ShoppingCart className="w-6 h-6" strokeWidth={2} />
+            {cartTotalCount > 0 && (
+              <span className="absolute -top-1.5 -right-2 bg-[#FF3B30] text-white text-[11px] font-black min-w-[20px] h-[20px] px-1 flex items-center justify-center rounded-full">
+                {cartTotalCount}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Desktop Navigation */}
         <motion.div 
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="md:hidden flex items-center justify-between mb-6 -ml-3 mt-2 -mr-3"
+          className="hidden md:flex items-center mb-2 -ml-3 md:ml-0"
         >
           <button 
             onClick={() => router.back()} 
-            className="w-10 h-10 flex items-center justify-center rounded-full text-gray-700 hover:bg-gray-100 hover:text-[var(--color-primary)] transition-colors"
+            className="flex items-center gap-1 px-3 py-2 rounded-full text-gray-700 hover:bg-gray-100 hover:text-[var(--color-primary)] transition-colors"
           >
-            <ArrowLeft className="w-6 h-6" />
-          </button>
-
-          <button 
-            onClick={() => router.push('/shop/cart')} 
-            className="md:hidden w-10 h-10 flex items-center justify-center bg-white rounded-lg border border-gray-200 text-[#122B54] active:scale-95 transition-all mr-3"
-          >
-            <ShoppingCart className="w-5 h-5" />
+            <ChevronLeft className="w-6 h-6" />
+            <span className="font-semibold text-[15px]">Back</span>
           </button>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 mt-0 md:mt-6">
           
           {/* Left Column - Product Image */}
           <motion.div 
@@ -133,7 +165,7 @@ export default function ProductDetailPage() {
               className="md:hidden -mx-4 aspect-square flex overflow-x-auto snap-x snap-mandatory hide-scroll"
               onScroll={handleScroll}
             >
-              {images.map((src, idx) => (
+              {images.map((src: string, idx: number) => (
                 <div key={idx} className="w-full h-full flex-shrink-0 snap-center relative bg-[#F8FAFC]">
                   <Image 
                     src={src} 
@@ -157,14 +189,14 @@ export default function ProductDetailPage() {
             
             {/* Mobile Carousel Dots */}
             <div className="md:hidden flex justify-center gap-1.5 mt-2 mb-1">
-              {images.map((_, idx) => (
+              {images.map((_: any, idx: number) => (
                 <div key={idx} className={`w-2 h-2 rounded-full transition-colors ${activeImgIdx === idx ? 'bg-[var(--color-primary)]' : 'bg-gray-300'}`} />
               ))}
             </div>
             
             {/* Thumbnail Placeholders (Visible on mobile too) */}
             <div className="flex gap-3 md:gap-4 overflow-x-auto hide-scroll pb-1">
-               {images.map((imgSrc, idx) => (
+              {images.map((imgSrc: string, idx: number) => (
                  <div 
                    key={idx} 
                    onClick={() => handleThumbnailClick(idx)}
@@ -185,7 +217,7 @@ export default function ProductDetailPage() {
           >
             {/* Title & Reviews */}
             <div className="mb-4">
-              <h1 className="text-[17px] md:text-4xl font-bold text-gray-900 leading-[1.3]">
+              <h1 className="text-[17px] md:text-4xl font-semibold text-gray-900 leading-[1.3]">
                 {product.name}
               </h1>
             </div>
@@ -212,33 +244,31 @@ export default function ProductDetailPage() {
               <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100 mb-1">{product.discount}</span>
             </div>
 
-            <div className="w-full h-px bg-gray-200 mb-8" />
-
-            {/* Additional Info (Replaced Size and Benefits) */}
-            <div className="mb-8 grid grid-cols-2 gap-4">
+            {/* Additional Info */}
+            <div className="mb-8 space-y-3">
               {product.brand && (
-                <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                  <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">Brand</p>
-                  <p className="font-bold text-gray-900">{product.brand}</p>
+                <div className="flex items-start">
+                  <span className="w-28 text-sm text-gray-500 font-medium">Brand</span>
+                  <span className="text-sm font-semibold text-gray-900">{product.brand}</span>
                 </div>
               )}
               {product.ageGroup && (
-                <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                  <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">Age Group</p>
-                  <p className="font-bold text-gray-900">{product.ageGroup}</p>
+                <div className="flex items-start">
+                  <span className="w-28 text-sm text-gray-500 font-medium">Age Group</span>
+                  <span className="text-sm font-semibold text-gray-900">{product.ageGroup}</span>
                 </div>
               )}
               {product.category && (
-                <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                  <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">Category</p>
-                  <p className="font-bold text-gray-900 capitalize">{product.category}</p>
+                <div className="flex items-start">
+                  <span className="w-28 text-sm text-gray-500 font-medium">Category</span>
+                  <span className="text-sm font-semibold text-gray-900 capitalize">{product.category}</span>
                 </div>
               )}
             </div>
 
             {/* Description */}
             <div className="mb-8">
-              <h3 className="font-bold text-gray-900 mb-3">Product Description</h3>
+              <h3 className="font-semibold text-gray-900 mb-3">Product Description</h3>
               <p className="text-gray-600 leading-relaxed font-medium">
                 {product.desc}
               </p>
@@ -248,26 +278,17 @@ export default function ProductDetailPage() {
             <div className="mt-auto bg-white p-3 lg:p-0 border-t border-gray-100 lg:border-none fixed bottom-0 left-0 w-full lg:relative lg:bottom-0 z-40 flex shadow-[0_-10px_30px_rgba(0,0,0,0.05)] lg:shadow-none pb-safe">
               
               {product.stockQuantity > 0 ? (
-                quantity > 0 ? (
-                  <div className="w-full h-12 md:h-14 bg-[var(--color-primary)] text-white font-semibold rounded-lg shadow-sm flex items-center justify-between px-3 transition-all duration-300">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setQuantity(quantity - 1); }}
-                      className="p-1.5 md:p-2 bg-white text-[var(--color-primary)] rounded-md shadow-sm active:scale-95 transition-all hover:bg-gray-50"
-                    >
-                      <Minus className="w-5 h-5 md:w-6 md:h-6" strokeWidth={3} />
-                    </button>
-                    <span className="tracking-wide font-bold text-base md:text-lg">{quantity} item{quantity > 1 ? 's' : ''} added</span>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setQuantity(quantity + 1); }}
-                      className="p-1.5 md:p-2 bg-white text-[var(--color-primary)] rounded-md shadow-sm active:scale-95 transition-all hover:bg-gray-50"
-                    >
-                      <Plus className="w-5 h-5 md:w-6 md:h-6" strokeWidth={3} />
-                    </button>
+                cartQuantity > 0 ? (
+                  <div 
+                    onClick={() => router.push('/shop/cart')}
+                    className="w-full h-12 md:h-14 bg-[var(--color-primary)] text-white font-semibold rounded-lg shadow-sm flex items-center justify-center cursor-pointer hover:bg-[#527d89] transition-colors"
+                  >
+                    <span className="tracking-wide font-semibold text-base md:text-lg">{cartQuantity} in cart</span>
                   </div>
                 ) : (
                   <button
-                    onClick={(e) => { e.stopPropagation(); setQuantity(1); }}
-                    className="w-full h-12 md:h-14 bg-[var(--color-primary)] text-white font-bold text-base md:text-lg rounded-lg hover:bg-[#527d89] hover:shadow-md transition-all duration-300 flex items-center justify-center gap-2 group/btn shadow-sm"
+                    onClick={handleAddToCart}
+                    className="w-full h-12 md:h-14 bg-[var(--color-primary)] text-white font-semibold text-base md:text-lg rounded-lg hover:bg-[#527d89] hover:shadow-md transition-all duration-300 flex items-center justify-center gap-2 group/btn shadow-sm"
                   >
                     <ShoppingCart className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
                     Add to Cart
@@ -276,7 +297,7 @@ export default function ProductDetailPage() {
               ) : (
                 <button
                   disabled
-                  className="w-full h-12 md:h-14 bg-gray-300 text-gray-500 font-bold text-base md:text-lg rounded-lg shadow-sm flex items-center justify-center gap-2 cursor-not-allowed"
+                  className="w-full h-12 md:h-14 bg-gray-300 text-gray-500 font-semibold text-base md:text-lg rounded-lg shadow-sm flex items-center justify-center gap-2 cursor-not-allowed"
                 >
                   Out of Stock
                 </button>
@@ -288,7 +309,7 @@ export default function ProductDetailPage() {
 
       </main>
 
-      <Footer />
+      
     </div>
   );
 }

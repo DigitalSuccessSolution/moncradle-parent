@@ -49,7 +49,7 @@ export function AuthScreen() {
       {/* Full Screen Image Background (Matches Splash Screen) */}
       <div className="absolute inset-0 w-full h-full z-0 bg-[#FAFBFC]">
         <Image
-          src="/images/image copy 3.png"
+          src="/images/splashscreen2.png"
           alt="Authentication"
           fill
           priority

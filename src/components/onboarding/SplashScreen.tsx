@@ -8,7 +8,7 @@ const slides = [
   {
     id: 1,
     image: "/images/splashscreen1.png",
-    logo: "MONCRADEL",
+    logo: "moncradle",
     tagline: "Nurturing Little Lives",
     title1: "Smart Care For",
     title2: "Little Ones",
@@ -17,7 +17,7 @@ const slides = [
   {
     id: 2,
     image: "/images/splashscreen2.png",
-    logo: "MONCRADEL",
+    logo: "moncradle",
     tagline: "Healthy & Happy",
     title1: "Track Growth",
     title2: "Seamlessly",
@@ -181,7 +181,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
           {/* Next / Get Started Button */}
           <button
             onClick={handleNext}
-            className="w-full bg-[#ED7A9C] text-white text-base sm:text-lg font-bold py-3.5 rounded-2xl shadow-[0_8px_30px_rgba(237,122,156,0.15)] border border-pink-50 active:scale-[0.98] transition-transform duration-200"
+            className="w-full bg-[#ED7A9C] text-white text-base sm:text-lg font-semibold py-3.5 rounded-2xl shadow-[0_8px_30px_rgba(237,122,156,0.15)] border border-pink-50 active:scale-[0.98] transition-transform duration-200"
           >
             {currentSlide === slides.length - 1 ? "Get Started" : "Next"}
           </button>

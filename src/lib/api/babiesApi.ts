@@ -16,6 +16,7 @@ export interface BabyProfile {
   ageInMonths?: number;
   bloodType?: string;
   prematureDays?: number;
+  allergies?: string[];
   [key: string]: any;
 }
 
@@ -28,7 +29,8 @@ export async function createBaby(data: {
   dateOfBirth: string;
   gender: string;
   diet: string;
-  ageInMonths: number;
+  ageInMonths?: number;
+  allergies?: string[];
 }) {
   const response = await apiClient.post("/babies", data);
   return response.data;
@@ -39,7 +41,7 @@ export async function createBaby(data: {
  * GET /api/babies
  */
 export async function getBabies() {
-  const response = await apiClient.get("/babies");
+  const response = await apiClient.get(`/babies?t=${Date.now()}`);
   return response.data;
 }
 
@@ -56,7 +58,7 @@ export async function getBabyById(id: string) {
  * Update a baby profile
  * PUT /api/babies/:id
  */
-export async function updateBaby(id: string, data: Partial<BabyProfile>) {
+export async function updateBaby(id: string, data: Partial<BabyProfile> | FormData) {
   const response = await apiClient.put(`/babies/${id}`, data);
   return response.data;
 }

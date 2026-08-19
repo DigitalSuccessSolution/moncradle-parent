@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 
 export function HeroSection() {
   const shouldReduceMotion = useReducedMotion();
@@ -41,7 +42,7 @@ export function HeroSection() {
   }, [currentSlide, originalSlides.length]);
 
   return (
-    <section className="w-full relative px-4 pt-20 pb-4 md:p-0">
+    <section className="w-full relative px-4 pb-4 md:p-0">
 
       {/* Mobile-Only Automatic Image Slider */}
       <motion.div
@@ -63,6 +64,7 @@ export function HeroSection() {
               <Image
                 src={src}
                 fill
+                sizes="100vw"
                 alt={`Hero Slide ${index + 1}`}
                 className="object-cover object-center"
                 priority={index === 0}
@@ -131,12 +133,12 @@ export function HeroSection() {
               }}
               className="flex flex-nowrap items-center gap-4 pt-2 w-auto"
             >
-              <button className="justify-center bg-[#6495a3] text-white px-8 py-3 rounded-full font-bold shadow-lg shadow-[#6495a3]/30 hover:bg-[#527d89] transition-all hover:-translate-y-0.5 flex items-center text-sm whitespace-nowrap">
+              <Link href="/growth" className="justify-center bg-[var(--pastel-blue)] text-white px-8 py-3 rounded-full font-semibold hover:brightness-95 transition-all hover:-translate-y-0.5 flex items-center text-sm whitespace-nowrap">
                 Explore Growth
-              </button>
-              <button className="justify-center bg-white text-gray-700 border border-gray-200 px-8 py-3 rounded-full font-bold shadow-sm hover:shadow-md hover:border-gray-300 transition-all hover:-translate-y-0.5 flex items-center text-sm whitespace-nowrap">
-                Shop Essentials
-              </button>
+              </Link>
+              <Link href="/nutrition/meal-plans" className="justify-center bg-[var(--pastel-orange)] text-white px-8 py-3 rounded-full font-semibold hover:brightness-95 transition-all hover:-translate-y-0.5 flex items-center text-sm whitespace-nowrap">
+                Explore Meals
+              </Link>
             </motion.div>
           </motion.div>
         </div>
@@ -146,7 +148,7 @@ export function HeroSection() {
 
           {/* Large Decorative Circle */}
           <div className="absolute inset-0 flex items-center justify-center -translate-y-4">
-            <div className="w-[520px] h-[520px] bg-[#F6E9F7] rounded-full"></div>
+            <div className="w-[520px] h-[520px] bg-[var(--pastel-purple)] opacity-30 rounded-full"></div>
           </div>
 
           {/* Image */}
@@ -155,7 +157,8 @@ export function HeroSection() {
               src="/hero.png"
               alt="Mother and Baby"
               fill
-              className="object-contain object-bottom drop-shadow-xl"
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-contain object-bottom"
               priority
             />
           </div>

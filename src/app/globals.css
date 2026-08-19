@@ -1,8 +1,11 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 :root {
-  --background: #FAFBFC;
-  --foreground: #4A4E51;
+  --background: #FFFFFF;
+  /* Pure White */
+  --foreground: #334155;
+  /* Slate 700 - Softer than pure black */
 }
 
 @theme inline {
@@ -10,16 +13,45 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
 
-  --color-primary: #5A8BA3;
-  --color-primary-light: #72a2ba;
-  --color-secondary: #F7D1BA;
-  --color-accent: #8FB9A3;
-  --color-neutral: #4A4E51;
-  --color-card: #FFFFFF;
-  --color-border: #E9EEF2;
+  --color-primary: #8A84C8;
+  /* Soft Indigo (Growth Icon) */
+  --color-primary-light: #A39FD8;
+  /* Lighter Indigo */
+  --color-secondary: #F4A261;
+  /* Soft Orange (Records Icon) */
+  --color-accent: #9FBEE4;
+  /* Soft Blue (Meal Icon) */
 
-  --shadow-soft: 0 10px 40px -10px rgba(90, 139, 163, 0.08);
-  --shadow-float: 0 20px 40px -15px rgba(90, 139, 163, 0.12);
+  /* Multi-Color Pastel Palette */
+  --pastel-green: #B5CA82;
+  /* Doctor */
+  --pastel-blue: #9FBEE4;
+  /* Meal */
+  --pastel-purple: #C4B7D7;
+  /* Shop */
+  --pastel-indigo: #8A84C8;
+  /* Growth */
+  --pastel-orange: #F4A261;
+  /* Records */
+  --pastel-coral: #E76F51;
+  /* Reminders */
+
+  --color-neutral: #64748B;
+  /* Slate 500 */
+  --color-card: #FFFFFF;
+  --color-border: #F1F5F9;
+  /* Slate 100 border */
+
+  --shadow-soft: none;
+  --shadow-float: none;
+
+  /* Disable standard shadows globally for a completely flat design */
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  --shadow-xl: none;
+  --shadow-2xl: none;
+  --shadow: none;
 
   --radius-xl: 20px;
   --radius-2xl: 24px;
@@ -46,9 +78,39 @@ body {
   display: none;
 }
 
+/* Hide scrollbar globally on mobile screens for a native app feel */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+}
+
 .no-scrollbar {
   -ms-overflow-style: none;
   /* IE and Edge */
   scrollbar-width: none;
   /* Firefox */
+}
+
+@layer base {
+
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #9ca3af !important;
+    opacity: 1 !important;
+  }
 }

@@ -57,8 +57,8 @@ export function GrowthOverview() {
           <motion.div variants={itemVariants} className="flex-1 w-full max-w-[50%] md:max-w-[300px] bg-white rounded-lg p-2.5 sm:p-5 shadow-[var(--shadow-soft)] border border-gray-100 flex flex-col relative z-10 transition-transform hover:-translate-y-1 duration-300">
             {/* Header Row */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-3 mb-2.5 sm:mb-4">
-              <div className="inline-flex bg-rose-50 text-rose-500 font-bold text-[8px] sm:text-[10px] tracking-widest px-2 sm:px-3 py-0.5 sm:py-1 rounded-md uppercase">Before</div>
-              <h3 className="font-bold text-gray-800 text-[10px] sm:text-sm md:text-base">At 3 Months</h3>
+              <div className="inline-flex bg-[var(--pastel-coral)]/10 text-[var(--pastel-coral)] font-semibold text-[8px] sm:text-[10px] tracking-widest px-2 sm:px-3 py-0.5 sm:py-1 rounded-md uppercase">Before</div>
+              <h3 className="font-semibold text-gray-800 text-[10px] sm:text-sm md:text-base">At 3 Months</h3>
             </div>
 
             {/* Image */}
@@ -69,18 +69,18 @@ export function GrowthOverview() {
             {/* Stats Container */}
             <div className="flex items-center justify-between pt-1 sm:pt-2">
               <div className="flex flex-col items-center text-center gap-1 sm:gap-1.5 flex-1">
-                <div className="text-rose-400"><Scale className="w-3 h-3 sm:w-4 sm:h-4" /></div>
-                <span className="font-bold text-[9px] sm:text-xs text-gray-800">5.2 kg</span>
+                <div className="text-[var(--pastel-coral)]"><Scale className="w-3 h-3 sm:w-4 sm:h-4" /></div>
+                <span className="font-semibold text-[9px] sm:text-xs text-gray-800">5.2 kg</span>
                 <span className="text-[7px] sm:text-[9px] font-medium text-gray-400 uppercase">Weight</span>
               </div>
               <div className="flex flex-col items-center text-center gap-1 sm:gap-1.5 flex-1 px-0.5 sm:px-1">
-                <div className="text-rose-400"><Ruler className="w-3 h-3 sm:w-4 sm:h-4" /></div>
-                <span className="font-bold text-[9px] sm:text-xs text-gray-800">58 cm</span>
+                <div className="text-[var(--pastel-coral)]"><Ruler className="w-3 h-3 sm:w-4 sm:h-4" /></div>
+                <span className="font-semibold text-[9px] sm:text-xs text-gray-800">58 cm</span>
                 <span className="text-[7px] sm:text-[9px] font-medium text-gray-400 uppercase">Height</span>
               </div>
               <div className="flex flex-col items-center text-center gap-1 sm:gap-1.5 flex-1">
-                <div className="text-rose-400"><Star className="w-3 h-3 sm:w-4 sm:h-4" /></div>
-                <span className="font-bold text-[9px] sm:text-xs text-gray-800 leading-[1.1]">Just starting</span>
+                <div className="text-[var(--pastel-coral)]"><Star className="w-3 h-3 sm:w-4 sm:h-4" /></div>
+                <span className="font-semibold text-[9px] sm:text-xs text-gray-800 leading-[1.1]">Just starting</span>
                 <span className="text-[7px] sm:text-[9px] font-medium text-gray-400 uppercase">Milestones</span>
               </div>
             </div>
@@ -90,8 +90,8 @@ export function GrowthOverview() {
           <motion.div variants={itemVariants} className="flex-1 w-full max-w-[50%] md:max-w-[300px] bg-white rounded-lg p-2.5 sm:p-5 shadow-[var(--shadow-soft)] border border-gray-100 flex flex-col relative z-10 transition-transform hover:-translate-y-1 duration-300">
             {/* Header Row */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-3 mb-2.5 sm:mb-4">
-              <div className="inline-flex bg-emerald-50 text-emerald-500 font-bold text-[8px] sm:text-[10px] tracking-widest px-2 sm:px-3 py-0.5 sm:py-1 rounded-md uppercase">After</div>
-              <h3 className="font-bold text-gray-800 text-[10px] sm:text-sm md:text-base">At 12 Months</h3>
+              <div className="inline-flex bg-[var(--pastel-green)]/10 text-[var(--pastel-green)] font-semibold text-[8px] sm:text-[10px] tracking-widest px-2 sm:px-3 py-0.5 sm:py-1 rounded-md uppercase">After</div>
+              <h3 className="font-semibold text-gray-800 text-[10px] sm:text-sm md:text-base">At 12 Months</h3>
             </div>
 
             {/* Image */}
@@ -102,18 +102,18 @@ export function GrowthOverview() {
             {/* Stats Container */}
             <div className="flex items-center justify-between pt-1 sm:pt-2">
               <div className="flex flex-col items-center text-center gap-1 sm:gap-1.5 flex-1">
-                <div className="text-emerald-500"><Scale className="w-3 h-3 sm:w-4 sm:h-4" /></div>
-                <span className="font-bold text-[9px] sm:text-xs text-gray-800">9.6 kg</span>
+                <div className="text-[var(--pastel-green)]"><Scale className="w-3 h-3 sm:w-4 sm:h-4" /></div>
+                <span className="font-semibold text-[9px] sm:text-xs text-gray-800">9.6 kg</span>
                 <span className="text-[7px] sm:text-[9px] font-medium text-gray-400 uppercase">Weight</span>
               </div>
               <div className="flex flex-col items-center text-center gap-1 sm:gap-1.5 flex-1 px-0.5 sm:px-1">
-                <div className="text-emerald-500"><Ruler className="w-3 h-3 sm:w-4 sm:h-4" /></div>
-                <span className="font-bold text-[9px] sm:text-xs text-gray-800">76 cm</span>
+                <div className="text-[var(--pastel-green)]"><Ruler className="w-3 h-3 sm:w-4 sm:h-4" /></div>
+                <span className="font-semibold text-[9px] sm:text-xs text-gray-800">76 cm</span>
                 <span className="text-[7px] sm:text-[9px] font-medium text-gray-400 uppercase">Height</span>
               </div>
               <div className="flex flex-col items-center text-center gap-1 sm:gap-1.5 flex-1">
-                <div className="text-emerald-500"><Star className="w-3 h-3 sm:w-4 sm:h-4" /></div>
-                <span className="font-bold text-[9px] sm:text-[10px] text-gray-800 leading-[1.1] pb-0.5">Walking,<br />Babbling</span>
+                <div className="text-[var(--pastel-green)]"><Star className="w-3 h-3 sm:w-4 sm:h-4" /></div>
+                <span className="font-semibold text-[9px] sm:text-[10px] text-gray-800 leading-[1.1] pb-0.5">Walking,<br />Babbling</span>
                 <span className="text-[7px] sm:text-[9px] font-medium text-gray-400 uppercase">Milestones</span>
               </div>
             </div>

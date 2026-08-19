@@ -13,7 +13,7 @@ import { useAuth } from "@/context/AuthContext";
 export function ProfileDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
 
   const handleLogout = () => {
     logout();
@@ -48,24 +48,29 @@ export function ProfileDropdown() {
     <div className="relative" ref={dropdownRef} onMouseEnter={() => setIsOpen(true)} onMouseLeave={() => setIsOpen(false)}>
       {/* Trigger */}
       <button
-        className="flex items-center gap-3 cursor-pointer group hover:bg-gray-50 p-1.5 pr-4 rounded-full transition-all duration-300 border border-transparent hover:border-gray-100"
+        className="flex items-center gap-1.5 lg:gap-3 cursor-pointer group hover:bg-gray-50 p-1 lg:p-1.5 lg:pr-4 rounded-full transition-all duration-300 border border-transparent hover:border-gray-100"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <div className="relative overflow-hidden rounded-full transform group-hover:scale-105 transition-transform duration-300">
-          <Image
-            src="/images/doctor_profile.png"
-            alt="Profile"
-            width={36}
-            height={36}
-            className="rounded-full object-cover w-9 h-9 border-2 border-white shadow-sm"
-          />
-          <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></div>
+        <div className="relative overflow-hidden rounded-full transform group-hover:scale-105 transition-transform duration-300 bg-indigo-50 border-2 border-white shadow-sm w-8 h-8 lg:w-9 lg:h-9 flex items-center justify-center shrink-0">
+          {user?.avatar ? (
+            <Image
+              src={user.avatar}
+              alt="Profile"
+              width={36}
+              height={36}
+              className="object-cover w-full h-full"
+            />
+          ) : (
+            <span className="text-indigo-600 font-semibold text-xs lg:text-sm">
+              {user?.name ? user.name.charAt(0).toUpperCase() : 'P'}
+            </span>
+          )}
         </div>
-        <div className="flex flex-col text-left hidden sm:flex">
-          <span className="text-sm font-medium text-black transition-colors">Riya Sharma</span>
-          <span className="text-[10px] text-gray-500 font-normal leading-tight">Mother</span>
+        <div className="flex flex-col text-left hidden lg:flex max-w-[100px] xl:max-w-[140px]">
+          <span className="text-[13px] xl:text-sm font-medium text-black transition-colors truncate">{user?.name || 'Parent'}</span>
+          <span className="text-[10px] text-gray-500 font-normal leading-tight capitalize truncate">{user?.role || 'Parent'}</span>
         </div>
-        <ChevronDown className={`w-4 h-4 text-black transition-transform duration-300 ml-1 ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-3.5 h-3.5 lg:w-4 lg:h-4 text-black transition-transform duration-300 ml-0.5 lg:ml-1 shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {/* Dropdown Menu */}

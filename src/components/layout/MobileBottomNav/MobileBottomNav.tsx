@@ -29,6 +29,7 @@ export function MobileBottomNav({ isHidden = false }: { isHidden?: boolean }) {
     "/doctor",
     "/health-records",
     "/appointments",
+    "/notifications",
     "/subscriptions",
     "/settings",
     "/help-support",
@@ -59,7 +60,7 @@ export function MobileBottomNav({ isHidden = false }: { isHidden?: boolean }) {
             className={`flex flex-col items-center gap-1.5 transition-colors cursor-pointer ${isActive ? "text-[var(--color-primary)]" : "text-gray-600 hover:text-gray-900"}`}
           >
             <Icon className="w-6 h-6" />
-            <span className={`text-[10px] ${isActive ? "font-bold" : "font-semibold"}`}>{item.name}</span>
+            <span className={`text-[10px] ${isActive ? "font-semibold" : "font-semibold"}`}>{item.name}</span>
           </Link>
         );
       })}

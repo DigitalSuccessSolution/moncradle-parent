@@ -28,7 +28,7 @@ export function HealthRecords() {
                 <HeartPulse className="w-6 h-6 md:w-7 md:h-7" />
               </div>
               <div>
-                <h3 className="font-bold md:font-normal text-lg md:text-2xl text-[#122B54] tracking-tight">
+                <h3 className="font-semibold md:font-normal text-lg md:text-2xl text-[#122B54] tracking-tight">
                   Health Records
                 </h3>
                 <p className="text-[11px] md:text-sm font-medium text-gray-500 mt-0.5 max-w-[200px] md:max-w-sm leading-tight">
@@ -37,7 +37,7 @@ export function HealthRecords() {
               </div>
             </div>
 
-            <Link href="/records" className="text-[11px] md:text-sm font-bold md:font-medium text-[var(--color-primary)] flex items-center gap-1 group shrink-0 whitespace-nowrap self-start mt-2 md:mt-1">
+            <Link href="/records" className="text-[11px] md:text-sm font-semibold md:font-medium text-[var(--color-primary)] flex items-center gap-1 group shrink-0 whitespace-nowrap self-start mt-2 md:mt-1">
               <span className="relative pb-0.5">
                 View All
                 <span className="absolute bottom-0 left-0 w-full h-[1.5px] bg-[var(--color-primary)] origin-left scale-x-0 group-hover:scale-x-100 group-active:scale-x-0 transition-transform duration-300 ease-out rounded-full"></span>
@@ -54,7 +54,7 @@ export function HealthRecords() {
                  <CheckCircle className="w-4 h-4 md:w-5 md:h-5" strokeWidth={2.5} />
                </div>
                <div>
-                 <p className="text-sm md:text-base font-bold text-[#122B54]">Vaccination</p>
+                 <p className="text-sm md:text-base font-semibold text-[#122B54]">Vaccination</p>
                  <p className="text-[11px] md:text-xs font-medium text-gray-500 mt-0.5">Up to date</p>
                </div>
             </div>
@@ -64,7 +64,7 @@ export function HealthRecords() {
                  <Activity className="w-4 h-4 md:w-5 md:h-5" strokeWidth={2.5} />
                </div>
                <div>
-                 <p className="text-sm md:text-base font-bold text-[#122B54]">Lab Reports</p>
+                 <p className="text-sm md:text-base font-semibold text-[#122B54]">Lab Reports</p>
                  <p className="text-[11px] md:text-xs font-medium text-gray-500 mt-0.5">2 New</p>
                </div>
             </div>
@@ -74,7 +74,7 @@ export function HealthRecords() {
                  <Package className="w-4 h-4 md:w-5 md:h-5" strokeWidth={2.5} />
                </div>
                <div>
-                 <p className="text-sm md:text-base font-bold text-[#122B54]">Prescriptions</p>
+                 <p className="text-sm md:text-base font-semibold text-[#122B54]">Prescriptions</p>
                  <p className="text-[11px] md:text-xs font-medium text-gray-500 mt-0.5">1 Active</p>
                </div>
             </div>

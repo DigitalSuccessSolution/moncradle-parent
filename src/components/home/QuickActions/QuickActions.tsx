@@ -1,15 +1,16 @@
 import Link from "next/link";
-import { Stethoscope, Utensils, ShoppingBag, TrendingUp, FileText, Bell } from "lucide-react";
+import Image from "next/image";
 
 export function QuickActions() {
   const actions = [
-    { icon: Stethoscope, label: "Doctor", link: "/doctor", bgColor: "bg-[#B5CA82]", ringColor: "ring-[#B5CA82]/20" },
-    { icon: Utensils, label: "Meal", link: "/nutrition", bgColor: "bg-[#9FBEE4]", ringColor: "ring-[#9FBEE4]/20" },
-    { icon: ShoppingBag, label: "Shop", link: "/shop", bgColor: "bg-[#C4B7D7]", ringColor: "ring-[#C4B7D7]/20" },
-    { icon: TrendingUp, label: "Growth", link: "/growth", bgColor: "bg-[#8A84C8]", ringColor: "ring-[#8A84C8]/20" },
+    { imageSrc: "/images/icons/doctor.png", label: "Doctor", link: "/doctor", bgColor: "bg-[#D8F2E3]" },
+    { imageSrc: "/images/icons/meal.png", label: "Meal", link: "/nutrition", bgColor: "bg-[#D5EAF7]" },
+    { imageSrc: "/images/icons/shop.png", label: "Shop", link: "/shop", bgColor: "bg-[#E6D7F9]" },
+    { imageSrc: "/images/icons/growth.png", label: "Growth", link: "/growth", bgColor: "bg-[#D9CCFA]" },
+    { imageSrc: "/images/icons/records.png", label: "Tracker", link: "/tracking", bgColor: "bg-[#FCE2C2]" },
     // Desktop only icons
-    { icon: FileText, label: "Records", link: "/profile", bgColor: "bg-[#F4A261]", ringColor: "ring-[#F4A261]/20", hiddenMobile: true },
-    { icon: Bell, label: "Reminders", link: "/profile", bgColor: "bg-[#E76F51]", ringColor: "ring-[#E76F51]/20", hiddenMobile: true },
+    { imageSrc: "/images/icons/records.png", label: "Records", link: "/health-records", bgColor: "bg-[#FCE2C2]" },
+    { imageSrc: "/images/icons/reminders.png", label: "Reminders", link: "/notifications", bgColor: "bg-[#FAC7BA]" },
   ];
 
   return (
@@ -17,21 +18,23 @@ export function QuickActions() {
       <div className="bg-sky-100/50 rounded-lg p-5 md:p-6 border border-sky-100/50 w-full">
         {/* Header */}
         <div className="flex items-center justify-between mb-6 px-1 md:px-2">
-          <h2 className="text-[17px] md:text-xl font-bold text-gray-900 tracking-tight">Quick Actions</h2>
+          <h2 className="text-[17px] md:text-xl font-semibold text-gray-900 tracking-tight">Quick Actions</h2>
         </div>
 
         {/* Icons Row */}
-        <div className="flex justify-between md:justify-around items-center px-1 md:px-4">
+        <div className="flex overflow-x-auto md:overflow-visible gap-6 md:gap-0 justify-start md:justify-around items-center px-1 md:px-4 pb-2 md:pb-0 no-scrollbar snap-x">
           {actions.map((action, i) => (
             <Link 
               key={i} 
               href={action.link} 
-              className={`flex flex-col items-center gap-3.5 group ${action.hiddenMobile ? 'hidden md:flex' : 'flex'}`}
+              className={`flex flex-col items-center gap-3.5 group shrink-0 snap-center ${action.hiddenMobile ? 'hidden md:flex' : 'flex'}`}
             >
-              <div className={`w-[3.25rem] h-[3.25rem] md:w-16 md:h-16 rounded-full flex items-center justify-center ${action.bgColor} text-white transition-transform duration-200 active:scale-95 group-hover:scale-105`}>
-                <action.icon className="w-6 h-6 md:w-7 md:h-7" strokeWidth={2.5} />
+              <div className={`w-16 h-16 md:w-[88px] md:h-[88px] rounded-full flex items-center justify-center transition-transform duration-200 active:scale-95 group-hover:-translate-y-1 relative shadow-sm border border-black/5 ${action.bgColor}`}>
+                <div className="relative w-[95%] h-[95%]">
+                  <Image src={action.imageSrc} alt={action.label} fill className="object-contain" sizes="(max-width: 768px) 90px, 150px" />
+                </div>
               </div>
-              <span className="text-[12px] md:text-[13px] font-bold text-gray-900 leading-none">{action.label}</span>
+              <span className="text-[12px] md:text-[13px] font-semibold text-gray-900 leading-none">{action.label}</span>
             </Link>
           ))}
         </div>

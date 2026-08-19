@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { sendOTP } from '@/lib/api/authApi';
 
 interface PhoneLoginProps {
@@ -13,25 +14,21 @@ export function PhoneLogin({ onSuccess }: PhoneLoginProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Basic validation for 10-digit Indian phone number
-    const phoneRegex = /^[0-9]{10}$/;
-    if (!phoneRegex.test(phone)) {
-      setError('Please enter a valid 10-digit mobile number.');
+    if (!phone) {
+      setError('Please enter a valid phone number');
       return;
     }
 
-    setError('');
     setIsLoading(true);
+    setError('');
 
     try {
-      // Call real Send OTP API
-      await sendOTP(phone);
+      const response = await sendOTP(phone);
+      toast.success(`OTP sent: ${response.otp}`);
       onSuccess(phone);
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } };
-      const message = error?.response?.data?.message || 'Failed to send OTP. Please try again.';
-      setError(message);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err.message || 'Failed to send OTP. Please try again.');
+      toast.error('Failed to send OTP');
     } finally {
       setIsLoading(false);
     }
@@ -58,7 +55,7 @@ export function PhoneLogin({ onSuccess }: PhoneLoginProps) {
           Welcome to
         </h2>
         <h2 className="text-3xl sm:text-[32px] leading-tight font-medium text-[#ED7A9C]">
-          Moncradel
+          moncradle
         </h2>
         <p className="text-xs sm:text-sm text-gray-500 mt-2 font-medium">
           Enter your mobile number to get started
@@ -79,7 +76,7 @@ export function PhoneLogin({ onSuccess }: PhoneLoginProps) {
               value={phone}
               onChange={handlePhoneChange}
               placeholder="Mobile Number"
-              className="flex-1 bg-transparent border-none outline-none pl-4 text-[#3A3368] font-semibold text-base sm:text-lg placeholder:text-gray-400 placeholder:font-medium"
+              className="flex-1 min-w-0 w-full bg-transparent border-none outline-none pl-4 text-[#3A3368] font-semibold text-base sm:text-lg placeholder:text-gray-400 placeholder:font-medium"
             />
           </div>
           {error && (
@@ -92,7 +89,7 @@ export function PhoneLogin({ onSuccess }: PhoneLoginProps) {
         <button
           type="submit"
           disabled={phone.length !== 10 || isLoading}
-          className="w-full bg-white text-[#ED7A9C] text-base sm:text-lg font-bold py-3.5 mt-2 rounded-2xl shadow-[0_8px_30px_rgba(237,122,156,0.15)] border border-pink-50 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:active:scale-100 flex justify-center items-center h-[54px]"
+          className="w-full bg-white text-[#ED7A9C] text-base sm:text-lg font-semibold py-3.5 mt-2 rounded-2xl shadow-[0_8px_30px_rgba(237,122,156,0.15)] border border-pink-50 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:active:scale-100 flex justify-center items-center h-[54px]"
         >
           {isLoading ? (
             <svg className="animate-spin h-6 w-6 text-[#ED7A9C]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

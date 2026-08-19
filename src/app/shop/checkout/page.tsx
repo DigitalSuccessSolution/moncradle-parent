@@ -1,22 +1,23 @@
 "use client";
 
-import { Header } from "@/components/layout/Header/Header";
-import { Footer } from "@/components/layout/Footer/Footer";
-import { ArrowLeft, MapPin, Truck, CreditCard, Banknote, CheckCircle2, Lock } from "lucide-react";
+
+
+import { ChevronLeft, MapPin, Truck, CreditCard, Banknote, CheckCircle2, Lock } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 
-// Dummy data matching cart state conceptually
-const cartItems = [
-  { id: "prod-1", name: "Organic Baby Cerelac Trial Pack For New Born Baby (6-12 months)", size: "500g", price: 280, quantity: 1, img: "/images/meal_food.png" },
-  { id: "prod-2", name: "Vitamin D3 Drops for new born baby 15ml D drop", size: "15ml", price: 290, quantity: 2, img: "/images/product_bottle.png" },
-];
-
-const addresses = [
-  { id: "addr-1", type: "Home", name: "John Doe", phone: "+91 98765 43210", address: "A-123, Sunshine Apartments, Sector 45", city: "Gurugram", state: "Haryana", zip: "122003", isDefault: true }
-];
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { fetchCartAsync } from "@/store/slices/cartSlice";
+import { useEffect } from "react";
+import { createOrder, OrderItem } from "@/lib/api/ordersApi";
+import { clearCart } from "@/lib/api/cartApi";
+import { useRouter } from "next/navigation";
+import { getAddresses, Address } from "@/lib/api/addressesApi";
+import { useAuth } from "@/context/AuthContext";
+import { Edit2 } from "lucide-react";
+import { AddressModal } from "@/components/AddressModal";
 
 const deliveryOptions = [
   { id: "standard", name: "Standard Delivery", time: "3-5 Business Days", price: 0 },
@@ -30,29 +31,112 @@ const paymentMethods = [
 ];
 
 export default function CheckoutPage() {
+  const dispatch = useAppDispatch();
+  const router = useRouter();
+  const { items: cartItems, subtotal } = useAppSelector(state => state.cart);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { user } = useAuth();
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>("");
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [editingAddress, setEditingAddress] = useState<Address | null>(null);
+
+  useEffect(() => {
+    dispatch(fetchCartAsync());
+    fetchUserAddresses();
+  }, [dispatch]);
+
+  const fetchUserAddresses = async () => {
+    try {
+      const data = await getAddresses();
+      setAddresses(data);
+      if (data.length > 0) {
+        const defaultAddr = data.find((a: Address) => a.isDefault);
+        setSelectedAddressId(defaultAddr ? defaultAddr._id : data[0]._id);
+      }
+    } catch (error) {
+      console.error("Failed to fetch addresses:", error);
+    }
+  };
+
+  const handleAddressSuccess = (savedAddress: Address, isEdit: boolean) => {
+    if (isEdit) {
+      setAddresses(addresses.map(a => a._id === savedAddress._id ? savedAddress : a));
+    } else {
+      setAddresses([...addresses, savedAddress]);
+    }
+    setSelectedAddressId(savedAddress._id);
+  };
+
+  const handleEditClick = (e: React.MouseEvent, addr: Address) => {
+    e.stopPropagation(); // prevent selecting the address just by clicking edit
+    setEditingAddress(addr);
+    setIsAddressModalOpen(true);
+  };
+
   const [activeDelivery, setActiveDelivery] = useState("standard");
   const [activePayment, setActivePayment] = useState("upi");
 
-  const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const shipping = deliveryOptions.find(d => d.id === activeDelivery)?.price || 0;
   const total = subtotal + shipping;
 
+  const handlePlaceOrder = async () => {
+    if (cartItems.length === 0) return;
+    setIsSubmitting(true);
+    try {
+      const orderItems: OrderItem[] = cartItems.map(item => ({
+        itemType: item.itemType,
+        productId: item.itemType === 'product' && item.productId ? item.productId._id : undefined,
+        mealId: item.itemType === 'meal' && item.mealId ? item.mealId._id : undefined,
+        quantity: item.quantity,
+        priceAtAddition: item.priceAtAddition,
+      }));
+
+      const selectedAddr = addresses.find(a => a._id === selectedAddressId);
+      if (!selectedAddr) {
+        alert("Please select or add a delivery address.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      await createOrder({
+        items: orderItems,
+        deliveryAddress: {
+          street: selectedAddr.street,
+          city: selectedAddr.city,
+          state: selectedAddr.state,
+          zipCode: selectedAddr.zipCode
+        }
+      });
+
+      await clearCart();
+      await dispatch(fetchCartAsync());
+      router.push('/shop/order-success');
+    } catch (error) {
+      console.error("Failed to place order:", error);
+      alert("Failed to place order. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[var(--color-background)] font-sans flex flex-col">
-      <Header />
+      
       
       <main className="flex-1 max-w-[1200px] w-full mx-auto px-4 md:px-8 py-8 md:py-12">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <Link href="/shop/cart" className="md:hidden text-gray-700 hover:text-[var(--color-primary)] transition-colors p-1 -ml-1">
-            <ArrowLeft className="w-6 h-6" />
+            <ChevronLeft className="w-6 h-6" />
           </Link>
           <h1 className="text-xl md:text-3xl font-bold text-gray-900">Checkout</h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 xl:gap-12 items-start">
           {/* Left Column: Details */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-4">
             
             {/* 1. Delivery Address */}
             <motion.section 
@@ -62,32 +146,56 @@ export default function CheckoutPage() {
             >
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
-                  <span className="bg-gray-100 text-gray-600 w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center text-xs md:text-sm">1</span>
                   Delivery Address
                 </h2>
-                <button className="text-sm font-bold text-[var(--color-primary)] hover:text-[#527d89] transition-colors">
+                <button onClick={() => {
+                  setEditingAddress(null);
+                  setIsAddressModalOpen(true);
+                }} className="text-sm font-bold text-[var(--color-primary)] hover:text-[#527d89] transition-colors">
                   Add New
                 </button>
               </div>
 
               <div className="space-y-4">
-                {addresses.map((addr) => (
-                  <div key={addr.id} className="relative p-4 md:p-5 rounded-xl border border-[var(--color-primary)] bg-gray-50/50 cursor-pointer flex gap-3 md:gap-4 transition-all">
-                    <div className="pt-1 flex-shrink-0">
-                      <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6 text-[var(--color-primary)]" fill="currentColor" stroke="white" />
-                    </div>
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2 mb-1">
-                        <span className="font-bold text-gray-900">{addr.name}</span>
-                        <span className="bg-white px-2 py-0.5 rounded-full text-[10px] font-bold text-gray-500 border border-gray-200 uppercase tracking-wider">{addr.type}</span>
-                      </div>
-                      <p className="text-sm text-gray-600 leading-relaxed mb-2">
-                        {addr.address}, {addr.city}, {addr.state} - {addr.zip}
-                      </p>
-                      <p className="text-sm font-semibold text-gray-800">{addr.phone}</p>
-                    </div>
+                {addresses.length === 0 ? (
+                  <div className="text-center p-6 bg-gray-50 border border-gray-100 rounded-xl text-gray-500 text-sm">
+                    No addresses found. Please add a new address to continue.
                   </div>
-                ))}
+                ) : (
+                  addresses.map((addr) => {
+                    const isSelected = selectedAddressId === addr._id;
+                    return (
+                      <div 
+                        key={addr._id} 
+                        onClick={() => setSelectedAddressId(addr._id)}
+                        className={`relative p-4 md:p-5 rounded-xl border cursor-pointer flex gap-3 md:gap-4 transition-all ${isSelected ? 'border-[var(--color-primary)] bg-gray-50/50' : 'border-gray-100 hover:border-gray-300'}`}
+                      >
+                        <div className="pt-1 flex-shrink-0">
+                          {isSelected ? (
+                            <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6 text-[var(--color-primary)]" fill="currentColor" stroke="white" />
+                          ) : (
+                            <div className="w-5 h-5 md:w-6 md:h-6 rounded-full border-2 border-gray-300" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start w-full">
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                              <span className="font-bold text-gray-900">{user?.name || "Customer"}</span>
+                              {addr.isDefault && <span className="bg-white px-2 py-0.5 rounded-full text-[10px] font-bold text-[var(--color-primary)] border border-[var(--color-primary)] uppercase tracking-wider">Default</span>}
+                            </div>
+                            <button onClick={(e) => handleEditClick(e, addr)} className="text-gray-400 hover:text-[var(--color-primary)] transition-colors p-1">
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <p className="text-sm text-gray-600 leading-relaxed mb-2">
+                            {addr.street}, {addr.city}, {addr.state} - {addr.zipCode}
+                          </p>
+                          <p className="text-sm font-semibold text-gray-800">{addr.phone || user?.phone}</p>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </motion.section>
 
@@ -99,7 +207,6 @@ export default function CheckoutPage() {
               className="bg-white rounded-2xl p-6 md:p-8 border border-gray-100"
             >
               <h2 className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2 mb-6">
-                <span className="bg-gray-100 text-gray-600 w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center text-xs md:text-sm">2</span>
                 Delivery Method
               </h2>
 
@@ -136,7 +243,6 @@ export default function CheckoutPage() {
               className="bg-white rounded-2xl p-6 md:p-8 border border-gray-100"
             >
               <h2 className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2 mb-6">
-                <span className="bg-gray-100 text-gray-600 w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center text-xs md:text-sm">3</span>
                 Payment Method
               </h2>
 
@@ -178,18 +284,22 @@ export default function CheckoutPage() {
 
             {/* Mini Cart Items */}
             <div className="space-y-4 mb-6 pb-6 border-b border-gray-100 border-dashed">
-              {cartItems.map(item => (
-                <div key={item.id} className="flex gap-4 items-center">
-                  <div className="w-12 h-12 md:w-14 md:h-14 bg-gray-50 rounded-lg relative overflow-hidden flex-shrink-0 border border-gray-100">
-                    <Image src={item.img} alt={item.name} fill className="object-cover" />
+              {cartItems.map(item => {
+                const itemDetails = item.itemType === 'product' ? item.productId : item.mealId;
+                if (!itemDetails) return null;
+                return (
+                  <div key={item._id} className="flex gap-4 items-center">
+                    <div className="w-12 h-12 md:w-14 md:h-14 bg-gray-50 rounded-lg relative overflow-hidden flex-shrink-0 border border-gray-100">
+                      <Image src={itemDetails.imageUrl || "/images/product_bottle.png"} alt={itemDetails.name} fill className="object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-gray-900 truncate">{itemDetails.name}</p>
+                      <p className="text-xs text-gray-500 font-medium mt-0.5">Qty: {item.quantity}</p>
+                    </div>
+                    <span className="font-bold text-gray-900 text-sm">₹{item.priceAtAddition * item.quantity}</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-gray-900 truncate">{item.name}</p>
-                    <p className="text-xs text-gray-500 font-medium mt-0.5">Qty: {item.quantity}</p>
-                  </div>
-                  <span className="font-bold text-gray-900 text-sm">₹{item.price * item.quantity}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="space-y-3 mb-6">
@@ -221,9 +331,18 @@ export default function CheckoutPage() {
               <p className="text-[10px] text-gray-400 font-medium text-right">Incl. of all taxes</p>
             </div>
 
-            <button className="group w-full bg-[#122B54] text-white py-3.5 rounded-xl font-bold text-base flex items-center justify-center gap-2 hover:bg-[#1e3c72] transition-all shadow-lg shadow-[#122B54]/20 active:scale-[0.98] duration-200">
-              <Lock className="w-4 h-4 text-white/70" />
-              Place Order
+            <button 
+              onClick={handlePlaceOrder}
+              disabled={isSubmitting || cartItems.length === 0}
+              className={`group w-full bg-[#122B54] text-white py-3.5 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#122B54]/20 duration-200 ${isSubmitting || cartItems.length === 0 ? 'opacity-70 cursor-not-allowed' : 'hover:bg-[#1e3c72] active:scale-[0.98]'}`}>
+              {isSubmitting ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <>
+                  <Lock className="w-4 h-4 text-white/70" />
+                  Place Order
+                </>
+              )}
             </button>
             
             <p className="text-center text-[11px] text-gray-400 font-medium mt-4 flex items-center justify-center gap-1">
@@ -234,7 +353,14 @@ export default function CheckoutPage() {
         </div>
       </main>
 
-      <Footer />
+      
+
+      <AddressModal 
+        isOpen={isAddressModalOpen} 
+        onClose={() => setIsAddressModalOpen(false)} 
+        onSuccess={handleAddressSuccess} 
+        editingAddress={editingAddress} 
+      />
     </div>
   );
 }
