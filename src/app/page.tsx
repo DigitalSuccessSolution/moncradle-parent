@@ -21,6 +21,8 @@ import { BabyProfileSetup } from "@/components/onboarding/BabyProfileSetup";
 import { useAuth } from "@/context/AuthContext";
 import { getBabies } from "@/lib/api/babiesApi";
 
+import toast from "react-hot-toast";
+
 export default function HomePage() {
   const { isAuthenticated, isLoading } = useAuth();
   const [hasSeenSplash, setHasSeenSplash] = useState<boolean>(false);
@@ -32,6 +34,49 @@ export default function HomePage() {
     setIsMounted(true);
     setHasSeenSplash(!!localStorage.getItem("hasSeenOnboarding"));
   }, []);
+
+  // Handle "Press back again to exit" on Android/PWA
+  useEffect(() => {
+    if (!isMounted) return;
+
+    let backPressCount = 0;
+    let backPressTimer: NodeJS.Timeout;
+
+    const handlePopState = (event: PopStateEvent) => {
+      if (backPressCount === 0) {
+        // Prevent default exit by pushing state back
+        window.history.pushState(null, "", window.location.pathname);
+        backPressCount++;
+        toast("Press back again to exit", { 
+          position: 'bottom-center',
+          style: {
+            background: '#333',
+            color: '#fff',
+            borderRadius: '100px',
+            fontSize: '14px',
+            padding: '10px 20px',
+            marginBottom: '60px'
+          }
+        });
+
+        backPressTimer = setTimeout(() => {
+          backPressCount = 0;
+        }, 2000);
+      } else {
+        // Let it exit normally on second press
+        window.history.back();
+      }
+    };
+
+    // Push initial state so the first back press is trapped
+    window.history.pushState(null, "", window.location.pathname);
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      clearTimeout(backPressTimer);
+    };
+  }, [isMounted]);
 
   useEffect(() => {
     const checkBabyProfile = async () => {
