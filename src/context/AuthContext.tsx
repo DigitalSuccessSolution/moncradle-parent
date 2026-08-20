@@ -90,10 +90,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUser(userData);
             localStorage.setItem("user", JSON.stringify(userData));
           });
-          // Industry Standard: Only request FCM token automatically on load if permission is already granted.
-          // If not granted, we shouldn't spam the user with prompts on every page load.
-          // Instead, we should show a button in UI to let the user opt-in manually.
-          if ('Notification' in window && Notification.permission === 'granted') {
+          // Prompt for notification permission automatically on load
+          if ('Notification' in window) {
             requestForToken().then(fcmToken => {
               if (fcmToken) {
                 updateUserProfile({ fcmToken }).catch(console.error);
@@ -160,8 +158,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.setItem("user", JSON.stringify(userData));
         });
         
-        // Industry Standard: Only request FCM token automatically after login if permission is already granted.
-        if ('Notification' in window && Notification.permission === 'granted') {
+        // Prompt for notification permission automatically after login
+        if ('Notification' in window) {
           requestForToken().then(fcmToken => {
             if (fcmToken) {
               updateUserProfile({ fcmToken }).catch(console.error);
