@@ -26,9 +26,9 @@ export const submitReview = async (payload: SubmitReviewPayload) => {
 /** Check if the parent already reviewed a specific target */
 export const checkHasReviewed = async (
   params: Partial<SubmitReviewPayload>
-): Promise<boolean> => {
+): Promise<any | null> => {
   const res = await apiClient.get("/reviews/has-reviewed", { params });
-  return res.data?.data?.hasReviewed ?? false;
+  return res.data?.data?.hasReviewed || null;
 };
 
 /** Get reviews for a meal */

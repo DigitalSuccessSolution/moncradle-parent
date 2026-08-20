@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/Button";
 import ReviewModal from "@/components/ui/ReviewModal";
 
 import { getOrders } from "@/lib/api/ordersApi";
+import { checkHasReviewed, ReviewTargetType } from "@/lib/api/reviewsApi";
 import { useAppSelector } from "@/store/hooks";
 
 const mapOrderForUI = (order: any) => {
@@ -42,6 +43,7 @@ const mapOrderForUI = (order: any) => {
     rawMealId: firstMealId,
     rawProductId: firstProductId,
     deliveryPartnerId: order.deliveryPartnerId?._id || order.deliveryPartnerId || null,
+    itemType: firstItemType || 'meal',
   };
 };
 
@@ -51,10 +53,9 @@ export default function OrdersPage() {
   const [activeOrders, setActiveOrders] = useState<any[]>([]);
   const [pastOrders, setPastOrders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [trackingOrder, setTrackingOrder] = useState<any>(null);
-  const [reviewOrder, setReviewOrder] = useState<{ order: any; mode: "meal" | "deliveryPartner" } | null>(null);
-  // Track submitted ratings: { [orderId]: { meal?: number, deliveryPartner?: number } }
-  const [reviewedOrders, setReviewedOrders] = useState<Record<string, { meal?: number; deliveryPartner?: number }>>({});
+  const [reviewOrder, setReviewOrder] = useState<{ order: any; mode: "item" | "deliveryPartner" } | null>(null);
+  // Track submitted ratings: { [orderId]: { item?: any, deliveryPartner?: any } }
+  const [reviewedOrders, setReviewedOrders] = useState<Record<string, { item?: any; deliveryPartner?: any }>>({});
 
   const getProgress = (status: string) => {
     if (!status) return 0;
@@ -92,6 +93,34 @@ export default function OrdersPage() {
 
         setActiveOrders(active);
         setPastOrders(past);
+
+        // Fetch review status for delivered orders
+        const deliveredOrders = past.filter((o: any) => o.status === 'Delivered');
+        if (deliveredOrders.length > 0) {
+          const reviewStatusObj: Record<string, any> = {};
+          
+          await Promise.all(deliveredOrders.map(async (o: any) => {
+            try {
+              const [hasReviewedItem, hasReviewedDelivery] = await Promise.all([
+                checkHasReviewed({ orderId: o.fullId, targetType: o.itemType as ReviewTargetType }),
+                checkHasReviewed({ orderId: o.fullId, targetType: 'deliveryPartner' })
+              ]);
+              
+              if (hasReviewedItem || hasReviewedDelivery) {
+                reviewStatusObj[o.fullId] = {
+                  item: hasReviewedItem || undefined,
+                  deliveryPartner: hasReviewedDelivery || undefined
+                };
+              }
+            } catch (err) {
+              // Ignore individual failures
+            }
+          }));
+          
+          if (Object.keys(reviewStatusObj).length > 0) {
+            setReviewedOrders(prev => ({ ...prev, ...reviewStatusObj }));
+          }
+        }
       } catch (err) {
         console.error("Failed to fetch orders:", err);
       } finally {
@@ -101,17 +130,7 @@ export default function OrdersPage() {
     fetchOrders();
   }, []);
 
-  // Prevent background scrolling when modal is open
-  useEffect(() => {
-    if (trackingOrder) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [trackingOrder]);
+  // No tracking order modal needed anymore
 
   return (
     <div className="min-h-screen bg-[var(--color-background)] font-sans pb-24 md:pb-0 relative">
@@ -173,7 +192,8 @@ export default function OrdersPage() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.1 }}
-                  className="bg-white rounded-lg p-5 border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-5"
+                  onClick={() => router.push(`/orders/${order.fullId}`)}
+                  className="bg-white rounded-lg p-5 border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-5 cursor-pointer hover:border-[var(--color-primary)] transition-colors group"
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
@@ -206,9 +226,12 @@ export default function OrdersPage() {
                       variant="primary"
                       size="sm"
                       className="rounded-lg shadow-sm cursor-pointer px-4"
-                      onClick={() => setTrackingOrder(order)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/orders/${order.fullId}`);
+                      }}
                     >
-                      Track Order
+                      View Details
                     </Button>
                   </div>
                 </motion.div>
@@ -229,7 +252,8 @@ export default function OrdersPage() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 + (i * 0.1) }}
-                  className="bg-white rounded-lg p-4 border border-gray-100 transition-all group cursor-pointer flex flex-col gap-3"
+                  onClick={() => router.push(`/orders/${order.fullId}`)}
+                  className="bg-white rounded-lg p-4 border border-gray-100 transition-all group cursor-pointer flex flex-col gap-3 hover:border-[var(--color-primary)]"
                 >
                   {/* Top row — image + order info */}
                   <div className="flex items-center gap-3">
@@ -250,20 +274,20 @@ export default function OrdersPage() {
                   <div className="flex items-center justify-between pt-2 border-t border-gray-50">
                     {order.status === "Delivered" ? (
                       <div className="flex gap-2">
-                        {/* Meal Rate button or Rated stars */}
-                        {reviewedOrders[order.fullId]?.meal ? (
+                        {/* Item Rate button or Rated stars */}
+                        {reviewedOrders[order.fullId]?.item ? (
                           <div className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-100">
                             {[1,2,3,4,5].map(s => (
-                              <Star key={s} className={`w-3 h-3 ${s <= (reviewedOrders[order.fullId].meal ?? 0) ? 'fill-amber-400 text-amber-400' : 'text-gray-200 fill-gray-100'}`} />
+                              <Star key={s} className={`w-3 h-3 ${s <= (reviewedOrders[order.fullId].item.rating ?? reviewedOrders[order.fullId].item) ? 'fill-amber-400 text-amber-400' : 'text-gray-200 fill-gray-100'}`} />
                             ))}
-                            <span className="text-[11px] font-semibold text-amber-600 ml-0.5">Meal</span>
+                            <span className="text-[11px] font-semibold text-amber-600 ml-0.5">{order.itemType === 'product' ? 'Product' : 'Meal'}</span>
                           </div>
                         ) : (
                           <button
-                            onClick={(e) => { e.stopPropagation(); setReviewOrder({ order, mode: "meal" }); }}
+                            onClick={(e) => { e.stopPropagation(); setReviewOrder({ order, mode: "item" }); }}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-200 bg-amber-50 text-amber-600 text-[12px] font-semibold hover:bg-amber-100 transition-colors active:scale-95"
                           >
-                            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> Rate Meal
+                            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> Rate {order.itemType === 'product' ? 'Product' : 'Meal'}
                           </button>
                         )}
 
@@ -271,7 +295,7 @@ export default function OrdersPage() {
                         {reviewedOrders[order.fullId]?.deliveryPartner ? (
                           <div className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-100">
                             {[1,2,3,4,5].map(s => (
-                              <Star key={s} className={`w-3 h-3 ${s <= (reviewedOrders[order.fullId].deliveryPartner ?? 0) ? 'fill-blue-400 text-blue-400' : 'text-gray-200 fill-gray-100'}`} />
+                              <Star key={s} className={`w-3 h-3 ${s <= (reviewedOrders[order.fullId].deliveryPartner.rating ?? reviewedOrders[order.fullId].deliveryPartner) ? 'fill-blue-400 text-blue-400' : 'text-gray-200 fill-gray-100'}`} />
                             ))}
                             <span className="text-[11px] font-semibold text-blue-600 ml-0.5">Delivery</span>
                           </div>
@@ -313,149 +337,19 @@ export default function OrdersPage() {
             }));
             setReviewOrder(null);
           }}
-          targetType={reviewOrder.mode}
+          targetType={reviewOrder.mode === "item" ? reviewOrder.order.itemType : "deliveryPartner"}
           targetName={
-            reviewOrder.mode === "meal"
-              ? reviewOrder.order.name || "Meal"
+            reviewOrder.mode === "item"
+              ? reviewOrder.order.name || "Order Item"
               : "Delivery Partner"
           }
           targetSubtitle={`Order #${reviewOrder.order.id} · ${reviewOrder.order.date}`}
-          mealId={reviewOrder.mode === "meal" ? reviewOrder.order.rawMealId ?? undefined : undefined}
+          mealId={reviewOrder.mode === "item" && reviewOrder.order.itemType === 'meal' ? reviewOrder.order.rawMealId ?? undefined : undefined}
+          productId={reviewOrder.mode === "item" && reviewOrder.order.itemType === 'product' ? reviewOrder.order.rawProductId ?? undefined : undefined}
           deliveryPartnerId={reviewOrder.mode === "deliveryPartner" ? reviewOrder.order.deliveryPartnerId ?? undefined : undefined}
           orderId={reviewOrder.order.fullId}
         />
       )}
-      {/* Tracking Modal */}
-      <AnimatePresence>
-        {trackingOrder && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-              onClick={() => setTrackingOrder(null)}
-            />
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative w-full max-w-lg bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col"
-            >
-              {/* Header */}
-              <div className="flex items-center justify-between p-5 bg-white border-b border-gray-100 z-10">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-lg font-semibold text-gray-900">Track Order</h2>
-                  <span className="text-xs font-semibold text-gray-500 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">#{trackingOrder.id}</span>
-                </div>
-                <button
-                  onClick={() => setTrackingOrder(null)}
-                  className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Content */}
-              <div className="p-6 overflow-y-auto no-scrollbar space-y-8 bg-white relative">
-
-                {/* Decorative background blur */}
-                <div className="absolute top-0 right-0 w-48 h-48 bg-[var(--color-primary)] opacity-[0.03] rounded-full blur-3xl pointer-events-none"></div>
-
-                {/* Progress Bar UI */}
-                {trackingOrder && (
-                  <div className="relative mt-2 px-2 sm:px-6">
-                    {/* Background Line */}
-                    <div className="absolute top-5 left-0 w-full h-[2px] bg-gray-100 -translate-y-1/2 rounded-full z-0"></div>
-                    {/* Active Line */}
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${getProgress(trackingOrder.status)}%` }}
-                      transition={{ duration: 1, delay: 0.2, ease: "easeOut" }}
-                      className="absolute top-5 left-0 h-[2px] bg-[var(--color-primary)] -translate-y-1/2 rounded-full z-0"
-                    ></motion.div>
-
-                    <div className="relative flex justify-between z-10">
-                      {/* Steps */}
-                      {[
-                        { label: "Placed", icon: CheckCircle2 },
-                        { label: "Packed", icon: Package },
-                        { label: "In Transit", icon: Truck },
-                        { label: "Delivered", icon: MapPin }
-                      ].map((step, index) => {
-                        const stepStatus = getStepStatus(trackingOrder.status, index + 1);
-                        const Icon = step.icon;
-
-                        return (
-                          <div key={index} className="flex flex-col items-center gap-3">
-                            {stepStatus === 'completed' && (
-                              <div className="w-10 h-10 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center relative z-10">
-                                <Icon className="w-4 h-4" />
-                              </div>
-                            )}
-                            {stepStatus === 'active' && (
-                              <div className="relative z-10">
-                                <div className="absolute -inset-2 bg-[var(--color-primary)]/20 rounded-full animate-ping opacity-75"></div>
-                                <div className="relative w-10 h-10 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center">
-                                  <Icon className="w-4 h-4" />
-                                </div>
-                              </div>
-                            )}
-                            {stepStatus === 'upcoming' && (
-                              <div className="w-10 h-10 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center relative z-10">
-                                <Icon className="w-4 h-4" />
-                              </div>
-                            )}
-                            <span className={`text-[11px] text-center leading-tight ${stepStatus === 'active' ? 'font-semibold text-[var(--color-primary)]' : stepStatus === 'completed' ? 'font-semibold text-gray-800' : 'font-semibold text-gray-400'}`}>
-                              {step.label}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Delivery Info */}
-                {trackingOrder && (
-                  <div className="bg-orange-50/50 border border-orange-100 rounded-lg p-4 flex items-start gap-3 relative z-10">
-                    <div className="p-2 bg-white text-orange-500 rounded-lg border border-orange-100 shadow-sm shrink-0">
-                      <Truck className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-semibold text-gray-900">
-                        {trackingOrder.status.toLowerCase() === 'delivered' ? 'Delivered Successfully' :
-                          trackingOrder.status.toLowerCase() === 'pending' ? 'Order Received' :
-                            'Arriving Soon'}
-                      </h4>
-                      <p className="text-xs font-medium text-gray-600 mt-0.5 leading-relaxed">
-                        {trackingOrder.status.toLowerCase() === 'delivered' ? 'Your package has been delivered.' :
-                          trackingOrder.status.toLowerCase() === 'pending' ? 'We have received your order and are processing it.' :
-                            'Your package is on its way.'}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-              </div>
-
-              {/* Actions */}
-              <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 rounded-b-lg">
-                <Button variant="outline" size="sm" className="rounded-lg cursor-pointer" onClick={() => setTrackingOrder(null)}>
-                  Close
-                </Button>
-                <Button variant="primary" size="sm" className="rounded-lg cursor-pointer">
-                  Contact Support
-                </Button>
-              </div>
-
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

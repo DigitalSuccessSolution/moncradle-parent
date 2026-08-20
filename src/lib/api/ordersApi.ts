@@ -30,3 +30,13 @@ export async function getOrders() {
   const response = await apiClient.get("/orders");
   return response.data;
 }
+
+/** GET /api/orders?search=:id — fetch a single order by ID */
+export async function getOrderById(orderId: string) {
+  // Use the backend's built-in search capability to fetch by ID
+  const response = await apiClient.get(`/orders?search=${orderId}`);
+  if (response.data.data && response.data.data.length > 0) {
+    return response.data.data[0];
+  }
+  throw new Error("Order not found");
+}
