@@ -2,15 +2,15 @@ import Link from "next/link";
 import Image from "next/image";
 
 export function QuickActions() {
-  const actions = [
+  const actions: { imageSrc: string; label: string; link: string; bgColor: string; hiddenMobile?: boolean }[] = [
     { imageSrc: "/images/icons/doctor.png", label: "Doctor", link: "/doctor", bgColor: "bg-[#D8F2E3]" },
     { imageSrc: "/images/icons/meal.png", label: "Meal", link: "/nutrition", bgColor: "bg-[#D5EAF7]" },
     { imageSrc: "/images/icons/shop.png", label: "Shop", link: "/shop", bgColor: "bg-[#E6D7F9]" },
     { imageSrc: "/images/icons/growth.png", label: "Growth", link: "/growth", bgColor: "bg-[#D9CCFA]" },
     { imageSrc: "/images/icons/records.png", label: "Tracker", link: "/tracking", bgColor: "bg-[#FCE2C2]" },
     // Desktop only icons
-    { imageSrc: "/images/icons/records.png", label: "Records", link: "/health-records", bgColor: "bg-[#FCE2C2]" },
-    { imageSrc: "/images/icons/reminders.png", label: "Reminders", link: "/notifications", bgColor: "bg-[#FAC7BA]" },
+    { imageSrc: "/images/icons/records.png", label: "Records", link: "/health-records", bgColor: "bg-[#FCE2C2]", hiddenMobile: true },
+    { imageSrc: "/images/icons/reminders.png", label: "Reminders", link: "/notifications", bgColor: "bg-[#FAC7BA]", hiddenMobile: true },
   ];
 
   return (

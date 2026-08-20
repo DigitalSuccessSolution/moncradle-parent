@@ -5,24 +5,20 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft, Search, MessageSquareText, Mail, Phone, ChevronDown, ChevronUp, LifeBuoy, FileText, Plus, X, Send, MoreVertical, Edit2, Quote, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { getSupportTickets, createSupportTicket, SupportTicket } from "@/lib/api/supportApi";
+import { getFaqs, Faq } from "@/lib/api/faqsApi";
 import { AnimatePresence, motion } from "framer-motion";
 import Swal from "sweetalert2";
 import { useRef } from "react";
 import { io, Socket } from 'socket.io-client';
 import { apiClient } from "@/lib/apiClient";
-
-const faqs = [
-  { question: "How do I track my baby's growth?", answer: "You can track your baby's growth by navigating to the Growth Tracker section." },
-  { question: "Where can I find my order history?", answer: "Your past and current orders are available in the 'Orders' section." },
-  { question: "How do I book a consultation with a doctor?", answer: "Go to the 'Doctor' section, select a specialist, pick a time slot." },
-  { question: "Can I manage multiple baby profiles?", answer: "Currently, our platform supports one primary baby profile per account." },
-  { question: "How secure are my health records?", answer: "All your health records are encrypted and securely stored." }
-];
+import FaqItem from "@/components/common/FaqItem";
 
 export default function HelpSupportPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+  const [faqs, setFaqs] = useState<Faq[]>([]);
 
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [totalTicketsCount, setTotalTicketsCount] = useState(0);
@@ -100,7 +96,18 @@ export default function HelpSupportPage() {
   }, []);
 
   useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
     fetchTickets(1, false);
+    
+    const fetchDynamicFaqs = async () => {
+      const allFaqs = await getFaqs('parent');
+      setFaqs(allFaqs.filter(f => f.category === 'general'));
+    };
+    fetchDynamicFaqs();
   }, []);
 
   const fetchTickets = async (pageNum: number = 1, isLoadMore: boolean = false) => {
@@ -280,8 +287,8 @@ export default function HelpSupportPage() {
   }, [selectedChatTicket, socket]);
 
   const filteredFaqs = faqs.filter(faq =>
-    faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    faq.answer.toLowerCase().includes(searchQuery.toLowerCase())
+    faq.question.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
+    faq.answer.toLowerCase().includes(debouncedQuery.toLowerCase())
   );
 
   return (
@@ -335,14 +342,23 @@ export default function HelpSupportPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search for answers..."
-                className="w-full px-4 md:px-5 py-3 md:py-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl md:rounded-2xl text-[14px] md:text-[15px] font-semibold text-white placeholder:text-white/60 focus:outline-none focus:bg-white focus:text-gray-900 focus:placeholder:text-gray-400 transition-all pl-11 shadow-sm"
+                className="w-full pl-10 pr-10 md:pl-12 md:pr-12 py-3 md:py-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl md:rounded-2xl text-[14px] md:text-[15px] font-semibold text-white placeholder:text-white/60 focus:outline-none focus:bg-white focus:text-gray-900 focus:placeholder:text-gray-400 transition-all shadow-sm"
               />
               <Search className={`w-4 h-4 md:w-5 md:h-5 absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors ${searchQuery ? 'text-gray-400' : 'text-white/80'}`} />
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+                >
+                  <X className="w-4 h-4 md:w-5 md:h-5" />
+                </button>
+              )}
             </div>
           </div>
         </section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 md:gap-8 lg:gap-12 pt-2 md:pt-4">
+        {!debouncedQuery && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 md:gap-8 lg:gap-12 pt-2 md:pt-4">
 
           {/* Left Column: Contact Us */}
           <div className="lg:col-span-1 space-y-8">
@@ -435,47 +451,42 @@ export default function HelpSupportPage() {
               )}
             </div>
 
-            {/* FAQs */}
-            <div className="bg-white rounded-2xl md:rounded-3xl p-4 md:p-8 border border-gray-100 shadow-sm">
-              <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
-                <div className="w-8 h-8 md:w-10 md:h-10 bg-[var(--color-primary)]/10 rounded-lg md:rounded-xl flex items-center justify-center text-[var(--color-primary)] shrink-0">
-                  <FileText className="w-4 h-4 md:w-5 md:h-5" />
-                </div>
-                <h2 className="text-base md:text-xl font-semibold text-gray-900">Frequently Asked Questions</h2>
-              </div>
-
-              {filteredFaqs.length === 0 ? (
-                <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                  <p className="text-xs md:text-sm text-gray-500 font-medium">No answers found for "{searchQuery}".<br />Please try a different keyword.</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-gray-100">
-                  {filteredFaqs.map((faq, index) => {
-                    const isOpen = openFaqIndex === index;
-                    return (
-                      <div key={index} className={`transition-all duration-300 ${isOpen ? 'bg-[var(--color-primary)]/5 rounded-xl md:rounded-2xl' : 'hover:bg-gray-50 rounded-xl md:rounded-2xl'}`}>
-                        <button onClick={() => toggleFaq(index)} className="w-full flex items-center justify-between p-3.5 md:p-5 text-left cursor-pointer focus:outline-none">
-                          <span className={`font-semibold text-[13px] md:text-[15px] pr-3 md:pr-4 ${isOpen ? 'text-[var(--color-primary)]' : 'text-gray-800'}`}>
-                            {faq.question}
-                          </span>
-                          <div className={`shrink-0 w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center transition-colors ${isOpen ? 'bg-[var(--color-primary)] text-white shadow-sm' : 'bg-gray-100 text-gray-500'}`}>
-                            {isOpen ? <ChevronUp className="w-3 h-3 md:w-4 md:h-4" /> : <ChevronDown className="w-3 h-3 md:w-4 md:h-4" />}
-                          </div>
-                        </button>
-                        <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'}`}>
-                          <div className="px-3.5 md:px-5 pb-3.5 md:pb-5 text-[12px] md:text-sm text-gray-600 leading-relaxed font-medium">
-                            {faq.answer}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
           </div>
         </div>
+        )}
+
+        {/* FAQs */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mt-8 pb-4"
+        >
+          <h2 className="text-base md:text-lg font-semibold text-gray-900 mb-4 px-1">
+            {debouncedQuery ? 'Search Results' : 'Frequently Asked Questions'}
+          </h2>
+          <div className="space-y-2">
+            {filteredFaqs.length === 0 ? (
+              <div className="text-center py-4 bg-white rounded-2xl border border-dashed border-gray-200">
+                {debouncedQuery ? (
+                  <p className="text-sm text-gray-500">No answers found for "{debouncedQuery}".<br />Please try a different keyword.</p>
+                ) : (
+                  <p className="text-sm text-gray-500">No FAQs available yet.</p>
+                )}
+              </div>
+            ) : (
+              filteredFaqs.map((faq, index) => (
+                <FaqItem
+                  key={faq._id || index}
+                  question={faq.question}
+                  answer={faq.answer}
+                  isOpen={openFaqIndex === index}
+                  onToggle={() => toggleFaq(index)}
+                />
+              ))
+            )}
+          </div>
+        </motion.section>
       </main>
       
       <AnimatePresence>

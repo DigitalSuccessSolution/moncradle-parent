@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import {
   LineChart, Apple, ShoppingBag, Package, Stethoscope,
   FileText, Calendar, HeartPulse, Bell, Settings, CreditCard, LifeBuoy, LogOut, ChevronRight, ShoppingCart,
-  ChevronLeft, Edit3, Utensils, Heart
+  ChevronLeft, Edit3, Utensils, Heart, Clock
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { getUserProfile, UserProfile } from "@/lib/api/usersApi";
@@ -41,17 +41,19 @@ export default function MobileProfileMenuPage() {
   }, []);
 
   const menuItems = [
-    { icon: Utensils, imageSrc: "/images/icons/meal.png", imageBg: "bg-[#D5EAF7]", label: "Meal Plan", href: "/nutrition/meal-plans", bgColor: "bg-[var(--pastel-blue)]/10", textColor: "text-[var(--pastel-blue)]" },
-    { icon: ShoppingCart, imageSrc: "/images/icons/shop.png", imageBg: "bg-[#E6D7F9]", label: "My Cart", href: "/shop/cart", bgColor: "bg-[var(--pastel-orange)]/10", textColor: "text-[var(--pastel-orange)]" },
+    { icon: Clock, imageSrc: "", imageBg: "bg-[#EAE2F8]", label: "Baby Tracker", href: "/tracking", bgColor: "bg-[var(--pastel-indigo)]/10", textColor: "text-[var(--pastel-indigo)]" },
+    { icon: Utensils, imageSrc: "/images/icons/meal.png", imageBg: "bg-[#D6F0FA]", label: "Meal Plan", href: "/nutrition/meal-plans", bgColor: "bg-[var(--pastel-blue)]/10", textColor: "text-[var(--pastel-blue)]" },
+    { icon: ShoppingCart, imageSrc: "/images/icons/shop.png", imageBg: "bg-[#FCE2C2]", label: "My Cart", href: "/shop/cart", bgColor: "bg-[var(--pastel-orange)]/10", textColor: "text-[var(--pastel-orange)]" },
     { icon: Heart, imageSrc: "/images/icons/wishlist.png", imageBg: "bg-[#F6E1F9]", label: "Wishlist", href: "/shop/wishlist", bgColor: "bg-[var(--pastel-purple)]/10", textColor: "text-[var(--pastel-purple)]" },
-    { icon: Package, imageSrc: "/images/icons/orders.png", imageBg: "bg-[#FDE2DF]", label: "Orders", href: "/orders", bgColor: "bg-[var(--pastel-coral)]/10", textColor: "text-[var(--pastel-coral)]" },
+    { icon: Package, imageSrc: "/images/icons/orders.png", imageBg: "bg-[#FAC7BA]", label: "Orders", href: "/orders", bgColor: "bg-[var(--pastel-coral)]/10", textColor: "text-[var(--pastel-coral)]" },
     { icon: FileText, imageSrc: "/images/icons/blog.png", imageBg: "bg-[#E6F4EA]", label: "Blog & Articles", href: "/articles", bgColor: "bg-[var(--pastel-green)]/10", textColor: "text-[var(--pastel-green)]" },
-    { icon: Stethoscope, imageSrc: "/images/icons/doctor.png", imageBg: "bg-[#D8F2E3]", label: "Doctor", href: "/doctor", bgColor: "bg-[var(--pastel-green)]/10", textColor: "text-[var(--pastel-green)]" },
-    { icon: FileText, imageSrc: "/images/icons/records.png", imageBg: "bg-[#FCE2C2]", label: "Health Records", href: "/health-records", bgColor: "bg-[var(--pastel-orange)]/10", textColor: "text-[var(--pastel-orange)]" },
-    { icon: Calendar, imageSrc: "/images/icons/appointments.png", imageBg: "bg-[#FAC7BA]", label: "Appointments", href: "/appointments", bgColor: "bg-[var(--pastel-indigo)]/10", textColor: "text-[var(--pastel-indigo)]" },
-    { icon: HeartPulse, imageSrc: "/images/icons/subscriptions.png", imageBg: "bg-[#D9CCFA]", label: "Subscriptions", href: "/subscriptions", bgColor: "bg-[var(--pastel-coral)]/10", textColor: "text-[var(--pastel-coral)]" },
-    { icon: Settings, imageSrc: "/images/icons/settings.png", imageBg: "bg-[#EAE2F8]", label: "Settings", href: "/settings", bgColor: "bg-[var(--pastel-purple)]/10", textColor: "text-[var(--pastel-purple)]" },
-    { icon: LifeBuoy, imageSrc: "/images/icons/help.png", imageBg: "bg-[#D6F0FA]", label: "Help & Support", href: "/help-support", bgColor: "bg-[var(--pastel-blue)]/10", textColor: "text-[var(--pastel-blue)]" },
+    
+    { icon: Stethoscope, imageSrc: "/images/icons/doctor.png", imageBg: "bg-[#EAE2F8]", label: "Doctor", href: "/doctor", bgColor: "bg-[var(--pastel-indigo)]/10", textColor: "text-[var(--pastel-indigo)]" },
+    { icon: FileText, imageSrc: "/images/icons/records.png", imageBg: "bg-[#D6F0FA]", label: "Health Records", href: "/health-records", bgColor: "bg-[var(--pastel-blue)]/10", textColor: "text-[var(--pastel-blue)]" },
+    { icon: Calendar, imageSrc: "/images/icons/appointments.png", imageBg: "bg-[#FCE2C2]", label: "Appointments", href: "/appointments", bgColor: "bg-[var(--pastel-orange)]/10", textColor: "text-[var(--pastel-orange)]" },
+    { icon: HeartPulse, imageSrc: "/images/icons/subscriptions.png", imageBg: "bg-[#F6E1F9]", label: "Subscriptions", href: "/subscriptions", bgColor: "bg-[var(--pastel-purple)]/10", textColor: "text-[var(--pastel-purple)]" },
+    { icon: Settings, imageSrc: "/images/icons/settings.png", imageBg: "bg-[#FAC7BA]", label: "Settings", href: "/settings", bgColor: "bg-[var(--pastel-coral)]/10", textColor: "text-[var(--pastel-coral)]" },
+    { icon: LifeBuoy, imageSrc: "/images/icons/help.png", imageBg: "bg-[#E6F4EA]", label: "Help & Support", href: "/help-support", bgColor: "bg-[var(--pastel-green)]/10", textColor: "text-[var(--pastel-green)]" },
   ];
 
   return (

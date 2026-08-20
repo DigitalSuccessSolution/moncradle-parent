@@ -3,7 +3,7 @@
 import { useAppSelector } from "@/store/hooks";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/Button";
-import { ChevronLeft, Moon, Droplets, Coffee, Plus, Bell, X, Clock, AlertCircle, Play, Square, Pause } from "lucide-react";
+import { ChevronLeft, ChevronRight, Moon, Droplets, Coffee, Plus, Bell, X, Clock, AlertCircle, Play, Square, Pause } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiClient } from "@/lib/apiClient";
@@ -32,6 +32,7 @@ export default function TrackingPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeType, setActiveType] = useState<ActivityType>('sleep');
   const [editingLogId, setEditingLogId] = useState<string | null>(null);
+  const [summaryDate, setSummaryDate] = useState<Date>(new Date());
   
   // Form State
   const [startTime, setStartTime] = useState("");
@@ -99,9 +100,7 @@ export default function TrackingPage() {
         const babyRes = await getBabies();
         const babies = babyRes.data || babyRes;
         if (babies && babies.length > 0) {
-          const bId = babies[0]._id;
-          setBabyId(bId);
-          fetchLogs(bId);
+          setBabyId(babies[0]._id);
         } else {
           setIsLoading(false);
         }
@@ -113,9 +112,23 @@ export default function TrackingPage() {
     fetchInitData();
   }, []);
 
-  const fetchLogs = async (bId: string) => {
+  useEffect(() => {
+    if (babyId) {
+      fetchLogs(babyId, summaryDate);
+    }
+  }, [babyId, summaryDate]);
+
+  const fetchLogs = async (bId: string, targetDate: Date) => {
     try {
-      const res = await apiClient.get(`/activity-logs/baby/${bId}`);
+      setIsLoading(true);
+      
+      const startOfDay = new Date(targetDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      
+      const endOfDay = new Date(startOfDay);
+      endOfDay.setDate(endOfDay.getDate() + 1);
+
+      const res = await apiClient.get(`/activity-logs/baby/${bId}?startDate=${startOfDay.toISOString()}&endDate=${endOfDay.toISOString()}`);
       if (res.data.success) {
         setLogs(res.data.data);
       }
@@ -232,25 +245,20 @@ export default function TrackingPage() {
       }
       
       setIsModalOpen(false);
-      fetchLogs(babyId);
+      fetchLogs(babyId, summaryDate);
     } catch (err) {
       console.error("Failed to save log:", err);
     }
   };
 
-  // Calculate Today's Summary
-  const todaySummary = useMemo(() => {
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    
-    const todaysLogs = logs.filter(log => new Date(log.startTime) >= today);
-    
+  // Calculate Daily Summary
+  const dailySummary = useMemo(() => {
     let sleepMins = 0;
     let diapers = 0;
     let lastFedTime = "N/A";
     let lastFedDate = 0;
 
-    todaysLogs.forEach(log => {
+    logs.forEach(log => {
       if (log.type === 'sleep' && log.durationMinutes) sleepMins += log.durationMinutes;
       if (log.type === 'diaper') diapers += 1;
       if (log.type === 'feeding') {
@@ -267,17 +275,6 @@ export default function TrackingPage() {
     const sleepStr = sleepHrs > 0 ? `${sleepHrs}h ${sleepRem}m` : `${sleepRem}m`;
 
     return { sleep: sleepStr, diapers, lastFed: lastFedTime };
-  }, [logs]);
-
-  // Group logs by Date
-  const groupedLogs = useMemo(() => {
-    const groups: { [key: string]: ActivityLog[] } = {};
-    logs.forEach(log => {
-      const dateStr = new Date(log.startTime).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-      if (!groups[dateStr]) groups[dateStr] = [];
-      groups[dateStr].push(log);
-    });
-    return groups;
   }, [logs]);
 
   return (
@@ -308,78 +305,140 @@ export default function TrackingPage() {
           </div>
         </div>
 
-        {/* --- LIVE TIMERS (Industry Standard) --- */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Sleep Timer */}
-          <div className="bg-white border border-[var(--pastel-indigo)] rounded-xl p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-[var(--pastel-indigo)] text-white rounded-full flex items-center justify-center">
-                <Moon className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Sleep Timer</h3>
-                <p className="text-sm font-semibold text-gray-500 w-20">
-                  {activeTimer?.type === 'sleep' ? formatElapsed(elapsed) : 'Ready'}
-                </p>
-              </div>
+        {/* Ultra-Modern Horizontal Week Navigator */}
+        <div className="mb-8 mt-2 px-1">
+          <div className="flex items-center justify-between mb-3 px-2">
+            <h2 className="text-lg font-bold text-gray-900 tracking-wide">
+              {summaryDate.toDateString() === new Date().toDateString() ? "Today" : summaryDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            </h2>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => { const d = new Date(summaryDate); d.setDate(d.getDate() - 1); setSummaryDate(d); }}
+                className="w-8 h-8 rounded-full bg-white border border-gray-100 shadow-sm flex items-center justify-center hover:bg-gray-50 active:scale-95 transition-all"
+              >
+                <ChevronLeft className="w-4 h-4 text-gray-600" />
+              </button>
+              <button 
+                onClick={() => { const d = new Date(summaryDate); d.setDate(d.getDate() + 1); setSummaryDate(d); }}
+                disabled={summaryDate.toDateString() === new Date().toDateString()}
+                className={`w-8 h-8 rounded-full border border-gray-100 shadow-sm flex items-center justify-center transition-all ${summaryDate.toDateString() === new Date().toDateString() ? 'opacity-30 cursor-not-allowed bg-transparent' : 'bg-white hover:bg-gray-50 active:scale-95'}`}
+              >
+                <ChevronRight className="w-4 h-4 text-gray-600" />
+              </button>
             </div>
-            <button 
-              onClick={() => toggleTimer('sleep')}
-              className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors active:scale-95 ${activeTimer?.type === 'sleep' ? 'bg-[#FF3B30] text-white' : 'bg-[var(--color-primary)] text-white'}`}
-            >
-              {activeTimer?.type === 'sleep' ? <Square className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current ml-0.5" />}
-            </button>
           </div>
+          
+          <div className="flex justify-between items-center bg-white rounded-[20px] p-3 shadow-[0_2px_15px_-4px_rgba(0,0,0,0.05)] border border-gray-100">
+            {Array.from({ length: 7 }).map((_, i) => {
+              // Calculate the start of the week (Monday) for the currently selected summaryDate
+              const startOfWeek = new Date(summaryDate);
+              const day = startOfWeek.getDay();
+              const diff = day === 0 ? 6 : day - 1; // Adjust when day is sunday
+              startOfWeek.setDate(startOfWeek.getDate() - diff);
+              startOfWeek.setHours(0,0,0,0);
+              
+              const loopDate = new Date(startOfWeek);
+              loopDate.setDate(loopDate.getDate() + i);
+              
+              const today = new Date();
+              today.setHours(0,0,0,0);
 
-          {/* Nursing Timers */}
-          <div className="bg-white border border-[var(--pastel-blue)] rounded-xl p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-[var(--pastel-blue)] text-white rounded-full flex items-center justify-center">
-                <Coffee className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Nursing</h3>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[11px] font-semibold text-gray-500 w-12">{activeTimer?.type === 'nursingL' ? formatElapsed(elapsed) : 'L Side'}</span>
-                  <span className="text-[11px] font-semibold text-gray-500 w-12">{activeTimer?.type === 'nursingR' ? formatElapsed(elapsed) : 'R Side'}</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => toggleTimer('nursingL')}
-                className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors active:scale-95 ${activeTimer?.type === 'nursingL' ? 'bg-[#FF3B30] text-white' : 'bg-[var(--pastel-blue)] text-white'}`}
-              >
-                {activeTimer?.type === 'nursingL' ? <Square className="w-4 h-4 fill-current" /> : <span className="font-bold text-sm">L</span>}
-              </button>
-              <button 
-                onClick={() => toggleTimer('nursingR')}
-                className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors active:scale-95 ${activeTimer?.type === 'nursingR' ? 'bg-[#FF3B30] text-white' : 'bg-[var(--pastel-blue)] text-white'}`}
-              >
-                {activeTimer?.type === 'nursingR' ? <Square className="w-4 h-4 fill-current" /> : <span className="font-bold text-sm">R</span>}
-              </button>
-            </div>
+              const isSelected = loopDate.toDateString() === summaryDate.toDateString();
+              const isFuture = loopDate > today;
+
+              return (
+                <button
+                  key={i}
+                  disabled={isFuture}
+                  onClick={() => setSummaryDate(loopDate)}
+                  className={`flex flex-col items-center justify-center w-10 py-2 rounded-xl transition-all ${isSelected ? 'bg-[var(--color-primary)] text-white shadow-md scale-105' : isFuture ? 'opacity-30 cursor-not-allowed text-gray-400' : 'bg-transparent text-gray-600 hover:bg-gray-50'}`}
+                >
+                  <span className={`text-[10px] font-bold uppercase mb-1 ${isSelected ? 'text-white/90' : 'text-gray-400'}`}>
+                    {loopDate.toLocaleDateString('en-US', { weekday: 'narrow' })}
+                  </span>
+                  <span className={`text-sm font-bold ${isSelected ? 'text-white' : 'text-gray-900'}`}>
+                    {loopDate.getDate()}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Today's Summary Dashboard */}
+        {/* --- LIVE TIMERS (Industry Standard) --- */}
+        {summaryDate.toDateString() === new Date().toDateString() && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            {/* Sleep Timer */}
+            <div className="bg-white border border-[var(--pastel-indigo)] rounded-xl p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-[var(--pastel-indigo)] text-white rounded-full flex items-center justify-center">
+                  <Moon className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">Sleep Timer</h3>
+                  <p className="text-sm font-semibold text-gray-500 w-20">
+                    {activeTimer?.type === 'sleep' ? formatElapsed(elapsed) : 'Ready'}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => toggleTimer('sleep')}
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors active:scale-95 ${activeTimer?.type === 'sleep' ? 'bg-[#FF3B30] text-white' : 'bg-[var(--color-primary)] text-white'}`}
+              >
+                {activeTimer?.type === 'sleep' ? <Square className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current ml-0.5" />}
+              </button>
+            </div>
+
+            {/* Nursing Timers */}
+            <div className="bg-white border border-[var(--pastel-blue)] rounded-xl p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-[var(--pastel-blue)] text-white rounded-full flex items-center justify-center">
+                  <Coffee className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">Nursing</h3>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-[11px] font-semibold text-gray-500 w-12">{activeTimer?.type === 'nursingL' ? formatElapsed(elapsed) : 'L Side'}</span>
+                    <span className="text-[11px] font-semibold text-gray-500 w-12">{activeTimer?.type === 'nursingR' ? formatElapsed(elapsed) : 'R Side'}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => toggleTimer('nursingL')}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors active:scale-95 ${activeTimer?.type === 'nursingL' ? 'bg-[#FF3B30] text-white' : 'bg-[var(--pastel-blue)] text-white'}`}
+                >
+                  {activeTimer?.type === 'nursingL' ? <Square className="w-4 h-4 fill-current" /> : <span className="font-bold text-sm">L</span>}
+                </button>
+                <button 
+                  onClick={() => toggleTimer('nursingR')}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors active:scale-95 ${activeTimer?.type === 'nursingR' ? 'bg-[#FF3B30] text-white' : 'bg-[var(--pastel-blue)] text-white'}`}
+                >
+                  {activeTimer?.type === 'nursingR' ? <Square className="w-4 h-4 fill-current" /> : <span className="font-bold text-sm">R</span>}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Daily Summary Dashboard */}
         <div className="bg-white rounded-xl p-5 border border-gray-100">
-          <h2 className="text-sm font-semibold text-gray-800 uppercase tracking-wider mb-4 px-1">Today's Summary</h2>
+          <h2 className="text-sm font-semibold text-gray-800 uppercase tracking-wider mb-4 px-1">Summary</h2>
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 flex flex-col items-center justify-center text-center">
               <Moon className="w-5 h-5 text-[var(--pastel-indigo)] mb-2" />
               <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wide">Sleep</p>
-              <p className="text-sm font-bold text-gray-900 mt-0.5">{todaySummary.sleep}</p>
+              <p className="text-sm font-bold text-gray-900 mt-0.5">{dailySummary.sleep}</p>
             </div>
             <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 flex flex-col items-center justify-center text-center">
               <Coffee className="w-5 h-5 text-[var(--pastel-blue)] mb-2" />
               <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wide">Last Fed</p>
-              <p className="text-sm font-bold text-gray-900 mt-0.5">{todaySummary.lastFed}</p>
+              <p className="text-sm font-bold text-gray-900 mt-0.5">{dailySummary.lastFed}</p>
             </div>
             <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 flex flex-col items-center justify-center text-center">
               <Droplets className="w-5 h-5 text-[var(--pastel-orange)] mb-2" />
               <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wide">Diapers</p>
-              <p className="text-sm font-bold text-gray-900 mt-0.5">{todaySummary.diapers}</p>
+              <p className="text-sm font-bold text-gray-900 mt-0.5">{dailySummary.diapers}</p>
             </div>
           </div>
         </div>
@@ -392,69 +451,60 @@ export default function TrackingPage() {
              <div className="flex justify-center py-10">
                <div className="w-8 h-8 border-4 border-gray-100 border-t-[var(--color-primary)] rounded-full animate-spin"></div>
              </div>
-          ) : Object.keys(groupedLogs).length === 0 ? (
+          ) : logs.length === 0 ? (
              <div className="bg-white rounded-xl border border-gray-100 p-10 flex flex-col items-center text-center">
                 <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
                   <Clock className="w-8 h-8 text-gray-300" />
                 </div>
-                <p className="text-gray-900 font-semibold">No activities yet</p>
-                <p className="text-gray-500 text-sm mt-1 font-medium">Tap a button below to log your first activity.</p>
+                <p className="text-gray-900 font-semibold">No activities logged</p>
+                <p className="text-gray-500 text-sm mt-1 font-medium">Tap a button below to log an activity.</p>
              </div>
           ) : (
-            <div className="space-y-8">
-              {Object.entries(groupedLogs).map(([date, dayLogs]) => (
-                <div key={date}>
-                  <div className="sticky top-[60px] md:top-4 z-20 bg-[var(--color-background)]/90 backdrop-blur-sm py-2 mb-4">
-                     <span className="bg-white border border-gray-200 text-gray-600 text-[11px] font-semibold px-3 py-1.5 rounded-full uppercase tracking-wider">{date === new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) ? 'Today' : date}</span>
+            <div className="space-y-6 relative border-l-2 border-gray-100 ml-[19px]">
+              {logs.map((log) => (
+                <div key={log._id} className="relative pl-8 pr-2">
+                  {/* Timeline Node */}
+                  <div className={`absolute -left-[19px] top-0.5 w-[36px] h-[36px] rounded-full flex items-center justify-center border-2 border-white
+                    ${log.type === 'sleep' ? 'bg-[var(--pastel-indigo)]' : 
+                      log.type === 'feeding' ? 'bg-[var(--pastel-blue)]' : 
+                      log.type === 'diaper' ? 'bg-[var(--pastel-orange)]' : 'bg-gray-300'}
+                  `}>
+                    {log.type === 'sleep' && <Moon className="w-4 h-4 text-white" />}
+                    {log.type === 'feeding' && <Coffee className="w-4 h-4 text-white" />}
+                    {log.type === 'diaper' && <Droplets className="w-4 h-4 text-white" />}
                   </div>
                   
-                  <div className="relative border-l-2 border-gray-100 ml-[19px] space-y-6">
-                    {dayLogs.map((log) => (
-                      <div key={log._id} className="relative pl-8 pr-2">
-                        {/* Timeline Node */}
-                        <div className={`absolute -left-[19px] top-0.5 w-[36px] h-[36px] rounded-full flex items-center justify-center border-2 border-white
-                          ${log.type === 'sleep' ? 'bg-[var(--pastel-indigo)]' : 
-                            log.type === 'feeding' ? 'bg-[var(--pastel-blue)]' : 
-                            log.type === 'diaper' ? 'bg-[var(--pastel-orange)]' : 'bg-gray-300'}
-                        `}>
-                          {log.type === 'sleep' && <Moon className="w-4 h-4 text-white" />}
-                          {log.type === 'feeding' && <Coffee className="w-4 h-4 text-white" />}
-                          {log.type === 'diaper' && <Droplets className="w-4 h-4 text-white" />}
-                        </div>
-                        
-                        {/* Timeline Card */}
-                        <div 
-                          onClick={() => handleOpenModal(log.type, false, log)}
-                          className="bg-white p-4 rounded-xl border border-gray-100 transition-colors hover:border-gray-300 cursor-pointer"
-                        >
-                          <div className="flex items-center justify-between mb-1.5">
-                            <h3 className="font-semibold text-gray-900 capitalize text-[15px]">{log.type}</h3>
-                            <span className="text-[11px] font-semibold text-gray-400">
-                              {new Date(log.startTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
-                            </span>
-                          </div>
-                          
-                          {/* Rich Details */}
-                          <div className="flex flex-wrap items-center gap-2 mt-2">
-                            {log.details && (
-                              <span className="bg-gray-50 text-gray-600 text-[11px] font-semibold px-2.5 py-1 rounded border border-gray-100">
-                                {log.details}
-                              </span>
-                            )}
-                            {log.durationMinutes ? (
-                              <span className="bg-gray-50 text-gray-600 text-[11px] font-semibold px-2.5 py-1 rounded border border-gray-100">
-                                {log.durationMinutes} mins
-                              </span>
-                            ) : null}
-                            {log.amount && (
-                              <span className="bg-gray-50 text-gray-600 text-[11px] font-semibold px-2.5 py-1 rounded border border-gray-100">
-                                {log.amount} {log.unit}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                  {/* Timeline Card */}
+                  <div 
+                    onClick={() => handleOpenModal(log.type, false, log)}
+                    className="bg-white p-4 rounded-xl border border-gray-100 transition-colors hover:border-gray-300 cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <h3 className="font-semibold text-gray-900 capitalize text-[15px]">{log.type}</h3>
+                      <span className="text-[11px] font-semibold text-gray-400">
+                        {new Date(log.startTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                        {log.endTime && ` - ${new Date(log.endTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`}
+                      </span>
+                    </div>
+                    
+                    {/* Rich Details */}
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      {log.details && (
+                        <span className="bg-gray-50 text-gray-600 text-[11px] font-semibold px-2.5 py-1 rounded border border-gray-100">
+                          {log.details}
+                        </span>
+                      )}
+                      {log.durationMinutes ? (
+                        <span className="bg-gray-50 text-gray-600 text-[11px] font-semibold px-2.5 py-1 rounded border border-gray-100">
+                          {log.durationMinutes} mins
+                        </span>
+                      ) : null}
+                      {log.amount && (
+                        <span className="bg-gray-50 text-gray-600 text-[11px] font-semibold px-2.5 py-1 rounded border border-gray-100">
+                          {log.amount} {log.unit}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -465,20 +515,20 @@ export default function TrackingPage() {
 
       {/* Floating Action Bar (Bottom Quick Logs) */}
       <div className="fixed bottom-[80px] md:bottom-6 left-0 right-0 px-4 pointer-events-none z-50 flex justify-center">
-        <div className="bg-white p-2.5 rounded-full border border-gray-200 flex items-center gap-2 md:gap-4 pointer-events-auto">
-          <button onClick={() => handleOpenModal('sleep')} className="flex items-center gap-2 hover:bg-gray-50 px-5 md:px-6 py-2.5 rounded-full transition-colors active:scale-95">
-            <Moon className="w-5 h-5 text-[var(--pastel-indigo)] fill-[var(--pastel-indigo)]/20" />
-            <span className="font-semibold text-gray-800 text-sm">Sleep</span>
+        <div className="bg-white p-1.5 md:p-2.5 rounded-full border border-gray-200 shadow-xl flex items-center gap-1 md:gap-4 pointer-events-auto">
+          <button onClick={() => handleOpenModal('sleep')} className="flex items-center gap-1.5 md:gap-2 hover:bg-gray-50 px-3 md:px-6 py-2.5 rounded-full transition-colors active:scale-95">
+            <Moon className="w-4 h-4 md:w-5 md:h-5 text-[var(--pastel-indigo)] fill-[var(--pastel-indigo)]/20" />
+            <span className="font-semibold text-gray-800 text-xs sm:text-[13px] md:text-sm">Sleep</span>
           </button>
-          <div className="w-[1px] h-6 bg-gray-200" />
-          <button onClick={() => handleOpenModal('feeding')} className="flex items-center gap-2 hover:bg-gray-50 px-5 md:px-6 py-2.5 rounded-full transition-colors active:scale-95">
-            <Coffee className="w-5 h-5 text-[var(--pastel-blue)] fill-[var(--pastel-blue)]/20" />
-            <span className="font-semibold text-gray-800 text-sm">Feed</span>
+          <div className="w-[1px] h-5 md:h-6 bg-gray-200 shrink-0" />
+          <button onClick={() => handleOpenModal('feeding')} className="flex items-center gap-1.5 md:gap-2 hover:bg-gray-50 px-3 md:px-6 py-2.5 rounded-full transition-colors active:scale-95">
+            <Coffee className="w-4 h-4 md:w-5 md:h-5 text-[var(--pastel-blue)] fill-[var(--pastel-blue)]/20" />
+            <span className="font-semibold text-gray-800 text-xs sm:text-[13px] md:text-sm">Feed</span>
           </button>
-          <div className="w-[1px] h-6 bg-gray-200" />
-          <button onClick={() => handleOpenModal('diaper')} className="flex items-center gap-2 hover:bg-gray-50 px-5 md:px-6 py-2.5 rounded-full transition-colors active:scale-95">
-            <Droplets className="w-5 h-5 text-[var(--pastel-orange)] fill-[var(--pastel-orange)]/20" />
-            <span className="font-semibold text-gray-800 text-sm">Diaper</span>
+          <div className="w-[1px] h-5 md:h-6 bg-gray-200 shrink-0" />
+          <button onClick={() => handleOpenModal('diaper')} className="flex items-center gap-1.5 md:gap-2 hover:bg-gray-50 px-3 md:px-6 py-2.5 rounded-full transition-colors active:scale-95">
+            <Droplets className="w-4 h-4 md:w-5 md:h-5 text-[var(--pastel-orange)] fill-[var(--pastel-orange)]/20" />
+            <span className="font-semibold text-gray-800 text-xs sm:text-[13px] md:text-sm">Diaper</span>
           </button>
         </div>
       </div>
@@ -561,11 +611,13 @@ export default function TrackingPage() {
                 {/* COMMON TIME INPUTS */}
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Start Time</label>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                      {(activeType === 'sleep' || (activeType === 'feeding' && feedType === 'Breast')) ? 'Start Time' : 'Time'}
+                    </label>
                     <input type="datetime-local" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium outline-none" />
                   </div>
                   
-                  {activeType === 'sleep' && (
+                  {(activeType === 'sleep' || (activeType === 'feeding' && feedType === 'Breast')) && (
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">End Time</label>
                       <input type="datetime-local" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium outline-none" />

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { getBanners } from "@/lib/api/bannersApi";
 
 export function HeroSection() {
   const shouldReduceMotion = useReducedMotion();
@@ -14,13 +15,25 @@ export function HeroSection() {
   const [isTransitioning, setIsTransitioning] = useState(true);
 
   const originalSlides = [
-    "/images/heroslide/ChatGPT Image Aug 5, 2026, 01_14_39 PM.png",
-    "/images/heroslide/ChatGPT Image Aug 5, 2026, 01_14_31 PM.png",
-    "/images/heroslide/ChatGPT Image Aug 5, 2026, 01_14_27 PM.png"
+    { imageUrl: "/images/heroslide/hero1.png", link: "" },
+    { imageUrl: "/images/heroslide/hero2.png", link: "" },
+    { imageUrl: "/images/heroslide/hero3.png", link: "" }
   ];
 
+  const [slides, setSlides] = useState<{imageUrl: string; link: string}[]>(originalSlides);
+
+  useEffect(() => {
+    const fetchDynamicBanners = async () => {
+      const fetchedBanners = await getBanners();
+      if (fetchedBanners && fetchedBanners.length > 0) {
+        setSlides(fetchedBanners.map(b => ({ imageUrl: b.imageUrl, link: b.link || "" })));
+      }
+    };
+    fetchDynamicBanners();
+  }, []);
+
   // Clone the first slide to the end for the seamless loop
-  const extendedSlides = [...originalSlides, originalSlides[0]];
+  const extendedSlides = [...slides, slides[0]];
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -32,14 +45,14 @@ export function HeroSection() {
 
   // Handle the seamless jump when reaching the cloned slide
   useEffect(() => {
-    if (currentSlide === originalSlides.length) {
+    if (currentSlide === slides.length) {
       const timeout = setTimeout(() => {
         setIsTransitioning(false);
         setCurrentSlide(0);
       }, 700); // This must match the CSS transition duration
       return () => clearTimeout(timeout);
     }
-  }, [currentSlide, originalSlides.length]);
+  }, [currentSlide, slides.length]);
 
   return (
     <section className="w-full relative px-4 pb-4 md:p-0">
@@ -56,28 +69,42 @@ export function HeroSection() {
           className={`flex w-full h-full ${isTransitioning ? 'transition-transform duration-700 ease-in-out' : ''}`}
           style={{ transform: `translateX(-${currentSlide * 100}%)` }}
         >
-          {extendedSlides.map((src, index) => (
-            <div
-              key={index}
-              className="w-full h-full shrink-0 relative"
-            >
+          {extendedSlides.map((slide, index) => {
+            const imageWrapper = (
               <Image
-                src={src}
+                src={slide.imageUrl}
                 fill
                 sizes="100vw"
                 alt={`Hero Slide ${index + 1}`}
                 className="object-cover object-center"
                 priority={index === 0}
               />
-            </div>
-          ))}
+            );
+
+            const isExternal = slide.link.startsWith('http');
+            return slide.link ? (
+              <Link 
+                key={index} 
+                href={slide.link} 
+                target={isExternal ? '_blank' : undefined} 
+                rel={isExternal ? "noopener noreferrer" : undefined} 
+                className="w-full h-full shrink-0 relative block cursor-pointer z-10"
+              >
+                {imageWrapper}
+              </Link>
+            ) : (
+              <div key={index} className="w-full h-full shrink-0 relative">
+                {imageWrapper}
+              </div>
+            );
+          })}
         </div>
         {/* Pagination Dots */}
         <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
-          {originalSlides.map((_, index) => (
+          {slides.map((_, index) => (
             <div
               key={index}
-              className={`h-1.5 rounded-full transition-all duration-300 shadow-sm ${index === (currentSlide % originalSlides.length) ? "w-4 bg-white" : "w-1.5 bg-white/50"
+              className={`h-1.5 rounded-full transition-all duration-300 shadow-sm ${index === (currentSlide % slides.length) ? "w-4 bg-white" : "w-1.5 bg-white/50"
                 }`}
             />
           ))}

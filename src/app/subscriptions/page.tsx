@@ -5,9 +5,11 @@ import { ChevronLeft, Sparkles, Layers, ShieldCheck, RefreshCw, Zap, HeartPulse,
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { getSubscriptions, getSubscriptionPlans, Subscription, SubscriptionPlan } from "@/lib/api/subscriptionsApi";
+import { getFaqs, Faq } from "@/lib/api/faqsApi";
 import SubscriptionCard from "@/components/subscriptions/SubscriptionCard";
 import PlanCard from "@/components/subscriptions/PlanCard";
 import { CardSkeleton, PlanSkeleton } from "@/components/subscriptions/SubscriptionSkeletons";
+import FaqItem from "@/components/common/FaqItem";
 
 // ── Empty state (page-specific) ───────────────────────────────────────────────
 
@@ -41,46 +43,7 @@ function EmptyState({ onExplore }: { onExplore: () => void }) {
   );
 }
 
-function FaqItem({
-  question,
-  answer,
-  isOpen,
-  onToggle,
-}: {
-  question: string;
-  answer: string;
-  isOpen: boolean;
-  onToggle: () => void;
-}) {
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-      <button
-        onClick={onToggle}
-        className="w-full flex items-center justify-between px-5 py-4 text-left outline-none focus:outline-none"
-      >
-        <span className="text-[14px] md:text-[16px] font-semibold text-gray-900 pr-4">{question}</span>
-        <ChevronDown
-          className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-        />
-      </button>
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            <p className="px-5 pb-4 text-[13px] md:text-[15px] text-gray-500 leading-relaxed border-t border-gray-50 pt-3">
-              {answer}
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
+
 
 // ── Main Page ────────────────────────────────────────────────────────────────
 
@@ -91,16 +54,19 @@ export default function SubscriptionsPage() {
   const [explorePlans, setExplorePlans] = useState<SubscriptionPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
+  const [faqs, setFaqs] = useState<Faq[]>([]);
 
   useEffect(() => {
     const fetchSubs = async () => {
       try {
-        const [resSubs, resPlans] = await Promise.all([
+        const [resSubs, resPlans, allFaqs] = await Promise.all([
           getSubscriptions(),
           getSubscriptionPlans(),
+          getFaqs('parent'),
         ]);
         setSubscriptions(resSubs || []);
         setExplorePlans(resPlans || []);
+        setFaqs(allFaqs.filter(f => f.category === 'subscriptions'));
         if (resSubs.length === 0) {
           setActiveTab("explore");
         }
@@ -116,7 +82,7 @@ export default function SubscriptionsPage() {
 
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] font-sans pb-24 md:pb-0">
+    <div className="min-h-screen bg-[var(--color-background)] font-sans pb-24 md:pb-0">
       <main className="max-w-[1200px] mx-auto px-4 md:px-8 py-4 md:py-8 space-y-6">
 
         {/* Mobile Back Header */}
@@ -296,21 +262,21 @@ export default function SubscriptionsPage() {
         >
           <h2 className="text-base md:text-lg font-semibold text-gray-900 mb-4 px-1">Frequently Asked Questions</h2>
           <div className="space-y-2">
-            {[
-              { q: "Can I pause my subscription?",        a: "Yes. Open your active plan, select Manage, and choose Pause. Your remaining days are preserved and resume when you unpause." },
-              { q: "What happens after my plan expires?",  a: "Your plan moves to 'Expired' status and deliveries stop. You can renew at any time to start a fresh cycle." },
-              { q: "Are meals customised for my baby?",    a: "Yes. Every meal plan is built around your baby's age, weight, allergies, and nutritional needs set in their profile." },
-              { q: "How do I cancel a subscription?",      a: "Go to My Plans, open the plan, and select Manage → Cancel. The plan remains active until the end of the current cycle." },
-              { q: "Will I be charged automatically?",     a: "No. Plans do not auto-renew. You will receive a reminder before expiry and can choose to renew manually." },
-            ].map((item, i) => (
-              <FaqItem
-                key={i}
-                question={item.q}
-                answer={item.a}
-                isOpen={openFaqIndex === i}
-                onToggle={() => setOpenFaqIndex(openFaqIndex === i ? null : i)}
-              />
-            ))}
+            {faqs.length === 0 ? (
+              <div className="text-center py-4 bg-white rounded-2xl border border-dashed border-gray-200">
+                <p className="text-sm text-gray-500">No FAQs available yet.</p>
+              </div>
+            ) : (
+              faqs.map((item, i) => (
+                <FaqItem
+                  key={item._id || i}
+                  question={item.question}
+                  answer={item.answer}
+                  isOpen={openFaqIndex === i}
+                  onToggle={() => setOpenFaqIndex(openFaqIndex === i ? null : i)}
+                />
+              ))
+            )}
           </div>
         </motion.section>
 

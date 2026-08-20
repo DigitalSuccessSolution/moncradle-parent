@@ -3,10 +3,12 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 import {
   User, Baby, LineChart, Apple, ShoppingBag, Package, Stethoscope,
-  FileText, Calendar, HeartPulse, Bell, Settings, CreditCard, LifeBuoy, LogOut, ChevronDown
+  FileText, Calendar, HeartPulse, Bell, Settings, CreditCard, LifeBuoy, LogOut, ChevronDown,
+  Clock, Utensils, ShoppingCart, Heart
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -14,6 +16,7 @@ export function ProfileDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { user, logout } = useAuth();
+  const pathname = usePathname();
 
   const handleLogout = () => {
     logout();
@@ -35,11 +38,14 @@ export function ProfileDropdown() {
   const menuItems = [
     { icon: User, label: "My Profile", href: "/profile" },
     { icon: Baby, label: "Baby Profile", href: "/baby-profile" },
+    { icon: Clock, label: "Baby Tracker", href: "/tracking" },
+    { icon: Utensils, label: "Meal Plan", href: "/nutrition/meal-plans" },
     { icon: Package, label: "Orders", href: "/orders" },
+    { icon: Stethoscope, label: "Doctor", href: "/doctor" },
     { icon: FileText, label: "Health Records", href: "/health-records" },
     { icon: Calendar, label: "Appointments", href: "/appointments" },
     { icon: HeartPulse, label: "Subscriptions", href: "/subscriptions" },
-    { icon: Bell, label: "Notifications", href: "/notifications" },
+    { icon: FileText, label: "Blog & Articles", href: "/articles" },
     { icon: Settings, label: "Settings", href: "/settings" },
     { icon: LifeBuoy, label: "Help & Support", href: "/help-support" },
   ];
@@ -87,14 +93,24 @@ export function ProfileDropdown() {
             <div className="px-2 space-y-0.5 max-h-[70vh] overflow-y-auto no-scrollbar">
               {menuItems.map((item, idx) => {
                 const Icon = item.icon;
+                const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+                
                 return (
                   <Link
                     key={idx}
                     href={item.href}
-                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-700 hover:text-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 transition-colors group"
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors group ${
+                      isActive 
+                        ? 'text-[var(--color-primary)] bg-[var(--color-primary)]/10' 
+                        : 'text-gray-700 hover:text-[var(--color-primary)] hover:bg-[var(--color-primary)]/5'
+                    }`}
                     onClick={() => setIsOpen(false)}
                   >
-                    <Icon className="w-4 h-4 text-gray-500 group-hover:text-[var(--color-primary)] transition-colors" />
+                    <Icon className={`w-4 h-4 transition-colors ${
+                      isActive 
+                        ? 'text-[var(--color-primary)]' 
+                        : 'text-gray-500 group-hover:text-[var(--color-primary)]'
+                    }`} />
                     {item.label}
                   </Link>
                 );
