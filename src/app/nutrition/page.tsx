@@ -47,7 +47,7 @@ export default function NutritionDashboard() {
 
   useEffect(() => {
     if (!isAuthLoading && !isAuthenticated) {
-      router.push("/login");
+      router.replace("/login");
     }
   }, [isAuthenticated, isAuthLoading, router]);
 

@@ -5,7 +5,8 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { motion, Variants } from "framer-motion";
 import { ChevronRight, Flame, ShoppingCart, Utensils, Heart } from "lucide-react";
-import { getMeals, Meal } from "@/lib/api/mealsApi";
+import { getMeals, getRecommendedMeals, Meal } from "@/lib/api/mealsApi";
+import { getBabies } from "@/lib/api/babiesApi";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { addToCartAsync } from "@/store/slices/cartSlice";
 import { useRouter } from "next/navigation";
@@ -19,12 +20,24 @@ export function MealRecommendations() {
   const cartMap = useAppSelector(state => state.cart.cartMap);
 
   useEffect(() => {
-    getMeals({ limit: 5 }).then(res => {
-      const data = res.data || res;
-      if (Array.isArray(data)) {
-        setMeals(data);
+    const fetchMeals = async () => {
+      try {
+        const babies = await getBabies();
+        if (babies && babies.length > 0) {
+          const recommended = await getRecommendedMeals(babies[0]._id);
+          if (recommended && recommended.length > 0) {
+            setMeals(recommended);
+            return;
+          }
+        }
+        // Fallback to popular meals
+        const res = await getMeals({ limit: 5 });
+        setMeals(Array.isArray(res.data) ? res.data : res);
+      } catch (error) {
+        console.error("Failed to fetch meals:", error);
       }
-    }).catch(console.error);
+    };
+    fetchMeals();
   }, []);
 
   const handleAddToCart = async (e: React.MouseEvent, meal: Meal) => {

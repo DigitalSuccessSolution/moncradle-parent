@@ -71,12 +71,19 @@ export function ProductCard({
         onClick={() => router.push(`/shop/${product.id}`)}
         className="relative w-full h-44 md:h-52 bg-[#EEF2F7] overflow-hidden flex-shrink-0 cursor-pointer"
       >
-        <Image
-          src={product.img}
-          alt={product.name}
-          fill
-          className="object-cover group-hover:scale-[1.04] transition-transform duration-500 ease-out"
-        />
+        {product.img ? (
+          <Image
+            src={product.img}
+            alt={product.name}
+            fill
+            className="object-cover group-hover:scale-[1.04] transition-transform duration-500 ease-out"
+          />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 group-hover:scale-[1.04] transition-transform duration-500 ease-out">
+            <ShoppingCart className="w-10 h-10 mb-2 opacity-50" />
+            <span className="text-[10px] font-semibold">No Image</span>
+          </div>
+        )}
 
         {/* Gradient scrim */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
@@ -103,14 +110,6 @@ export function ProductCard({
           </span>
         )}
 
-        {/* Price pill — bottom left */}
-        <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5 bg-black/50 backdrop-blur-sm rounded-full px-2.5 py-1">
-          <span className="text-white text-[13px] font-black leading-none">{product.price}</span>
-          {product.oldPrice && (
-            <span className="text-white/60 text-[10px] line-through leading-none">{product.oldPrice}</span>
-          )}
-        </div>
-
 
       </div>
 
@@ -125,10 +124,14 @@ export function ProductCard({
 
         {/* Rating + Price row */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1">
-            <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-            <span className="text-[11px] font-semibold text-gray-700">{product.rating}</span>
-          </div>
+          {product.rating ? (
+            <div className="flex items-center gap-1">
+              <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+              <span className="text-[11px] font-semibold text-gray-700">{product.rating}</span>
+            </div>
+          ) : (
+            <div className="w-10"></div>
+          )}
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-black text-[#0F172A]">{product.price}</span>
             {product.oldPrice && (
@@ -138,18 +141,18 @@ export function ProductCard({
         </div>
 
         {/* Add to Cart — stopPropagation here prevents card navigation */}
-        <div onClick={(e) => e.stopPropagation()}>
+        <div onClick={(e) => e.stopPropagation()} className="mt-1 flex justify-center">
           {cartQuantity > 0 ? (
             <div
               onClick={() => router.push(`/shop/cart`)}
-              className="flex items-center justify-center bg-[#8A84C8] text-white rounded-lg px-2 py-1.5 cursor-pointer hover:bg-[#7a74b8] transition-colors"
+              className="w-[85%] h-[36px] flex items-center justify-center bg-[#8A84C8] text-white rounded-2xl cursor-pointer hover:bg-[#7a74b8] transition-colors"
             >
               <span className="text-xs font-semibold">{cartQuantity} in cart</span>
             </div>
           ) : (
             <button
               onClick={(e) => { e.stopPropagation(); onAddToCart?.(e); }}
-              className="w-full flex items-center justify-center gap-1.5 bg-[#8A84C8] hover:bg-[#7a74b8] text-white text-[11px] font-semibold py-2 rounded-lg active:scale-95 transition-all"
+              className="w-[85%] h-[36px] flex items-center justify-center gap-1.5 bg-[#8A84C8] hover:bg-[#7a74b8] text-white text-[11px] font-semibold rounded-2xl active:scale-95 transition-all"
             >
               <ShoppingCart className="w-3.5 h-3.5" />
               Add to Cart

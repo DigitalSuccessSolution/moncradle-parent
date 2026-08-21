@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!isLoading && !isAuthenticated) {
       const isProtected = protectedRoutes.some(route => pathname === route || pathname.startsWith(route + '/'));
       if (isProtected) {
-        router.push("/login");
+        router.replace("/login");
       }
     }
   }, [isLoading, isAuthenticated, pathname, router]);

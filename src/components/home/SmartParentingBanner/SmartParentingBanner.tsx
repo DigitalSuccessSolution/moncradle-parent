@@ -3,8 +3,10 @@
 import { Clock, ArrowRight, Bell, TrendingUp } from "lucide-react";
 import Image from "next/image";
 import { motion, Variants } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 export function SmartParentingBanner() {
+  const router = useRouter();
   const fadeUp: Variants = {
     hidden: { opacity: 0, y: 15 },
     visible: {
@@ -46,6 +48,7 @@ export function SmartParentingBanner() {
         </motion.p>
 
         <motion.button
+          onClick={() => router.push('/growth')}
           initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}
           className="group inline-flex items-center justify-center gap-2 bg-slate-900 text-white px-6 md:px-7 py-3 md:py-3.5 rounded-full font-medium transition-transform hover:-translate-y-0.5 text-sm w-full sm:w-auto shadow-md shadow-slate-900/10 mx-auto lg:mx-0"
         >

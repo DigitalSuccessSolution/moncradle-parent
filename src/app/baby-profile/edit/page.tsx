@@ -8,13 +8,13 @@ import { ChevronLeft, Camera, CheckCircle2, Baby, ChevronDown } from "lucide-rea
 import { getBabies, updateBaby, BabyProfile } from "@/lib/api/babiesApi";
 
 const COMMON_ALLERGIES = ["Milk", "Eggs", "Peanuts", "Tree Nuts", "Soy", "Wheat", "Fish", "Shellfish"];
-
+const COMMON_SYMPTOMS = ["Cold", "Cough", "Fever", "Teething", "Constipation", "Diarrhea", "Colic"];
 export default function BabyEditProfilePage() {
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [baby, setBaby] = useState<BabyProfile | null>(null);
-  const [formData, setFormData] = useState<Omit<Partial<BabyProfile>, 'allergies'> & { allergies?: string | string[] }>({});
+  const [formData, setFormData] = useState<Omit<Partial<BabyProfile>, 'allergies' | 'currentSymptoms'> & { allergies?: string | string[], currentSymptoms?: string | string[] }>({});
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -39,7 +39,8 @@ export default function BabyEditProfilePage() {
             diet: fetchedBaby.diet || "",
             medicalCondition: fetchedBaby.medicalCondition || "",
             bloodType: fetchedBaby.bloodType || "",
-            allergies: fetchedBaby.allergies || []
+            allergies: fetchedBaby.allergies || [],
+            currentSymptoms: fetchedBaby.currentSymptoms || []
           });
           if (fetchedBaby.avatar) {
             setAvatarPreview(fetchedBaby.avatar);
@@ -62,6 +63,17 @@ export default function BabyEditProfilePage() {
       setFormData({...formData, allergies: list.filter(a => a !== allergy).join(', ')});
     } else {
       setFormData({...formData, allergies: [...list, allergy].join(', ')});
+    }
+  };
+
+  const toggleSymptom = (symptom: string) => {
+    const currentStr = Array.isArray(formData.currentSymptoms) ? formData.currentSymptoms.join(", ") : (formData.currentSymptoms || "");
+    const list = currentStr.split(',').map(s => s.trim()).filter(s => s);
+    
+    if (list.includes(symptom)) {
+      setFormData({...formData, currentSymptoms: list.filter(s => s !== symptom).join(', ')});
+    } else {
+      setFormData({...formData, currentSymptoms: [...list, symptom].join(', ')});
     }
   };
 
@@ -88,8 +100,15 @@ export default function BabyEditProfilePage() {
           : typeof formData.allergies === 'string' 
             ? formData.allergies.split(',').map((a: string) => a.trim()).filter((a: string) => a)
             : [];
-        console.log("Sending allergies to backend:", allergyList);
         data.append("allergies", JSON.stringify(allergyList));
+      }
+      if (formData.currentSymptoms !== undefined) {
+        const symptomList = Array.isArray(formData.currentSymptoms) 
+          ? formData.currentSymptoms 
+          : typeof formData.currentSymptoms === 'string' 
+            ? formData.currentSymptoms.split(',').map((s: string) => s.trim()).filter((s: string) => s)
+            : [];
+        data.append("currentSymptoms", JSON.stringify(symptomList));
       }
       if (avatarFile) data.append("avatar", avatarFile);
 
@@ -363,6 +382,37 @@ export default function BabyEditProfilePage() {
                         className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors cursor-pointer ${isSelected ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
                       >
                         {isSelected ? '✓ ' : '+ '}{allergy}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Current Symptoms */}
+              <div className="space-y-2 md:col-span-2">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-[15px] font-medium text-gray-800">Current Health Symptoms (Optional)</label>
+                </div>
+                <p className="text-xs text-gray-500 mb-2">This helps us recommend better meals for your baby's current needs.</p>
+                <input 
+                  type="text"
+                  value={Array.isArray(formData.currentSymptoms) ? formData.currentSymptoms.join(", ") : formData.currentSymptoms || ""}
+                  onChange={(e) => setFormData({...formData, currentSymptoms: e.target.value})}
+                  placeholder="e.g. Cold, Teething"
+                  className="w-full px-4 py-4 md:py-3.5 bg-white border border-gray-200 rounded-xl text-[15px] font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
+                />
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {COMMON_SYMPTOMS.map(symptom => {
+                    const currentStr = Array.isArray(formData.currentSymptoms) ? formData.currentSymptoms.join(", ") : (formData.currentSymptoms || "");
+                    const isSelected = currentStr.split(',').map(s => s.trim()).includes(symptom);
+                    return (
+                      <button
+                        key={symptom}
+                        type="button"
+                        onClick={() => toggleSymptom(symptom)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors cursor-pointer ${isSelected ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                      >
+                        {isSelected ? '✓ ' : '+ '}{symptom}
                       </button>
                     )
                   })}

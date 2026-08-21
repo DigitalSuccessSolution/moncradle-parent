@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { ShoppingCart, Flame, Utensils, Heart } from "lucide-react";
+import { ShoppingCart, Flame, Utensils, Heart, Star } from "lucide-react";
 import { motion, Variants } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Meal } from "@/lib/api/mealsApi";
@@ -93,7 +93,7 @@ export function MealCard({
 
         {(meal.discountedPrice && meal.discountedPrice < meal.price) ? (
           <span className="absolute top-2.5 left-2.5 bg-[#F4A261] text-white text-[10px] font-semibold px-2 py-0.5 rounded-md shadow">
-            ₹{meal.price - meal.discountedPrice} OFF
+            {Math.round(((meal.price - meal.discountedPrice) / meal.price) * 100)}% OFF
           </span>
         ) : null}
 
@@ -107,9 +107,17 @@ export function MealCard({
 
       {/* ── Content ── */}
       <div className="px-3 py-2.5 flex flex-col gap-2 flex-1">
-        <h4 className="text-[13px] font-semibold text-gray-900 line-clamp-1 group-hover:text-[#8A84C8] transition-colors leading-snug">
-          {meal.name}
-        </h4>
+        <div className="flex items-start justify-between gap-2">
+          <h4 className="text-[13px] font-semibold text-gray-900 line-clamp-1 group-hover:text-[#8A84C8] transition-colors leading-snug">
+            {meal.name}
+          </h4>
+          {((meal as any).rating > 0) && (
+            <div className="flex items-center gap-0.5 bg-yellow-50 px-1.5 py-0.5 rounded-full border border-yellow-100 flex-shrink-0">
+              <Star className="w-2.5 h-2.5 text-yellow-500 fill-yellow-500" />
+              <span className="text-[9px] font-bold text-yellow-700">{(meal as any).rating}</span>
+            </div>
+          )}
+        </div>
 
         <div className="flex items-center justify-between mt-auto mb-1">
           <div className="flex items-center gap-1">
@@ -121,18 +129,18 @@ export function MealCard({
           </div>
         </div>
 
-        <div onClick={(e) => e.stopPropagation()} className="mt-1">
+        <div onClick={(e) => e.stopPropagation()} className="mt-1 flex justify-center">
           {cartQuantity > 0 ? (
             <div
               onClick={() => router.push(`/shop/cart`)}
-              className="w-full flex items-center justify-center bg-[#8A84C8] text-white rounded-lg px-2 py-1.5 cursor-pointer hover:bg-[#7a74b8] transition-colors"
+              className="w-[85%] h-[36px] flex items-center justify-center bg-[#8A84C8] text-white rounded-2xl cursor-pointer hover:bg-[#7a74b8] transition-colors"
             >
               <span className="text-[11px] font-semibold">{cartQuantity} in cart</span>
             </div>
           ) : (
             <button
               onClick={(e) => onAddToCart?.(e, meal)}
-              className="w-full flex items-center justify-center gap-1.5 bg-[#8A84C8] hover:bg-[#7a74b8] text-white text-[11px] font-semibold py-2 rounded-lg active:scale-95 transition-all"
+              className="w-[85%] h-[36px] flex items-center justify-center gap-1.5 bg-[#8A84C8] hover:bg-[#7a74b8] text-white text-[11px] font-semibold rounded-2xl active:scale-95 transition-all"
             >
               <ShoppingCart className="w-3.5 h-3.5" />
               Add to Cart

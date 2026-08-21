@@ -121,8 +121,12 @@ export default function MealPlansHub() {
     if (isFetchingRef.current && !replace) return;
     const fetchId = ++currentFetchIdRef.current;
     isFetchingRef.current = true;
-    if (page === 1 && !replace && meals.length === 0) setIsLoading(true); 
-    else setIsFetchingMore(true);
+    if (replace) {
+      setIsLoading(true);
+      setIsFetchingMore(false);
+    } else {
+      setIsFetchingMore(true);
+    }
     
     try {
       const queryParams: Record<string, string | number> = {

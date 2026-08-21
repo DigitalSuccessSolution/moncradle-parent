@@ -21,6 +21,10 @@ export interface Meal {
   discountedPrice?: number;
   isActive: boolean;
   inStock: boolean;
+  rating?: number;
+  reviewsCount?: number;
+  tags?: string[];
+  allergens?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -39,4 +43,9 @@ export async function getMealFilters(): Promise<any> {
 export async function getMealById(id: string): Promise<Meal> {
   const response = await apiClient.get(`/meals/${id}`);
   return response.data.data;
+}
+
+export async function getRecommendedMeals(babyId: string): Promise<Meal[]> {
+  const response = await apiClient.get(`/meals/recommendations/${babyId}`);
+  return response.data.data || [];
 }

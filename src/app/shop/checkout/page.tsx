@@ -2,7 +2,7 @@
 
 
 
-import { ChevronLeft, MapPin, Truck, CreditCard, Banknote, CheckCircle2, Lock } from "lucide-react";
+import { ChevronLeft, MapPin, Truck, CreditCard, Banknote, CheckCircle2, Lock, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -112,7 +112,7 @@ export default function CheckoutPage() {
 
       await clearCart();
       await dispatch(fetchCartAsync());
-      router.push('/shop/order-success');
+      router.replace('/shop/order-success');
     } catch (error) {
       console.error("Failed to place order:", error);
       alert("Failed to place order. Please try again.");
@@ -123,8 +123,8 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-[var(--color-background)] font-sans flex flex-col">
-      
-      
+
+
       <main className="flex-1 max-w-[1200px] w-full mx-auto px-4 md:px-8 py-8 md:py-12">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
@@ -137,9 +137,9 @@ export default function CheckoutPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 xl:gap-12 items-start">
           {/* Left Column: Details */}
           <div className="lg:col-span-2 space-y-4">
-            
+
             {/* 1. Delivery Address */}
-            <motion.section 
+            <motion.section
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="bg-white rounded-2xl p-6 md:p-8 border border-gray-100"
@@ -165,8 +165,8 @@ export default function CheckoutPage() {
                   addresses.map((addr) => {
                     const isSelected = selectedAddressId === addr._id;
                     return (
-                      <div 
-                        key={addr._id} 
+                      <div
+                        key={addr._id}
                         onClick={() => setSelectedAddressId(addr._id)}
                         className={`relative p-4 md:p-5 rounded-xl border cursor-pointer flex gap-3 md:gap-4 transition-all ${isSelected ? 'border-[var(--color-primary)] bg-gray-50/50' : 'border-gray-100 hover:border-gray-300'}`}
                       >
@@ -200,7 +200,7 @@ export default function CheckoutPage() {
             </motion.section>
 
             {/* 2. Delivery Options */}
-            <motion.section 
+            <motion.section
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
@@ -214,7 +214,7 @@ export default function CheckoutPage() {
                 {deliveryOptions.map((opt) => {
                   const isActive = activeDelivery === opt.id;
                   return (
-                    <div 
+                    <div
                       key={opt.id}
                       onClick={() => setActiveDelivery(opt.id)}
                       className={`relative p-4 md:p-5 rounded-xl border cursor-pointer flex items-start gap-3 md:gap-4 transition-all duration-300 ${isActive ? 'border-[var(--color-primary)] bg-gray-50/50' : 'border-gray-100 hover:border-gray-300 bg-white'}`}
@@ -236,7 +236,7 @@ export default function CheckoutPage() {
             </motion.section>
 
             {/* 3. Payment Method */}
-            <motion.section 
+            <motion.section
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
@@ -251,7 +251,7 @@ export default function CheckoutPage() {
                   const isActive = activePayment === method.id;
                   const Icon = method.icon;
                   return (
-                    <div 
+                    <div
                       key={method.id}
                       onClick={() => setActivePayment(method.id)}
                       className={`relative p-4 md:p-5 rounded-xl border cursor-pointer flex items-center gap-3 md:gap-4 transition-all duration-300 ${isActive ? 'border-[var(--color-primary)] bg-gray-50/50' : 'border-gray-100 hover:border-gray-300 bg-white'}`}
@@ -275,7 +275,7 @@ export default function CheckoutPage() {
           </div>
 
           {/* Right Column: Order Summary */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             className="bg-white rounded-2xl border border-gray-100 p-6 lg:p-8 lg:sticky lg:top-24 overflow-hidden relative"
@@ -289,8 +289,12 @@ export default function CheckoutPage() {
                 if (!itemDetails) return null;
                 return (
                   <div key={item._id} className="flex gap-4 items-center">
-                    <div className="w-12 h-12 md:w-14 md:h-14 bg-gray-50 rounded-lg relative overflow-hidden flex-shrink-0 border border-gray-100">
-                      <Image src={itemDetails.imageUrl || "/images/product_bottle.png"} alt={itemDetails.name} fill className="object-cover" />
+                    <div className="w-12 h-12 md:w-14 md:h-14 bg-gray-50 rounded-lg relative overflow-hidden flex-shrink-0 border border-gray-100 flex items-center justify-center">
+                      {itemDetails.imageUrl ? (
+                        <Image src={itemDetails.imageUrl} alt={itemDetails.name} fill className="object-cover" />
+                      ) : (
+                        <ShoppingCart className="w-4 h-4 text-gray-300" />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-gray-900 truncate">{itemDetails.name}</p>
@@ -307,7 +311,7 @@ export default function CheckoutPage() {
                 <span className="text-gray-500 font-medium">Subtotal</span>
                 <span className="font-bold text-gray-900">₹{subtotal}</span>
               </div>
-              
+
               <div className="flex justify-between items-center text-sm md:text-base">
                 <span className="text-gray-500 font-medium">Shipping</span>
                 {shipping === 0 ? (
@@ -316,7 +320,7 @@ export default function CheckoutPage() {
                   <span className="font-bold text-gray-900">₹{shipping}</span>
                 )}
               </div>
-              
+
               <div className="flex justify-between items-center text-sm md:text-base">
                 <span className="text-gray-500 font-medium">Tax</span>
                 <span className="font-bold text-gray-900">₹0</span>
@@ -331,7 +335,7 @@ export default function CheckoutPage() {
               <p className="text-[10px] text-gray-400 font-medium text-right">Incl. of all taxes</p>
             </div>
 
-            <button 
+            <button
               onClick={handlePlaceOrder}
               disabled={isSubmitting || cartItems.length === 0}
               className={`group w-full bg-[#122B54] text-white py-3.5 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#122B54]/20 duration-200 ${isSubmitting || cartItems.length === 0 ? 'opacity-70 cursor-not-allowed' : 'hover:bg-[#1e3c72] active:scale-[0.98]'}`}>
@@ -344,7 +348,7 @@ export default function CheckoutPage() {
                 </>
               )}
             </button>
-            
+
             <p className="text-center text-[11px] text-gray-400 font-medium mt-4 flex items-center justify-center gap-1">
               By placing this order, you agree to our Terms.
             </p>
@@ -353,13 +357,13 @@ export default function CheckoutPage() {
         </div>
       </main>
 
-      
 
-      <AddressModal 
-        isOpen={isAddressModalOpen} 
-        onClose={() => setIsAddressModalOpen(false)} 
-        onSuccess={handleAddressSuccess} 
-        editingAddress={editingAddress} 
+
+      <AddressModal
+        isOpen={isAddressModalOpen}
+        onClose={() => setIsAddressModalOpen(false)}
+        onSuccess={handleAddressSuccess}
+        editingAddress={editingAddress}
       />
     </div>
   );

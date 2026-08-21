@@ -17,6 +17,7 @@ export interface BabyProfile {
   bloodType?: string;
   prematureDays?: number;
   allergies?: string[];
+  currentSymptoms?: string[];
   [key: string]: any;
 }
 

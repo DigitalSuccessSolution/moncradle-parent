@@ -26,38 +26,50 @@ function mapProduct(p: Product) {
     price: `₹${p.discountedPrice || p.price}`,
     discount: p.discountedPrice && p.discountedPrice < p.price ? `${Math.round(((p.price - p.discountedPrice) / p.price) * 100)}% OFF` : "",
     tag: p.isFeatured ? "Featured" : "",
-    img: p.imageUrl || "/images/product_bottle.png",
+    img: p.imageUrl || (p.images && p.images.length > 0 ? p.images[0] : ""),
     category: p.category ? p.category.charAt(0).toUpperCase() + p.category.slice(1) : "General",
     ageGroup: p.ageGroup || "All Ages",
     brand: p.brand || "",
     stockQuantity: p.stockQuantity || 0,
-    rating: 4.5,
-    reviews: Math.floor(Math.random() * 200) + 10,
+    rating: p.rating || 0,
+    reviews: p.reviewsCount || 0,
     preferences: p.preferences || [],
   };
 }
 
+let shopCache = {
+  products: [] as any[],
+  hasMore: true,
+  searchQuery: "",
+  activeCategory: "All Products",
+  sortBy: "Popularity",
+  ageGroup: null as string | null,
+  priceRange: null as string | null,
+  page: 1,
+  isInitialized: false,
+};
+
 export default function ShopPage() {
   const router = useRouter();
-  const [products, setProducts] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [products, setProducts] = useState<any[]>(shopCache.products);
+  const [isLoading, setIsLoading] = useState(!shopCache.isInitialized);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [hasMore, setHasMore] = useState(shopCache.hasMore);
+  const [searchQuery, setSearchQuery] = useState(shopCache.searchQuery);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Filter States
   const [categories, setCategories] = useState<string[]>(["All Products"]);
   const [ageGroups, setAgeGroups] = useState<string[]>([]);
-  const [activeCategory, setActiveCategory] = useState("All Products");
+  const [activeCategory, setActiveCategory] = useState(shopCache.activeCategory);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [sortBy, setSortBy] = useState("Popularity");
-  const [ageGroup, setAgeGroup] = useState<string | null>(null);
-  const [priceRange, setPriceRange] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState(shopCache.sortBy);
+  const [ageGroup, setAgeGroup] = useState<string | null>(shopCache.ageGroup);
+  const [priceRange, setPriceRange] = useState<string | null>(shopCache.priceRange);
 
   // Use refs to avoid stale closures in IntersectionObserver
-  const pageRef = useRef(1);
+  const pageRef = useRef(shopCache.page);
   const isFetchingRef = useRef(false);
   const hasMoreRef = useRef(true);
   const currentFetchIdRef = useRef(0);
@@ -74,8 +86,12 @@ export default function ShopPage() {
     if (isFetchingRef.current && !replace) return;
     const fetchId = ++currentFetchIdRef.current;
     isFetchingRef.current = true;
-    if (page === 1 && !replace && products.length === 0) setIsLoading(true);
-    else setIsFetchingMore(true);
+    if (replace) {
+      setIsLoading(true);
+      setIsFetchingMore(false);
+    } else {
+      setIsFetchingMore(true);
+    }
     try {
       const queryParams: Record<string, string | number> = {
         page,
@@ -107,16 +123,22 @@ export default function ShopPage() {
       if (Array.isArray(fetchedProducts)) {
         const mapped = fetchedProducts.map(mapProduct);
         setProducts(prev => {
-          if (replace) return mapped;
-          // Deduplicate by id to prevent duplicate key error
-          const existingIds = new Set(prev.map((p: any) => p.id));
-          const newOnes = mapped.filter((p: any) => !existingIds.has(p.id));
-          return [...prev, ...newOnes];
+          const newProducts = replace ? mapped : (() => {
+            const existingIds = new Set(prev.map((p: any) => p.id));
+            const newOnes = mapped.filter((p: any) => !existingIds.has(p.id));
+            return [...prev, ...newOnes];
+          })();
+          shopCache.products = newProducts;
+          return newProducts;
         });
         const loaded = replace ? fetchedProducts.length : (pageRef.current - 1) * PAGE_LIMIT + fetchedProducts.length;
         const more = fetchedProducts.length === PAGE_LIMIT && loaded < count;
         hasMoreRef.current = more;
         setHasMore(more);
+
+        shopCache.hasMore = more;
+        shopCache.page = pageRef.current;
+        shopCache.isInitialized = true;
       }
     } catch (error) {
       console.error("Failed to fetch products:", error);
@@ -127,8 +149,21 @@ export default function ShopPage() {
     }
   };
 
+  const isInitialMount = useRef(true);
+
   // Fetch when search or filters change
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      if (shopCache.isInitialized) return;
+    }
+
+    shopCache.searchQuery = searchQuery;
+    shopCache.activeCategory = activeCategory;
+    shopCache.sortBy = sortBy;
+    shopCache.ageGroup = ageGroup;
+    shopCache.priceRange = priceRange;
+
     pageRef.current = 1;
     hasMoreRef.current = true;
     setHasMore(true);
@@ -343,7 +378,7 @@ export default function ShopPage() {
 
   return (
     <div className="min-h-screen bg-[var(--color-background)] font-sans pb-24 md:pb-0 relative">
-      
+
 
       <main className="max-w-[1200px] mx-auto px-4 md:px-8 py-4 md:py-8 space-y-6">
 
@@ -377,141 +412,141 @@ export default function ShopPage() {
           </button>
         </div>
 
-  {/* Desktop Page Header */ }
-  <motion.div
-    initial={{ opacity: 0, y: -10 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="hidden md:flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4 px-1"
-  >
-    <div>
-      <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">Shop</h1>
-      <p className="text-sm text-gray-500 font-medium mt-1">Premium nutrition and essentials for your baby.</p>
-    </div>
-  </motion.div>
+        {/* Desktop Page Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="hidden md:flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4 px-1"
+        >
+          <div>
+            <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">Shop</h1>
+            <p className="text-sm text-gray-500 font-medium mt-1">Premium nutrition and essentials for your baby.</p>
+          </div>
+        </motion.div>
 
-  {/* Filters and Search */ }
-  <motion.div
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    transition={{ delay: 0.2 }}
-    className="flex justify-start gap-6"
-  >
-
-    <div className="flex items-center gap-3">
-      <div className="relative flex-1 lg:w-64">
-        <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input
-          type="text"
-          placeholder="Search products..."
-          onChange={handleSearchChange}
-          className="pl-10 pr-4 h-11 bg-white border border-gray-200 rounded-full text-sm font-medium outline-none focus:border-[var(--color-primary)] transition-colors w-full"
-        />
-      </div>
-      <button
-        onClick={() => setIsFilterOpen(true)}
-        className="bg-white border border-gray-200 w-11 h-11 rounded-full text-gray-600 hover:bg-[var(--color-primary)]/10 hover:text-[var(--color-primary)] hover:border-[var(--color-primary)]/30 transition-colors flex items-center justify-center flex-shrink-0"
-      >
-        <Filter className="w-4 h-4" />
-      </button>
-    </div>
-  </motion.div>
-
-  {/* Product Grid — plain div, no heavy animations to prevent scroll lag */ }
-  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3">
-    {isLoading && products.length === 0 ? (
-      <div className="col-span-full py-20 flex justify-center items-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-4 border-gray-200 border-t-[var(--color-primary)] rounded-full animate-spin"></div>
-          <p className="text-gray-500 font-semibold animate-pulse">Loading amazing products...</p>
-        </div>
-      </div>
-    ) : products.length === 0 ? (
-      <div className="col-span-full py-20 text-center text-gray-400 font-medium text-lg">No products found.</div>
-    ) : (
-      products.map((product) => (
-        <ProductCard
-          key={product.id}
-          product={product}
-          cartQuantity={cartMap[product.id]?.qty || 0}
-          onAddToCart={(e) => { e.stopPropagation(); handleAddToCart(product.id, product.name); }}
-          onIncrement={(e) => { e.stopPropagation(); handleIncrement(product.id, product.name); }}
-          onDecrement={(e) => { e.stopPropagation(); handleDecrement(product.id); }}
-        />
-      ))
-    )}
-  </div>
-
-  {/* ── Infinite Scroll Sentinel ── */ }
-  <div ref={sentinelRef} className="h-8" />
-
-  {/* Loading more spinner */ }
-  {
-    isFetchingMore && (
-      <div className="flex justify-center items-center py-6 gap-3">
-        <div className="w-5 h-5 border-2 border-gray-200 border-t-[var(--color-primary)] rounded-full animate-spin" />
-        <span className="text-sm text-gray-400 font-medium">Loading more products...</span>
-      </div>
-    )
-  }
-
-  {/* All loaded message */ }
-  {
-    !hasMore && products.length > 0 && (
-      <p className="text-center text-xs text-gray-400 py-4">
-        Showing all {products.length} products
-      </p>
-    )
-  }
-
-      </main >
-
-    
-
-
-  {/* Filter Modal */ }
-  <AnimatePresence>
-    {isFilterOpen && (
-      <>
-        {/* Backdrop */}
+        {/* Filters and Search */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={() => setIsFilterOpen(false)}
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[110]"
-        />
-
-        {/* Slide-over Panel (Desktop) */}
-        <motion.div
-          initial={{ x: "100%" }}
-          animate={{ x: 0 }}
-          exit={{ x: "100%" }}
-          transition={{ type: "spring", damping: 25, stiffness: 200 }}
-          className="hidden md:flex fixed top-0 right-0 h-full w-full max-w-md bg-white z-[120] shadow-2xl flex-col border-l border-gray-200"
+          transition={{ delay: 0.2 }}
+          className="flex justify-start gap-6"
         >
-          {filterContent}
-        </motion.div>
 
-        {/* Bottom Sheet (Mobile) */}
-        <motion.div
-          initial={{ y: "100%" }}
-          animate={{ y: 0 }}
-          exit={{ y: "100%" }}
-          transition={{ type: "spring", damping: 25, stiffness: 200 }}
-          className="md:hidden fixed bottom-0 left-0 w-full h-[85vh] bg-white z-[120] shadow-[0_-10px_40px_rgba(0,0,0,0.1)] flex flex-col rounded-t-3xl overflow-hidden"
-        >
-          {/* Drag Handle Indicator */}
-          <div className="w-full flex justify-center pt-3 pb-1 bg-white absolute top-0 z-10">
-            <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
-          </div>
-          <div className="mt-4 flex-1 flex flex-col overflow-hidden">
-            {filterContent}
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1 lg:w-64">
+              <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search products..."
+                onChange={handleSearchChange}
+                className="pl-10 pr-4 h-11 bg-white border border-gray-200 rounded-full text-sm font-medium outline-none focus:border-[var(--color-primary)] transition-colors w-full"
+              />
+            </div>
+            <button
+              onClick={() => setIsFilterOpen(true)}
+              className="bg-white border border-gray-200 w-11 h-11 rounded-full text-gray-600 hover:bg-[var(--color-primary)]/10 hover:text-[var(--color-primary)] hover:border-[var(--color-primary)]/30 transition-colors flex items-center justify-center flex-shrink-0"
+            >
+              <Filter className="w-4 h-4" />
+            </button>
           </div>
         </motion.div>
-      </>
-    )}
-  </AnimatePresence>
-</div>
-    
+
+        {/* Product Grid — plain div, no heavy animations to prevent scroll lag */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3">
+          {isLoading && products.length === 0 ? (
+            <div className="col-span-full py-20 flex justify-center items-center">
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-10 h-10 border-4 border-gray-200 border-t-[var(--color-primary)] rounded-full animate-spin"></div>
+                <p className="text-gray-500 font-semibold animate-pulse">Loading amazing products...</p>
+              </div>
+            </div>
+          ) : products.length === 0 ? (
+            <div className="col-span-full py-20 text-center text-gray-400 font-medium text-lg">No products found.</div>
+          ) : (
+            products.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                cartQuantity={cartMap[product.id]?.qty || 0}
+                onAddToCart={(e) => { e.stopPropagation(); handleAddToCart(product.id, product.name); }}
+                onIncrement={(e) => { e.stopPropagation(); handleIncrement(product.id, product.name); }}
+                onDecrement={(e) => { e.stopPropagation(); handleDecrement(product.id); }}
+              />
+            ))
+          )}
+        </div>
+
+        {/* ── Infinite Scroll Sentinel ── */}
+        <div ref={sentinelRef} className="h-8" />
+
+        {/* Loading more spinner */}
+        {
+          isFetchingMore && (
+            <div className="flex justify-center items-center py-6 gap-3">
+              <div className="w-5 h-5 border-2 border-gray-200 border-t-[var(--color-primary)] rounded-full animate-spin" />
+              <span className="text-sm text-gray-400 font-medium">Loading more products...</span>
+            </div>
+          )
+        }
+
+        {/* All loaded message */}
+        {
+          !hasMore && products.length > 0 && (
+            <p className="text-center text-xs text-gray-400 py-4">
+              Showing all {products.length} products
+            </p>
+          )
+        }
+
+      </main >
+
+
+
+
+      {/* Filter Modal */}
+      <AnimatePresence>
+        {isFilterOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsFilterOpen(false)}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[110]"
+            />
+
+            {/* Slide-over Panel (Desktop) */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="hidden md:flex fixed top-0 right-0 h-full w-full max-w-md bg-white z-[120] shadow-2xl flex-col border-l border-gray-200"
+            >
+              {filterContent}
+            </motion.div>
+
+            {/* Bottom Sheet (Mobile) */}
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="md:hidden fixed bottom-0 left-0 w-full h-[85vh] bg-white z-[120] shadow-[0_-10px_40px_rgba(0,0,0,0.1)] flex flex-col rounded-t-3xl overflow-hidden"
+            >
+              {/* Drag Handle Indicator */}
+              <div className="w-full flex justify-center pt-3 pb-1 bg-white absolute top-0 z-10">
+                <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
+              </div>
+              <div className="mt-4 flex-1 flex flex-col overflow-hidden">
+                {filterContent}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+
   );
 }

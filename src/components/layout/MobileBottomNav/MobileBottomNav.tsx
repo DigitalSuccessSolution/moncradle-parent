@@ -22,9 +22,8 @@ export function MobileBottomNav({ isHidden = false }: { isHidden?: boolean }) {
     { name: "Account", href: "/account", icon: User },
   ];
 
-  // Hide on account page and its sub-pages (linked from the account menu)
+  // Hide on auth pages and deep sub-pages
   const hideOnPaths = [
-    "/account",
     "/orders",
     "/doctor",
     "/health-records",
@@ -34,13 +33,18 @@ export function MobileBottomNav({ isHidden = false }: { isHidden?: boolean }) {
     "/settings",
     "/help-support",
     "/nutrition/meal-plans",
-    "/shop/"
+    "/shop/", // hides on product detail but not /shop
+    "/baby-profile",
+    "/address",
+    "/wallet"
   ];
 
   if (!mounted) {
     return null;
   }
 
+  // Account page should SHOW the bottom nav, but its sub-pages (like /account/edit) might want to hide it
+  // Since we don't have account subpages yet, we just make sure we don't hide on exactly "/account"
   if (hideOnPaths.some(path => pathname?.startsWith(path))) {
     return null;
   }

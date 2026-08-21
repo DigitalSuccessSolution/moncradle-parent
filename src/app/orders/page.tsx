@@ -32,11 +32,11 @@ const mapOrderForUI = (order: any) => {
         name: details?.name || 'Unknown Item',
         qty: item.quantity,
         price: `₹${item.priceAtAddition || 0}`,
-        img: details?.imageUrl || "/images/product_bottle.png"
+        img: details?.imageUrl || ""
       };
     }),
     total: `₹${order.totalAmount}`,
-    img: firstItem ? (firstItemType === 'product' ? firstItem.productId?.imageUrl : firstItem.mealId?.imageUrl) : "/images/product_bottle.png",
+    img: firstItem ? (firstItemType === 'product' ? firstItem.productId?.imageUrl : firstItem.mealId?.imageUrl) : "",
     name: firstItem ? (firstItemType === 'product' ? firstItem.productId?.name : firstItem.mealId?.name) : "Order Item",
     qty: order.items ? order.items.reduce((acc: number, curr: any) => acc + curr.quantity, 0) : 0,
     // IDs needed for reviews
@@ -207,7 +207,13 @@ export default function OrdersPage() {
                     <div className="flex flex-wrap items-center gap-4">
                       {order.items.map((item: any, j: number) => (
                         <div key={j} className="flex items-center gap-3">
-                          <Image src={item.img} alt={item.name} width={48} height={48} className="object-contain rounded-lg flex-shrink-0" />
+                          {item.img ? (
+                            <Image src={item.img} alt={item.name} width={48} height={48} className="object-contain rounded-lg flex-shrink-0" />
+                          ) : (
+                            <div className="w-12 h-12 bg-gray-50 rounded-lg border border-gray-100 flex items-center justify-center flex-shrink-0">
+                              <ShoppingCart className="w-4 h-4 text-gray-300" />
+                            </div>
+                          )}
                           <div>
                             <p className="text-xs font-semibold text-gray-900">{item.name}</p>
                             <p className="text-[10px] font-medium text-gray-500">Qty: {item.qty}</p>

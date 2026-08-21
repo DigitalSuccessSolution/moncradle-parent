@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -13,7 +13,7 @@ export default function OrderSuccessPage() {
   useEffect(() => {
     const timer = setInterval(() => {
       setCountdown(prev => {
-        if (prev <= 1) { clearInterval(timer); router.push("/orders"); return 0; }
+        if (prev <= 1) { clearInterval(timer); router.replace("/orders"); return 0; }
         return prev - 1;
       });
     }, 1000);

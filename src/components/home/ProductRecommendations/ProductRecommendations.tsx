@@ -18,13 +18,13 @@ function mapProduct(p: Product) {
     price: `₹${p.discountedPrice || p.price}`,
     discount: p.discountedPrice && p.discountedPrice < p.price ? `${Math.round(((p.price - p.discountedPrice) / p.price) * 100)}% OFF` : "",
     tag: p.isFeatured ? "Featured" : "",
-    img: p.imageUrl || "/images/product_bottle.png",
+    img: p.imageUrl || (p.images && p.images.length > 0 ? p.images[0] : ""),
     category: p.category ? p.category.charAt(0).toUpperCase() + p.category.slice(1) : "General",
     ageGroup: p.ageGroup || "All Ages",
     brand: p.brand || "",
     stockQuantity: p.stockQuantity || 0,
-    rating: 4.5,
-    reviews: Math.floor(Math.random() * 200) + 10,
+    rating: p.rating || 0,
+    reviews: p.reviewsCount || 0,
     preferences: p.preferences || [],
   };
 }

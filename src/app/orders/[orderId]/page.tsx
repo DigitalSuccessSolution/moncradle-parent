@@ -222,11 +222,15 @@ export default function OrderDetailPage() {
           <div className="space-y-4">
             {order.items?.map((item: any, idx: number) => {
               const detail = item.itemType === 'product' ? item.productId : item.mealId;
-              const imgUrl = detail?.imageUrl || "/images/product_bottle.png";
+              const imgUrl = detail?.imageUrl || detail?.images?.[0];
               return (
                 <div key={idx} className="flex gap-4 p-3 bg-gray-50 rounded-xl border border-gray-100 items-center">
-                  <div className="w-16 h-16 rounded-lg bg-white p-1 shadow-sm flex-shrink-0">
-                    <Image src={imgUrl} alt={detail?.name || "Item"} width={64} height={64} className="w-full h-full object-contain rounded-md" />
+                  <div className="w-16 h-16 rounded-lg bg-white p-1 shadow-sm flex-shrink-0 flex items-center justify-center">
+                    {imgUrl ? (
+                      <Image src={imgUrl} alt={detail?.name || "Item"} width={64} height={64} className="w-full h-full object-contain rounded-md" />
+                    ) : (
+                      <Package className="w-8 h-8 text-gray-300" />
+                    )}
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-900 text-sm line-clamp-2">{detail?.name || "Unknown Item"}</h3>

@@ -41,7 +41,7 @@ export default function CartPage() {
     item.productId?.name || item.mealId?.name || "Product";
 
   const getItemImg = (item: CartItem) =>
-    item.productId?.imageUrl || item.mealId?.imageUrl || "/images/product_bottle.png";
+    item.productId?.imageUrl || item.mealId?.imageUrl || "";
 
   const getItemPrice = (item: CartItem) => item.priceAtAddition;
 
@@ -62,7 +62,7 @@ export default function CartPage() {
 
   return (
     <div className="min-h-screen bg-[var(--color-background)] font-sans flex flex-col">
-      
+
       <main className="flex-1 max-w-[1200px] w-full mx-auto px-4 md:px-8 py-4 md:py-8 space-y-6">
         {/* Mobile Back Header */}
         <div className="md:hidden flex items-center justify-between px-4 py-3 -mx-4 -mt-4 sticky top-0 z-40 bg-white">
@@ -140,8 +140,15 @@ export default function CartPage() {
                   >
                     {/* Image */}
                     <Link href={item.productId?._id ? `/shop/${item.productId._id}` : (item.mealId?._id ? `/nutrition/meal-plans/${item.mealId._id}` : "#")} className="flex-shrink-0">
-                      <div className="w-24 md:w-28 relative h-full min-h-[96px] bg-gray-50 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity">
-                        <Image src={getItemImg(item)} alt={getItemName(item)} fill className="object-cover" />
+                      <div className="w-24 md:w-28 relative h-full min-h-[96px] bg-gray-50 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity flex items-center justify-center">
+                        {getItemImg(item) ? (
+                          <Image src={getItemImg(item)} alt={getItemName(item)} fill className="object-cover" />
+                        ) : (
+                          <div className="flex flex-col items-center justify-center text-gray-400">
+                            <ShoppingCart className="w-6 h-6 mb-1 opacity-50" />
+                            <span className="text-[9px] font-semibold">No Image</span>
+                          </div>
+                        )}
                       </div>
                     </Link>
 
@@ -241,7 +248,7 @@ export default function CartPage() {
         )}
       </main>
 
-      
+
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {itemToDelete && (

@@ -17,7 +17,7 @@ export default function LoginPage() {
   // Redirect to home if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      router.push('/');
+      router.replace('/');
     }
   }, [isAuthenticated, router]);
 

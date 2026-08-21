@@ -164,7 +164,7 @@ export default function BookAppointmentPage() {
       if (res.data.success) {
         setShowSuccess(true);
         setTimeout(() => {
-          router.push("/appointments");
+          router.replace("/appointments");
         }, 2500);
       }
     } catch (error) {
