@@ -11,6 +11,7 @@ import { useState, useRef, useEffect } from "react";
 import { getProductById, getProducts } from "@/lib/api/productsApi";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { addToCartAsync } from "@/store/slices/cartSlice";
+import { useAuth } from "@/context/AuthContext";
 import { ProductCard } from "@/components/shop/ProductCard";
 import ReviewSection from "@/components/common/ReviewSection";
 import toast from "react-hot-toast";
@@ -18,6 +19,7 @@ import toast from "react-hot-toast";
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { isAuthenticated } = useAuth();
 
   const productId = typeof params.productId === "string" ? params.productId : "";
   const [product, setProduct] = useState<any>(null);
@@ -82,6 +84,12 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!isAuthenticated) {
+      toast("Please login to add items to cart", { icon: "🔒" });
+      router.push("/login");
+      return;
+    }
+    if (!product) return;
     try {
       await dispatch(addToCartAsync({ itemId: productId, itemType: "product" })).unwrap();
       toast.success(`${product ? product.name : 'Product'} added to cart!`);
@@ -92,6 +100,11 @@ export default function ProductDetailPage() {
   };
 
   const handleAddRelatedToCart = async (id: string, name: string) => {
+    if (!isAuthenticated) {
+      toast("Please login to add items to cart", { icon: "🔒" });
+      router.push("/login");
+      return;
+    }
     try {
       await dispatch(addToCartAsync({ itemId: id, itemType: "product" })).unwrap();
       toast.success(`${name} added to cart!`);
@@ -103,6 +116,11 @@ export default function ProductDetailPage() {
 
   const handleBuyNow = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!isAuthenticated) {
+      toast("Please login to buy items", { icon: "🔒" });
+      router.push("/login");
+      return;
+    }
     if (cartQuantity === 0) {
       try {
         await dispatch(addToCartAsync({ itemId: productId, itemType: "product" })).unwrap();

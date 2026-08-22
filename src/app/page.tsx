@@ -18,14 +18,16 @@ import { HealthRecords } from "@/components/home/HealthRecords/HealthRecords";
 import { SplashScreen } from "@/components/onboarding/SplashScreen";
 import { AuthScreen } from "@/components/auth/AuthScreen";
 import { BabyProfileSetup } from "@/components/onboarding/BabyProfileSetup";
+import { ParentProfileSetup } from "@/components/onboarding/ParentProfileSetup";
 import { useAuth } from "@/context/AuthContext";
 import { getBabies } from "@/lib/api/babiesApi";
 
 import toast from "react-hot-toast";
 
 export default function HomePage() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const [hasSeenSplash, setHasSeenSplash] = useState<boolean>(false);
+  const [hasSetParentProfile, setHasSetParentProfile] = useState<boolean>(false);
   const [hasSetBabyProfile, setHasSetBabyProfile] = useState<boolean>(false);
   const [isMounted, setIsMounted] = useState<boolean>(false);
   const router = useRouter();
@@ -79,12 +81,21 @@ export default function HomePage() {
   }, [isMounted]);
 
   useEffect(() => {
-    const checkBabyProfile = async () => {
-      // Don't check if we are not authenticated yet
+    const checkProfiles = async () => {
       if (!isAuthenticated) return;
 
-      const localStatus = localStorage.getItem("hasSetBabyProfile");
-      if (localStatus) {
+      // 1. Check Parent Profile (Name)
+      if (user?.name) {
+        setHasSetParentProfile(true);
+        localStorage.setItem("hasSetParentProfile", "true");
+      } else {
+        const localParentStatus = localStorage.getItem("hasSetParentProfile");
+        if (localParentStatus) setHasSetParentProfile(true);
+      }
+
+      // 2. Check Baby Profile
+      const localBabyStatus = localStorage.getItem("hasSetBabyProfile");
+      if (localBabyStatus) {
         setHasSetBabyProfile(true);
       } else {
         const token = localStorage.getItem("token");
@@ -101,8 +112,8 @@ export default function HomePage() {
         }
       }
     };
-    checkBabyProfile();
-  }, [isAuthenticated]);
+    checkProfiles();
+  }, [isAuthenticated, user]);
 
   if (!isMounted || isLoading) return null;
 
@@ -112,11 +123,13 @@ export default function HomePage() {
 
       {!isAuthenticated && hasSeenSplash && <AuthScreen />}
 
-      {isAuthenticated && hasSeenSplash && !hasSetBabyProfile && (
-        <BabyProfileSetup onComplete={() => setHasSetBabyProfile(true)} />
+      {isAuthenticated && hasSeenSplash && !hasSetParentProfile && (
+        <ParentProfileSetup onComplete={() => setHasSetParentProfile(true)} />
       )}
 
-      
+      {isAuthenticated && hasSeenSplash && hasSetParentProfile && !hasSetBabyProfile && (
+        <BabyProfileSetup onComplete={() => setHasSetBabyProfile(true)} />
+      )}
 
       <HeroSection />
 

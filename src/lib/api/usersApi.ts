@@ -12,6 +12,10 @@ export interface UserProfile {
   role: string;
   address?: string;
   avatar?: string;
+  gender?: string;
+  dateOfBirth?: string;
+  preferredLanguage?: string;
+  relationToChild?: string;
   [key: string]: unknown;
 }
 

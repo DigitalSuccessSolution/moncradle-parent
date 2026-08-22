@@ -222,11 +222,6 @@ export default function CartPage() {
                 <div className="flex justify-between"><span>Tax</span><span className="text-gray-900 font-medium">₹0</span></div>
               </div>
 
-              {/* Promo */}
-              <div className="mb-5 flex gap-2">
-                <input type="text" placeholder="Promo code" className="flex-1 min-w-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-medium outline-none focus:border-[var(--color-primary)] transition-colors" />
-                <button className="bg-gray-900 text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-gray-800 transition-colors flex-shrink-0">Apply</button>
-              </div>
 
               <div className="border-t border-dashed border-gray-200 mb-5" />
 

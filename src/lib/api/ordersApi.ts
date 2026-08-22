@@ -17,6 +17,7 @@ export interface CreateOrderPayload {
     zipCode: string;
   };
   specialInstructions?: string;
+  couponCode?: string;
 }
 
 /** POST /api/orders — create a new order */
@@ -39,4 +40,13 @@ export async function getOrderById(orderId: string) {
     return response.data.data[0];
   }
   throw new Error("Order not found");
+}
+
+/** PATCH /api/orders/:id/status — cancel an order */
+export async function cancelOrder(orderId: string, reason?: string) {
+  const response = await apiClient.patch(`/orders/${orderId}/status`, {
+    status: 'cancelled',
+    cancellationReason: reason || 'Cancelled by user'
+  });
+  return response.data;
 }

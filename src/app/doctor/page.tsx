@@ -11,10 +11,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import { useAppSelector } from "@/store/hooks";
+import { useAuth } from "@/context/AuthContext";
+import toast from "react-hot-toast";
 
 export default function DoctorPage() {
   const unreadNotificationsCount = useAppSelector(state => state.notifications.unreadCount);
   const router = useRouter();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const cartTotalCount = useAppSelector(state => state.cart.totalCount);
   const [selectedDoctor, setSelectedDoctor] = useState<any>(null);
   const [doctors, setDoctors] = useState<any[]>([]);
@@ -25,6 +28,16 @@ export default function DoctorPage() {
     if (activeCategory === "All Specialists") return true;
     return doc.spec.toLowerCase().includes(activeCategory.toLowerCase());
   });
+
+  const handleBookClick = (e: React.MouseEvent, doctorId: string) => {
+    e.preventDefault();
+    if (!isAuthenticated) {
+      toast("Please login to book an appointment", { icon: "🔒" });
+      router.push("/login");
+    } else {
+      router.push(`/doctor/book?doctorId=${doctorId}`);
+    }
+  };
 
   const dynamicCategories = ["All Specialists", ...Array.from(new Set(doctors.map(doc => doc.spec).filter(Boolean)))];
 
@@ -198,11 +211,9 @@ export default function DoctorPage() {
                   <Button variant="outline" size="sm" className="flex-1" onClick={() => setSelectedDoctor(doc)}>
                     Profile
                   </Button>
-                  <Link href={`/doctor/book?doctorId=${doc.id}`} className="flex-1 block">
-                    <Button variant="primary" size="sm" fullWidth leftIcon={<CalendarIcon className="w-3.5 h-3.5" />}>
-                      Book
-                    </Button>
-                  </Link>
+                  <Button variant="primary" size="sm" className="flex-1" leftIcon={<CalendarIcon className="w-3.5 h-3.5" />} onClick={(e) => handleBookClick(e, doc.id)}>
+                    Book
+                  </Button>
                 </div>
 
               </div>
@@ -312,11 +323,11 @@ export default function DoctorPage() {
 
               {/* Actions */}
               <div className="p-4 bg-white sticky bottom-0 flex justify-center">
-                <Link href={`/doctor/book?doctorId=${selectedDoctor.id}`}>
-                  <Button variant="primary" size="sm" className="rounded-full" leftIcon={<CalendarIcon className="w-4 h-4" />} onClick={() => setSelectedDoctor(null)}>
+                <div className="flex gap-3 w-full">
+                  <Button variant="primary" className="flex-1" fullWidth leftIcon={<CalendarIcon className="w-4 h-4" />} onClick={(e) => handleBookClick(e, selectedDoctor.id)}>
                     Book Appointment
                   </Button>
-                </Link>
+                </div>
               </div>
             </motion.div>
           </div>

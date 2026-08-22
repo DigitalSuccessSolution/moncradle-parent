@@ -87,7 +87,17 @@ export default function BabyEditProfilePage() {
       const data = new FormData();
       if (formData.name) data.append("name", formData.name);
       if (formData.gender) data.append("gender", formData.gender);
-      if (formData.dateOfBirth) data.append("dateOfBirth", formData.dateOfBirth);
+      if (formData.dateOfBirth) {
+        data.append("dateOfBirth", formData.dateOfBirth);
+        // Calculate age in months
+        const birthDate = new Date(formData.dateOfBirth);
+        const today = new Date();
+        let months = (today.getFullYear() - birthDate.getFullYear()) * 12;
+        months -= birthDate.getMonth();
+        months += today.getMonth();
+        const ageInMonths = months <= 0 ? 0 : months;
+        data.append("ageInMonths", ageInMonths.toString());
+      }
       if (formData.weight) data.append("weight", formData.weight.toString());
       if (formData.height) data.append("height", formData.height.toString());
       if (formData.prematureDays !== undefined) data.append("prematureDays", formData.prematureDays.toString());
@@ -239,12 +249,9 @@ export default function BabyEditProfilePage() {
                     type="date" 
                     value={formData.dateOfBirth ? new Date(formData.dateOfBirth).toISOString().split('T')[0] : ""}
                     onChange={(e) => setFormData({...formData, dateOfBirth: e.target.value})}
-                    className="w-full appearance-none px-4 py-4 md:py-3.5 bg-white border border-gray-200 rounded-xl text-[15px] font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                    className="w-full px-4 py-4 md:py-3.5 bg-white border border-gray-200 rounded-xl text-[15px] font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
                     required
                   />
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
-                    <ChevronDown className="w-5 h-5 text-gray-400" />
-                  </div>
                 </div>
               </div>
 

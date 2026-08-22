@@ -96,14 +96,14 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <motion.h1 initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="text-2xl md:text-3xl font-semibold text-gray-900 mb-8 tracking-tight">
+        <motion.h1 initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="text-2xl md:text-3xl font-semibold text-gray-900 mb-8 tracking-tight max-w-2xl mx-auto">
           Profile & Records
         </motion.h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
+        <div className="max-w-2xl mx-auto">
 
           {/* Left Column - Profile Card & Menus */}
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="lg:col-span-1 space-y-6">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
 
             {/* Parent Profile Card */}
             <div className="bg-white p-6 shadow-sm relative">

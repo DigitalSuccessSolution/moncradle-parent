@@ -5,13 +5,14 @@ import { useRouter } from "next/navigation";
 
 
 
-import { Package, Truck, CheckCircle2, ChevronRight, X, MapPin, ChevronLeft, ShoppingCart, Star } from "lucide-react";
+import { Package, Truck, CheckCircle2, ChevronRight, X, MapPin, ChevronLeft, ShoppingCart, Star, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import ReviewModal from "@/components/ui/ReviewModal";
+import CancelOrderModal from "@/components/ui/CancelOrderModal";
 
-import { getOrders } from "@/lib/api/ordersApi";
+import { getOrders, cancelOrder } from "@/lib/api/ordersApi";
 import { checkHasReviewed, ReviewTargetType } from "@/lib/api/reviewsApi";
 import { useAppSelector } from "@/store/hooks";
 
@@ -54,81 +55,70 @@ export default function OrdersPage() {
   const [pastOrders, setPastOrders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [reviewOrder, setReviewOrder] = useState<{ order: any; mode: "item" | "deliveryPartner" } | null>(null);
-  // Track submitted ratings: { [orderId]: { item?: any, deliveryPartner?: any } }
   const [reviewedOrders, setReviewedOrders] = useState<Record<string, { item?: any; deliveryPartner?: any }>>({});
+  const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
 
-  const getProgress = (status: string) => {
-    if (!status) return 0;
-    switch (status.toLowerCase()) {
-      case 'pending': return 0;
-      case 'preparing':
-      case 'ready': return 33;
-      case 'out for delivery': return 66;
-      case 'delivered': return 100;
-      default: return 0;
+  const fetchOrders = async () => {
+    try {
+      const response = await getOrders();
+      const allOrders = response.data || [];
+
+      const active = allOrders
+        .filter((o: any) => ['pending', 'preparing', 'ready', 'out_for_delivery'].includes(o.status))
+        .map(mapOrderForUI);
+
+      const past = allOrders
+        .filter((o: any) => ['delivered', 'cancelled'].includes(o.status))
+        .map(mapOrderForUI);
+
+      setActiveOrders(active);
+      setPastOrders(past);
+
+      // Fetch review status for delivered orders
+      const deliveredOrders = past.filter((o: any) => o.status === 'Delivered');
+      if (deliveredOrders.length > 0) {
+        const reviewStatusObj: Record<string, any> = {};
+        
+        await Promise.all(deliveredOrders.map(async (o: any) => {
+          try {
+            const [hasReviewedItem, hasReviewedDelivery] = await Promise.all([
+              checkHasReviewed({ orderId: o.fullId, targetType: o.itemType as ReviewTargetType }),
+              checkHasReviewed({ orderId: o.fullId, targetType: 'deliveryPartner' })
+            ]);
+            
+            if (hasReviewedItem || hasReviewedDelivery) {
+              reviewStatusObj[o.fullId] = {
+                item: hasReviewedItem || undefined,
+                deliveryPartner: hasReviewedDelivery || undefined
+              };
+            }
+          } catch (err) {
+            // Ignore individual failures
+          }
+        }));
+        
+        if (Object.keys(reviewStatusObj).length > 0) {
+          setReviewedOrders(prev => ({ ...prev, ...reviewStatusObj }));
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch orders:", err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const getStepStatus = (status: string, step: number) => {
-    const progress = getProgress(status);
-    const stepThreshold = (step - 1) * 33;
-    if (progress > stepThreshold) return 'completed';
-    if (progress === stepThreshold) return 'active';
-    return 'upcoming';
-  };
-
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const response = await getOrders();
-        const allOrders = response.data || [];
-
-        const active = allOrders
-          .filter((o: any) => ['pending', 'preparing', 'ready', 'out_for_delivery'].includes(o.status))
-          .map(mapOrderForUI);
-
-        const past = allOrders
-          .filter((o: any) => ['delivered', 'cancelled'].includes(o.status))
-          .map(mapOrderForUI);
-
-        setActiveOrders(active);
-        setPastOrders(past);
-
-        // Fetch review status for delivered orders
-        const deliveredOrders = past.filter((o: any) => o.status === 'Delivered');
-        if (deliveredOrders.length > 0) {
-          const reviewStatusObj: Record<string, any> = {};
-          
-          await Promise.all(deliveredOrders.map(async (o: any) => {
-            try {
-              const [hasReviewedItem, hasReviewedDelivery] = await Promise.all([
-                checkHasReviewed({ orderId: o.fullId, targetType: o.itemType as ReviewTargetType }),
-                checkHasReviewed({ orderId: o.fullId, targetType: 'deliveryPartner' })
-              ]);
-              
-              if (hasReviewedItem || hasReviewedDelivery) {
-                reviewStatusObj[o.fullId] = {
-                  item: hasReviewedItem || undefined,
-                  deliveryPartner: hasReviewedDelivery || undefined
-                };
-              }
-            } catch (err) {
-              // Ignore individual failures
-            }
-          }));
-          
-          if (Object.keys(reviewStatusObj).length > 0) {
-            setReviewedOrders(prev => ({ ...prev, ...reviewStatusObj }));
-          }
-        }
-      } catch (err) {
-        console.error("Failed to fetch orders:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchOrders();
   }, []);
+
+  const handleConfirmCancel = async (reason: string) => {
+    if (!orderToCancel) return;
+    
+    await cancelOrder(orderToCancel, reason);
+    await fetchOrders(); // Refresh the list
+    setOrderToCancel(null);
+  };
 
   // No tracking order modal needed anymore
 
@@ -141,7 +131,7 @@ export default function OrdersPage() {
         {/* Mobile Back Header */}
         <div className="md:hidden flex items-center justify-between px-4 py-3 -mx-4 -mt-4 sticky top-0 z-40 bg-white">
           <div className="flex items-center gap-2">
-            <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all">
+            <button onClick={() => router.push('/')} className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all">
               <ChevronLeft className="w-6 h-6" strokeWidth={2} />
             </button>
             <h1 className="text-[17px] font-medium text-[#0F172A] ml-1">My Orders</h1>
@@ -163,7 +153,7 @@ export default function OrdersPage() {
           className="hidden md:flex items-center mb-2 -ml-3 md:ml-0"
         >
           <button
-            onClick={() => router.back()}
+            onClick={() => router.push('/')}
             className="flex items-center gap-1 px-3 py-2 rounded-full text-gray-700 hover:bg-gray-100 hover:text-[var(--color-primary)] transition-colors"
           >
             <ChevronLeft className="w-6 h-6" />
@@ -177,10 +167,16 @@ export default function OrdersPage() {
           <p className="text-sm text-gray-500 font-medium mt-1">Track your active deliveries and view past orders.</p>
         </div>
 
-        <div className="space-y-10">
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-[var(--color-primary)]" />
+            <p className="mt-4 text-sm text-gray-500 font-medium">Loading orders...</p>
+          </div>
+        ) : (
+          <div className="space-y-10">
 
-          {/* Active Orders List */}
-          <section>
+            {/* Active Orders List */}
+            <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Active Orders</h2>
             <div className="space-y-4">
               {activeOrders.length === 0 && !isLoading && (
@@ -223,22 +219,32 @@ export default function OrdersPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-3 pt-4 border-t border-gray-100 md:pt-0 md:border-t-0 md:pl-5 md:border-l">
-                    <div className="flex items-center gap-1.5 md:flex-col md:items-end md:gap-0.5">
-                      <p className="text-xs md:text-[10px] font-medium text-gray-500">Total Amount:</p>
-                      <p className="text-sm md:text-lg font-semibold text-[var(--color-primary)]">{order.total}</p>
+                  <div className="flex flex-col md:flex-col items-stretch md:items-end justify-between md:justify-center gap-4 md:gap-3 pt-4 border-t border-gray-100 md:pt-0 md:border-t-0 md:pl-5 md:border-l">
+                    <div className="flex items-center justify-between md:justify-end md:flex-col md:items-end md:gap-0.5">
+                      <p className="text-sm md:text-[11px] font-medium text-gray-500 whitespace-nowrap">Total Amount:</p>
+                      <p className="text-base md:text-lg font-bold text-[var(--color-primary)]">{order.total}</p>
                     </div>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      className="rounded-lg shadow-sm cursor-pointer px-4"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        router.push(`/orders/${order.fullId}`);
-                      }}
-                    >
-                      View Details
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      {order.status.toLowerCase() === 'pending' && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setOrderToCancel(order.fullId); }}
+                          className="flex-1 md:flex-none h-9 inline-flex items-center justify-center text-sm font-semibold text-red-600 bg-red-50 border border-red-200 px-4 rounded-lg hover:bg-red-100 transition-colors whitespace-nowrap"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        className="flex-1 md:flex-none shadow-sm cursor-pointer whitespace-nowrap"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/orders/${order.fullId}`);
+                        }}
+                      >
+                        View Details
+                      </Button>
+                    </div>
                   </div>
                 </motion.div>
               ))}
@@ -263,7 +269,13 @@ export default function OrdersPage() {
                 >
                   {/* Top row — image + order info */}
                   <div className="flex items-center gap-3">
-                    <Image src={order.img} alt="Order" width={52} height={52} className="object-contain rounded-lg flex-shrink-0" />
+                    {order.img ? (
+                      <Image src={order.img} alt="Order" width={52} height={52} className="object-contain rounded-lg flex-shrink-0" />
+                    ) : (
+                      <div className="w-[52px] h-[52px] bg-gray-50 rounded-lg border border-gray-100 flex items-center justify-center flex-shrink-0">
+                        <ShoppingCart className="w-5 h-5 text-gray-300" />
+                      </div>
+                    )}
                     <div className="flex-1 min-w-0">
                       <h5 className="font-semibold text-gray-900 text-sm truncate">Order #{order.id}</h5>
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -327,6 +339,7 @@ export default function OrdersPage() {
           </section>
 
         </div>
+        )}
 
       </main>
 
@@ -356,6 +369,13 @@ export default function OrdersPage() {
           orderId={reviewOrder.order.fullId}
         />
       )}
+
+      <CancelOrderModal
+        isOpen={!!orderToCancel}
+        onClose={() => setOrderToCancel(null)}
+        onConfirm={handleConfirmCancel}
+        orderId={orderToCancel || ""}
+      />
     </div>
   );
 }

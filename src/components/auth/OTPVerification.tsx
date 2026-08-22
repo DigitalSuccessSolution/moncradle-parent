@@ -65,15 +65,26 @@ export function OTPVerification({ phone, onVerify, onBack }: OTPVerificationProp
 
       // Save token and user data
       const token = data.token || data.accessToken || '';
-      const user = data.user || data.data || {};
+      const user = data.user || data.data || data || {};
+
+      // Restrict login to only users with 'parent' role (or those without a role set yet, to be safe)
+      if (user.role && user.role !== 'parent') {
+        throw new Error('Access Denied: This app is only for Parents.');
+      }
 
       login(token, user);
       onVerify();
-    } catch (err) {
+    } catch (err: any) {
+      if (err.message?.includes('Access Denied')) {
+        setError(err.message);
+        setIsLoading(false);
+        return;
+      }
+
       // Mock Fallback
       if (otpValue === '1234') {
         const dummyToken = 'mock_token_' + Date.now();
-        const dummyUser = { _id: 'user_1', name: 'Mock User', phone };
+        const dummyUser = { _id: 'user_1', name: '', phone };
         login(dummyToken, dummyUser);
         onVerify();
       } else {
@@ -88,6 +99,8 @@ export function OTPVerification({ phone, onVerify, onBack }: OTPVerificationProp
     setIsResending(true);
     setError('');
     setResendMsg('');
+    setOtp(new Array(4).fill(''));
+    setActiveOTPIndex(0);
 
     try {
       await sendOTP(phone);
@@ -152,10 +165,10 @@ export function OTPVerification({ phone, onVerify, onBack }: OTPVerificationProp
         <button
           type="submit"
           disabled={otp.join('').length !== 4 || isLoading}
-          className="w-full bg-white text-[#ED7A9C] text-base sm:text-lg font-semibold py-3.5 mt-2 rounded-2xl shadow-[0_8px_30px_rgba(237,122,156,0.15)] border border-pink-50 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:active:scale-100 flex justify-center items-center h-[54px]"
+          className="w-full bg-[#ED7A9C] text-white text-base sm:text-lg font-semibold py-3.5 mt-2 rounded-2xl shadow-lg shadow-pink-500/30 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:active:scale-100 flex justify-center items-center h-[54px]"
         >
           {isLoading ? (
-            <svg className="animate-spin h-6 w-6 text-[#ED7A9C]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
@@ -166,8 +179,8 @@ export function OTPVerification({ phone, onVerify, onBack }: OTPVerificationProp
 
         <p className="text-center text-xs text-gray-500 font-medium">
           Didn't receive the code?{' '}
-          <button 
-            type="button" 
+          <button
+            type="button"
             onClick={handleResendOTP}
             disabled={isResending}
             className="text-[#3A3368] font-semibold hover:underline disabled:opacity-50"

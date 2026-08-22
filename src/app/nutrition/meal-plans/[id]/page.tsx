@@ -98,6 +98,11 @@ export default function MealDetailPage() {
   const cartQuantity = cartMap[mealId]?.qty || 0;
 
   const handleAddToCart = () => {
+    if (!isAuthenticated) {
+      toast("Please login to add items to cart", { icon: "🔒" });
+      router.push("/login");
+      return;
+    }
     if (!meal) return;
     dispatch(addToCartAsync({
       itemId: meal._id,
@@ -110,6 +115,11 @@ export default function MealDetailPage() {
 
   const handleAddSimilarToCart = (e: any, m: Meal) => {
     if (e) e.stopPropagation();
+    if (!isAuthenticated) {
+      toast("Please login to add items to cart", { icon: "🔒" });
+      router.push("/login");
+      return;
+    }
     dispatch(addToCartAsync({
       itemId: m._id,
       itemType: "meal",

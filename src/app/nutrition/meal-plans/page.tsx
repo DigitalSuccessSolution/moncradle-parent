@@ -57,13 +57,13 @@ export default function MealPlansHub() {
   const cartMap = useAppSelector(state => state.cart.cartMap);
   const cartTotalCount = useAppSelector(state => state.cart.totalCount);
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
-  
+
   // Data States
   const [meals, setMeals] = useState<Meal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  
+
   // UI states
   const [activeAge, setActiveAge] = useState("All Ages");
   const [ageGroups, setAgeGroups] = useState<string[]>(["All Ages"]);
@@ -127,7 +127,7 @@ export default function MealPlansHub() {
     } else {
       setIsFetchingMore(true);
     }
-    
+
     try {
       const queryParams: Record<string, string | number> = {
         page,
@@ -153,19 +153,19 @@ export default function MealPlansHub() {
       if (fetchId !== currentFetchIdRef.current) return; // Stale fetch, ignore
       const fetchedMeals = Array.isArray(response.data) ? response.data : (Array.isArray(response) ? response : []);
       const count = response.count || 0;
-      
+
       setMeals(prev => {
         if (replace) return fetchedMeals;
         const existingIds = new Set(prev.map(m => m._id));
         const newOnes = fetchedMeals.filter((m: Meal) => !existingIds.has(m._id));
         return [...prev, ...newOnes];
       });
-      
+
       const loaded = replace ? fetchedMeals.length : (pageRef.current - 1) * PAGE_LIMIT + fetchedMeals.length;
       const more = fetchedMeals.length === PAGE_LIMIT && loaded < count;
       hasMoreRef.current = more;
       setHasMore(more);
-      
+
     } catch (error) {
       console.error("Failed to fetch meals:", error);
     } finally {
@@ -326,7 +326,7 @@ export default function MealPlansHub() {
   // Infinite scroll observer
   useEffect(() => {
     if (isLoading || !hasMore || !sentinelRef.current) return;
-    
+
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMoreRef.current && !isFetchingRef.current) {
@@ -336,7 +336,7 @@ export default function MealPlansHub() {
       },
       { threshold: 0.1, rootMargin: "200px" }
     );
-    
+
     observer.observe(sentinelRef.current);
     return () => observer.disconnect();
   }, [isLoading, hasMore]);
@@ -350,6 +350,11 @@ export default function MealPlansHub() {
 
   const handleAddToCart = async (e: React.MouseEvent, meal: Meal) => {
     e.stopPropagation();
+    if (!isAuthenticated) {
+      toast("Please login to add items to cart", { icon: "🔒" });
+      router.push("/login");
+      return;
+    }
     try {
       await dispatch(addToCartAsync({ itemId: meal._id, itemType: "meal" })).unwrap();
       toast.success(`${meal.name} added to cart!`);
@@ -362,6 +367,16 @@ export default function MealPlansHub() {
     router.push(`/nutrition/meal-plans/${mealId}`);
   };
 
+  const handleOpenMealPicker = () => {
+    if (!isAuthenticated) {
+      toast("Please login to create a meal plan", { icon: "🔒" });
+      router.push("/login");
+      return;
+    }
+    setMealPickerQuery("");
+    setIsMealPickerOpen(true);
+  };
+
   const filterContent = (
     <>
       <div className="flex items-center justify-between p-5 border-b border-gray-100">
@@ -369,7 +384,7 @@ export default function MealPlansHub() {
           <Filter className="w-5 h-5 text-[var(--color-primary)]" />
           Filter & Sort Meals
         </h2>
-        <button 
+        <button
           onClick={() => setIsFilterModalOpen(false)}
           className="p-2 rounded-full bg-gray-50 text-gray-500 hover:bg-red-50 hover:text-red-50 transition-colors"
         >
@@ -383,8 +398,8 @@ export default function MealPlansHub() {
           <h3 className="text-sm font-semibold text-gray-900 mb-3">Age Group</h3>
           <div className="flex flex-wrap gap-2">
             {ageGroups.map((age, i) => (
-              <button 
-                key={i} 
+              <button
+                key={i}
                 onClick={() => setActiveAge(age)}
                 className={`px-4 py-2 rounded-lg text-xs font-semibold border transition-colors ${activeAge === age ? 'bg-[var(--color-primary)]/10 border-[var(--color-primary)]/30 text-[var(--color-primary)]' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
               >
@@ -399,8 +414,8 @@ export default function MealPlansHub() {
           <h3 className="text-sm font-semibold text-gray-900 mb-3">Sort By</h3>
           <div className="flex flex-col gap-2">
             {["Popularity", "Price: Low to High", "Price: High to Low"].map((sort, i) => (
-              <label 
-                key={i} 
+              <label
+                key={i}
                 onClick={() => setSortBy(sort)}
                 className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors border border-transparent hover:border-gray-100"
               >
@@ -426,16 +441,15 @@ export default function MealPlansHub() {
               else if (type.toLowerCase() === 'dinner') { Icon = Moon; colorClass = 'text-amber-600'; }
               else if (type.toLowerCase() === 'snack') { Icon = Cookie; colorClass = 'text-emerald-600'; }
               else if (type !== 'All') { Icon = Utensils; colorClass = 'text-gray-500'; }
-              
+
               return (
                 <button
                   key={i}
                   onClick={() => setActiveType(type)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300 border ${
-                    isSelected
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300 border ${isSelected
                       ? 'border-[var(--color-primary)]/50 bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
                       : 'bg-white border-gray-200 text-[#122B54] hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   <Icon className={`w-4 h-4 ${isSelected ? 'text-[var(--color-primary)]' : colorClass}`} />
                   <span>{type === 'All' ? 'All Meals' : type}</span>
@@ -450,8 +464,8 @@ export default function MealPlansHub() {
           <h3 className="text-sm font-semibold text-gray-900 mb-3">Price Range</h3>
           <div className="flex flex-wrap gap-2">
             {["Under ₹100", "₹100 - ₹300", "Over ₹300"].map((price, i) => (
-              <button 
-                key={i} 
+              <button
+                key={i}
                 onClick={() => setPriceRange(price === priceRange ? null : price)}
                 className={`px-4 py-2 rounded-lg text-xs font-semibold border transition-colors ${priceRange === price ? 'bg-[var(--color-primary)]/10 border-[var(--color-primary)]/30 text-[var(--color-primary)]' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
               >
@@ -468,8 +482,8 @@ export default function MealPlansHub() {
             {["Organic", "Puree", "Solid", "Dairy-Free", "Vegetarian"].map((pref, i) => {
               const isSelected = preferences.includes(pref);
               return (
-                <label 
-                  key={i} 
+                <label
+                  key={i}
                   onClick={() => {
                     if (isSelected) setPreferences(preferences.filter(p => p !== pref));
                     else setPreferences([...preferences, pref]);
@@ -488,7 +502,7 @@ export default function MealPlansHub() {
       </div>
 
       <div className="p-5 border-t border-gray-100 bg-white grid grid-cols-2 gap-3">
-        <button 
+        <button
           onClick={() => {
             setSortBy("Popularity");
             setActiveType("All");
@@ -500,7 +514,7 @@ export default function MealPlansHub() {
         >
           Clear All
         </button>
-        <button 
+        <button
           onClick={() => setIsFilterModalOpen(false)}
           className="py-3 rounded-xl font-semibold text-sm text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-light)] shadow-md shadow-[var(--color-primary)]/20 transition-all active:scale-95"
         >
@@ -512,7 +526,7 @@ export default function MealPlansHub() {
 
   return (
     <div className="min-h-screen bg-[var(--color-background)] font-sans pb-24 md:pb-0 relative selection:bg-[var(--color-primary)]/20">
-      
+
       <main className="max-w-[1200px] mx-auto px-4 md:px-8 py-4 md:py-8 space-y-6">
 
         {/* Mobile Back Header */}
@@ -536,8 +550,8 @@ export default function MealPlansHub() {
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center mb-2 -ml-3 md:ml-0">
-          <button 
-            onClick={() => router.back()} 
+          <button
+            onClick={() => router.back()}
             className="flex items-center gap-1 px-3 py-2 rounded-full text-gray-700 hover:bg-gray-100 hover:text-[var(--color-primary)] transition-colors"
           >
             <ChevronLeft className="w-6 h-6" />
@@ -546,7 +560,7 @@ export default function MealPlansHub() {
         </div>
 
         {/* Desktop Page Header */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           className="hidden md:flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4 px-1"
@@ -573,7 +587,7 @@ export default function MealPlansHub() {
                 className="pl-10 pr-4 h-11 bg-white border border-gray-200 rounded-full text-sm font-medium outline-none focus:border-[var(--color-primary)] transition-colors w-full"
               />
             </div>
-            <button 
+            <button
               onClick={() => setIsFilterModalOpen(true)}
               className="bg-white border border-gray-200 w-11 h-11 rounded-full text-gray-600 hover:bg-[var(--color-primary)]/10 hover:text-[var(--color-primary)] hover:border-[var(--color-primary)]/30 transition-colors flex items-center justify-center flex-shrink-0"
             >
@@ -590,22 +604,20 @@ export default function MealPlansHub() {
         >
           <button
             onClick={() => setViewMode("grid")}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs md:text-sm font-semibold transition-all duration-300 border ${
-              viewMode === "grid"
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs md:text-sm font-semibold transition-all duration-300 border ${viewMode === "grid"
                 ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)] shadow-md"
                 : "bg-white text-gray-500 border-gray-200 hover:border-[var(--color-primary)]/50"
-            }`}
+              }`}
           >
             <LayoutGrid className="w-4 h-4 md:w-5 md:h-5" />
             Grid View
           </button>
           <button
             onClick={() => setViewMode("calendar")}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs md:text-sm font-semibold transition-all duration-300 border ${
-              viewMode === "calendar"
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs md:text-sm font-semibold transition-all duration-300 border ${viewMode === "calendar"
                 ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)] shadow-md"
                 : "bg-white text-gray-500 border-gray-200 hover:border-[var(--color-primary)]/50"
-            }`}
+              }`}
           >
             <CalendarIcon className="w-4 h-4 md:w-5 md:h-5" />
             Weekly Calendar
@@ -623,28 +635,28 @@ export default function MealPlansHub() {
             <h3 className="text-[18px] md:text-xl font-semibold text-black leading-tight mb-8 md:mb-10 px-1">
               Explore meals <span className="text-[var(--color-primary)]">({activeAge})</span>
             </h3>
-            
+
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3">
-            {isLoading && meals.length === 0 ? (
-              <div className="col-span-full py-20 flex justify-center items-center">
-                 <Loader2 className="w-8 h-8 text-[var(--color-primary)] animate-spin" />
-              </div>
-            ) : meals.length === 0 ? (
-              <div className="col-span-full py-20 text-center text-gray-400 font-medium text-lg">No meals found matching your filters.</div>
-            ) : (
-              meals.map((meal: Meal, idx: number) => (
-                <MealCard 
-                  key={`${meal._id || 'grid'}-${idx}`}
-                  meal={meal} 
-                  variants={itemVariants} 
-                  cartQuantity={cartMap[meal._id]?.qty || 0}
-                  onAddToCart={handleAddToCart}
-                  onClick={handleCardClick}
-                />
-              ))
-            )}
+              {isLoading && meals.length === 0 ? (
+                <div className="col-span-full py-20 flex justify-center items-center">
+                  <Loader2 className="w-8 h-8 text-[var(--color-primary)] animate-spin" />
+                </div>
+              ) : meals.length === 0 ? (
+                <div className="col-span-full py-20 text-center text-gray-400 font-medium text-lg">No meals found matching your filters.</div>
+              ) : (
+                meals.map((meal: Meal, idx: number) => (
+                  <MealCard
+                    key={`${meal._id || 'grid'}-${idx}`}
+                    meal={meal}
+                    variants={itemVariants}
+                    cartQuantity={cartMap[meal._id]?.qty || 0}
+                    onAddToCart={handleAddToCart}
+                    onClick={handleCardClick}
+                  />
+                ))
+              )}
             </div>
-            
+
             {/* Infinite Scroll Sentinel */}
             {hasMore && (
               <div ref={sentinelRef} className="flex justify-center items-center py-8">
@@ -655,7 +667,7 @@ export default function MealPlansHub() {
                 )}
               </div>
             )}
-            
+
             {!hasMore && meals.length > 0 && (
               <p className="text-center text-xs text-gray-400 py-6">
                 Showing all {meals.length} meals
@@ -681,15 +693,14 @@ export default function MealPlansHub() {
                   <button
                     key={idx}
                     onClick={() => setActiveDay(idx)}
-                    className={`relative px-4 md:px-6 py-2 md:py-2.5 rounded-lg text-xs md:text-sm font-semibold whitespace-nowrap transition-all ${
-                      activeDay === idx 
-                        ? 'bg-[var(--color-primary)] text-white shadow-md' 
+                    className={`relative px-4 md:px-6 py-2 md:py-2.5 rounded-lg text-xs md:text-sm font-semibold whitespace-nowrap transition-all ${activeDay === idx
+                        ? 'bg-[var(--color-primary)] text-white shadow-md'
                         : 'bg-white border border-gray-200 text-gray-600 hover:border-[var(--color-primary)]/50'
-                    }`}
+                      }`}
                   >
                     {dayName}
                     {isToday && (
-                      <span className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ${ activeDay === idx ? 'bg-white' : 'bg-[var(--color-primary)]'}`} />
+                      <span className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ${activeDay === idx ? 'bg-white' : 'bg-[var(--color-primary)]'}`} />
                     )}
                     {hasMeals && activeDay !== idx && (
                       <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-emerald-400" />
@@ -702,7 +713,7 @@ export default function MealPlansHub() {
             {/* Calendar Day View */}
             {isPlanLoading ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 md:gap-4">
-                {[1,2,3,4,5].map(i => (
+                {[1, 2, 3, 4, 5].map(i => (
                   <div key={i} className="animate-pulse bg-white rounded-lg border border-gray-100 overflow-hidden">
                     <div className="w-full h-28 bg-gray-100"></div>
                     <div className="p-3 space-y-2">
@@ -716,7 +727,7 @@ export default function MealPlansHub() {
               const selectedDayName = FULL_DAY_NAMES[activeDay];
               const dayMeals = planDayMap[selectedDayName] || [];
               const isEmpty = dayMeals.length === 0;
-              
+
               const MEAL_SLOTS = [
                 { type: "Breakfast", icon: Coffee, color: "text-amber-600" },
                 { type: "Snack", icon: Apple, color: "text-red-500" },
@@ -724,17 +735,17 @@ export default function MealPlansHub() {
                 { type: "Evening Snack", icon: Cookie, color: "text-purple-500" },
                 { type: "Dinner", icon: Soup, color: "text-emerald-600" },
               ];
-              
+
               if (isEmpty && !nutritionPlan) {
                 return (
                   <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
                     <CalendarIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                     <p className="text-base font-semibold text-gray-500">No nutrition plan assigned yet</p>
                     <p className="text-sm text-gray-400 mt-2 max-w-xs mx-auto">Click the '+' button below to start building your baby's weekly meal schedule!</p>
-                    
+
                     <div className="mt-6 flex justify-center">
                       <button
-                        onClick={() => { setMealPickerQuery(""); setIsMealPickerOpen(true); }}
+                        onClick={handleOpenMealPicker}
                         className="flex items-center gap-2 bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 text-white px-5 py-2.5 rounded-full text-sm font-semibold transition-colors"
                       >
                         <Plus className="w-4 h-4" /> Add First Meal
@@ -743,7 +754,7 @@ export default function MealPlansHub() {
                   </div>
                 );
               }
-              
+
               if (isEmpty) {
                 return (
                   <div className="text-center py-12 bg-[#F8FAFC] rounded-xl border border-gray-100">
@@ -751,7 +762,7 @@ export default function MealPlansHub() {
                     <p className="text-[15px] font-semibold text-gray-600">No meals scheduled for {selectedDayName}</p>
                     <p className="text-xs text-gray-400 mt-1 mb-5">Keep your baby's nutrition on track by adding meals.</p>
                     <button
-                      onClick={() => { setMealPickerQuery(""); setIsMealPickerOpen(true); }}
+                      onClick={handleOpenMealPicker}
                       className="inline-flex items-center gap-1.5 bg-white border border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-white px-4 py-2 rounded-full text-sm font-semibold transition-colors"
                     >
                       <Plus className="w-4 h-4" /> Add Meal for {selectedDayName}
@@ -759,7 +770,7 @@ export default function MealPlansHub() {
                   </div>
                 );
               }
-              
+
               return (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 md:gap-4 pt-2">
                   {dayMeals.map((meal, idx) => {
@@ -775,16 +786,16 @@ export default function MealPlansHub() {
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>
-                        <div 
-                          className="w-full h-28 md:h-32 relative bg-[#F8FAFC] border-b border-gray-100 overflow-hidden flex-shrink-0 cursor-pointer" 
+                        <div
+                          className="w-full h-28 md:h-32 relative bg-[#F8FAFC] border-b border-gray-100 overflow-hidden flex-shrink-0 cursor-pointer"
                           onClick={() => handleCardClick(meal._id)}
                         >
                           {(meal?.imageUrl || (meal?.images && meal.images.length > 0)) ? (
-                            <Image 
-                              src={(meal?.imageUrl || meal?.images?.[0]) as string} 
-                              alt={meal?.name || slot.type} 
-                              fill 
-                              className="object-cover group-hover:scale-110 transition-transform duration-500" 
+                            <Image
+                              src={(meal?.imageUrl || meal?.images?.[0]) as string}
+                              alt={meal?.name || slot.type}
+                              fill
+                              className="object-cover group-hover:scale-110 transition-transform duration-500"
                             />
                           ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
@@ -798,8 +809,8 @@ export default function MealPlansHub() {
                             <Icon className={`w-3.5 h-3.5 md:w-4 md:h-4 ${slot.color}`} strokeWidth={2.5} />
                             <span className="text-[10px] md:text-[11px] font-extrabold text-black uppercase tracking-wider">{slot.type}</span>
                           </div>
-                          <h4 
-                            className="text-xs md:text-sm font-semibold text-[#122B54] leading-snug line-clamp-2 group-hover:text-[var(--color-primary)] transition-colors cursor-pointer" 
+                          <h4
+                            className="text-xs md:text-sm font-semibold text-[#122B54] leading-snug line-clamp-2 group-hover:text-[var(--color-primary)] transition-colors cursor-pointer"
                             onClick={() => handleCardClick(meal._id)}
                           >
                             {meal?.name || "No meal assigned"}
@@ -811,7 +822,7 @@ export default function MealPlansHub() {
                       </div>
                     );
                   })}
-                  
+
                   {/* Add Meal Card */}
                   <button
                     onClick={() => { setMealPickerQuery(""); setIsMealPickerOpen(true); }}
@@ -832,21 +843,21 @@ export default function MealPlansHub() {
 
       </main>
 
-            
+
       {/* Filter Modal */}
       <AnimatePresence>
         {isFilterModalOpen && (
           <>
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsFilterModalOpen(false)}
               className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[110]"
             />
-            
+
             {/* Desktop Slide-over */}
-            <motion.div 
+            <motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
@@ -857,7 +868,7 @@ export default function MealPlansHub() {
             </motion.div>
 
             {/* Mobile Bottom Sheet */}
-            <motion.div 
+            <motion.div
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
@@ -931,7 +942,7 @@ export default function MealPlansHub() {
               <div className="flex-1 overflow-y-auto px-5 pb-6">
                 {isPickerLoading ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
-                    {[1,2,3,4,5,6].map(i => (
+                    {[1, 2, 3, 4, 5, 6].map(i => (
                       <div key={i} className="animate-pulse bg-gray-50 rounded-xl overflow-hidden">
                         <div className="h-24 bg-gray-200" />
                         <div className="p-2 space-y-1.5">

@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, Package, Truck, CheckCircle2, MapPin, Loader2, IndianRupee, Star } from "lucide-react";
+import { ChevronLeft, Package, Truck, CheckCircle2, MapPin, Loader2, IndianRupee, Star, X } from "lucide-react";
 import Image from "next/image";
 import ReviewModal from "@/components/ui/ReviewModal";
-import { getOrderById } from "@/lib/api/ordersApi";
+import CancelOrderModal from "@/components/ui/CancelOrderModal";
+import { getOrderById, cancelOrder } from "@/lib/api/ordersApi";
 import { checkHasReviewed, ReviewTargetType } from "@/lib/api/reviewsApi";
 
 export default function OrderDetailPage() {
@@ -18,29 +19,36 @@ export default function OrderDetailPage() {
   const [reviewOrder, setReviewOrder] = useState<{ mode: "item" | "deliveryPartner" } | null>(null);
   const [reviewedOrders, setReviewedOrders] = useState<{ item?: any; deliveryPartner?: any }>({});
   const [viewingReview, setViewingReview] = useState<{ title: string; review: any } | null>(null);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+
+  const fetchOrder = async () => {
+    try {
+      const data = await getOrderById(orderId as string);
+      setOrder(data);
+    } catch (err: any) {
+      setError(err.message || "Failed to load order");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchOrder = async () => {
-      try {
-        const data = await getOrderById(orderId as string);
-        setOrder(data);
-      } catch (err: any) {
-        setError(err.message || "Failed to load order");
-      } finally {
-        setLoading(false);
-      }
-    };
     if (orderId) {
       fetchOrder();
     }
   }, [orderId]);
+
+  const handleConfirmCancel = async (reason: string) => {
+    await cancelOrder(order._id, reason);
+    await fetchOrder(); // Refresh the order
+  };
 
   useEffect(() => {
     const fetchReviewsStatus = async () => {
       if (!order || order.status !== 'delivered') return;
 
       const firstItemType = order.items?.[0]?.itemType || "meal";
-      
+
       try {
         const [hasReviewedItem, hasReviewedDelivery] = await Promise.all([
           checkHasReviewed({ orderId: order._id, targetType: firstItemType as ReviewTargetType }),
@@ -108,7 +116,7 @@ export default function OrderDetailPage() {
   const shortId = order._id.slice(-6).toUpperCase();
   const dateFormatted = new Date(order.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   const displayStatus = order.status.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
-  
+
   const firstItem = order.items?.[0];
   const firstItemType = firstItem?.itemType || "meal";
   const firstItemDetail = firstItemType === 'product' ? firstItem?.productId : firstItem?.mealId;
@@ -118,11 +126,11 @@ export default function OrderDetailPage() {
   return (
     <div className="min-h-screen bg-[var(--color-background)] pb-24 font-sans relative">
       <main className="max-w-[800px] mx-auto px-4 md:px-8 py-4 space-y-6">
-        
+
         {/* Header */}
         <div className="flex items-center gap-3 sticky top-0 z-40 bg-[var(--color-background)] py-2 -mx-4 px-4 sm:mx-0 sm:px-0">
-          <button 
-            onClick={() => router.push('/orders')} 
+          <button
+            onClick={() => router.push('/orders')}
             className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors"
           >
             <ChevronLeft className="w-6 h-6 text-gray-800" />
@@ -137,23 +145,23 @@ export default function OrderDetailPage() {
 
         {/* Status Tracker */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
+          <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-3 ${order.status === 'cancelled' ? 'mb-4' : 'mb-6'}`}>
             <h2 className="text-lg font-bold text-gray-900">Tracking Status</h2>
-            <div className="flex items-center gap-3 flex-wrap">
-              {order.isOtpRequired && !['delivered', 'cancelled'].includes(order.status) && (
-                 <div className="flex items-center gap-2 bg-gray-50 px-3 py-1 rounded-lg border border-gray-200">
+            {order.status !== 'cancelled' && (
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                {order.isOtpRequired && !['delivered'].includes(order.status) && (
+                  <div className="h-8 inline-flex items-center gap-2 bg-gray-50 px-3 rounded-lg border border-gray-200">
                     <span className="text-[11px] font-semibold text-gray-500 uppercase">OTP:</span>
                     <span className="text-sm font-black text-[var(--color-primary)] tracking-[0.2em]">{order.deliveryOtp || '----'}</span>
-                 </div>
-              )}
-              <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                order.status === 'delivered' ? 'bg-green-50 text-green-600 border-green-200' :
-                order.status === 'cancelled' ? 'bg-red-50 text-red-600 border-red-200' :
-                'bg-orange-50 text-orange-600 border-orange-200'
-              }`}>
-                {displayStatus}
-              </span>
-            </div>
+                  </div>
+                )}
+                <span className={`h-8 inline-flex items-center px-3 rounded-full text-xs font-bold border ${order.status === 'delivered' ? 'bg-green-50 text-green-600 border-green-200' :
+                    'bg-orange-50 text-orange-600 border-orange-200'
+                  }`}>
+                  {displayStatus}
+                </span>
+              </div>
+            )}
           </div>
 
           {order.status !== 'cancelled' ? (
@@ -207,11 +215,25 @@ export default function OrderDetailPage() {
               </div>
             </div>
           ) : (
-            <div className="p-4 bg-red-50 border border-red-100 rounded-xl text-center">
-              <p className="text-sm font-semibold text-red-600">This order has been cancelled.</p>
+            <div className="p-4 sm:p-5 bg-red-50 border border-red-100 rounded-xl flex flex-col items-center text-center">
+              <div className="w-12 h-12 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-3">
+                <X className="w-6 h-6" />
+              </div>
+              <p className="text-base font-bold text-red-600 mb-1">This order has been cancelled</p>
               {order.cancellationReason && (
-                <p className="text-xs text-red-500 mt-1">Reason: {order.cancellationReason}</p>
+                <p className="text-sm text-red-500 mt-1 max-w-sm"><span className="font-semibold">Reason:</span> {order.cancellationReason}</p>
               )}
+            </div>
+          )}
+
+          {order.status === 'pending' && (
+            <div className="mt-6 flex justify-center">
+              <button
+                onClick={() => setIsCancelModalOpen(true)}
+                className="text-sm font-bold text-red-600 border border-red-200 bg-red-50 hover:bg-red-100 px-6 py-2 rounded-xl transition-colors"
+              >
+                Cancel Order
+              </button>
             </div>
           )}
         </div>
@@ -278,7 +300,7 @@ export default function OrderDetailPage() {
           <div className="space-y-3 text-sm">
             <div className="flex justify-between text-gray-600">
               <span>Item Total</span>
-              <span className="font-medium flex items-center"><IndianRupee className="w-3 h-3"/>{order.totalAmount}</span>
+              <span className="font-medium flex items-center"><IndianRupee className="w-3 h-3" />{order.totalAmount}</span>
             </div>
             <div className="flex justify-between text-gray-600">
               <span>Delivery Fee</span>
@@ -286,7 +308,7 @@ export default function OrderDetailPage() {
             </div>
             <div className="pt-3 border-t border-gray-100 flex justify-between font-bold text-lg text-gray-900">
               <span>Grand Total</span>
-              <span className="flex items-center text-[var(--color-primary)]"><IndianRupee className="w-4 h-4"/>{order.totalAmount}</span>
+              <span className="flex items-center text-[var(--color-primary)]"><IndianRupee className="w-4 h-4" />{order.totalAmount}</span>
             </div>
           </div>
         </div>
@@ -298,11 +320,11 @@ export default function OrderDetailPage() {
             <div className="flex flex-wrap items-center gap-3">
               {/* Rate Item */}
               {reviewedOrders.item ? (
-                <button 
+                <button
                   onClick={() => setViewingReview({ title: `${itemReviewLabel} Review`, review: reviewedOrders.item })}
                   className="flex items-center gap-1 px-4 py-2 rounded-xl bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer active:scale-95"
                 >
-                  {[1,2,3,4,5].map(s => (
+                  {[1, 2, 3, 4, 5].map(s => (
                     <Star key={s} className={`w-4 h-4 ${s <= (reviewedOrders.item.rating ?? reviewedOrders.item) ? 'fill-amber-400 text-amber-400' : 'text-gray-200 fill-gray-100'}`} />
                   ))}
                   <span className="text-xs font-bold text-amber-600 ml-1">View {itemReviewLabel} Review</span>
@@ -318,11 +340,11 @@ export default function OrderDetailPage() {
 
               {/* Rate Delivery */}
               {reviewedOrders.deliveryPartner ? (
-                <button 
+                <button
                   onClick={() => setViewingReview({ title: `Delivery Review`, review: reviewedOrders.deliveryPartner })}
                   className="flex items-center gap-1 px-4 py-2 rounded-xl bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer active:scale-95"
                 >
-                  {[1,2,3,4,5].map(s => (
+                  {[1, 2, 3, 4, 5].map(s => (
                     <Star key={s} className={`w-4 h-4 ${s <= (reviewedOrders.deliveryPartner.rating ?? reviewedOrders.deliveryPartner) ? 'fill-blue-400 text-blue-400' : 'text-gray-200 fill-gray-100'}`} />
                   ))}
                   <span className="text-xs font-bold text-blue-600 ml-1">View Delivery Review</span>
@@ -367,7 +389,7 @@ export default function OrderDetailPage() {
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative w-full max-w-sm bg-white rounded-2xl shadow-xl p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4">{viewingReview.title}</h3>
               <div className="flex gap-1 mb-4">
-                {[1,2,3,4,5].map(s => (
+                {[1, 2, 3, 4, 5].map(s => (
                   <Star key={s} className={`w-7 h-7 ${s <= (viewingReview.review.rating ?? viewingReview.review) ? 'fill-amber-400 text-amber-400' : 'text-gray-200 fill-gray-100'}`} />
                 ))}
               </div>
@@ -381,6 +403,13 @@ export default function OrderDetailPage() {
           </div>
         )}
       </AnimatePresence>
+
+      <CancelOrderModal
+        isOpen={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        onConfirm={handleConfirmCancel}
+        orderId={order?._id || ""}
+      />
     </div>
   );
 }

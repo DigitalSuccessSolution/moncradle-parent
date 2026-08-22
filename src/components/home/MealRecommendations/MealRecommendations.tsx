@@ -12,25 +12,37 @@ import { addToCartAsync } from "@/store/slices/cartSlice";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { MealCard } from "@/components/nutrition/MealCard";
+import { useAuth } from "@/context/AuthContext";
 
 export function MealRecommendations() {
   const [meals, setMeals] = useState<Meal[]>([]);
   const router = useRouter();
   const dispatch = useAppDispatch();
   const cartMap = useAppSelector(state => state.cart.cartMap);
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     const fetchMeals = async () => {
       try {
-        const babies = await getBabies();
-        if (babies && babies.length > 0) {
-          const recommended = await getRecommendedMeals(babies[0]._id);
-          if (recommended && recommended.length > 0) {
-            setMeals(recommended);
-            return;
+        if (isAuthenticated) {
+          try {
+            const babies = await getBabies();
+            if (babies && babies.length > 0) {
+              const recommended = await getRecommendedMeals(babies[0]._id);
+              if (recommended && recommended.length > 0) {
+                setMeals(recommended);
+                return;
+              }
+            }
+          } catch (e: any) {
+            // Ignore 401s silently if token is invalid or just cleared
+            if (e?.response?.status !== 401) {
+              console.error("Failed to fetch babies/recommended:", e);
+            }
           }
         }
-        // Fallback to popular meals
+        
+        // Fallback to popular meals if not authenticated or no babies
         const res = await getMeals({ limit: 5 });
         setMeals(Array.isArray(res.data) ? res.data : res);
       } catch (error) {
@@ -38,10 +50,15 @@ export function MealRecommendations() {
       }
     };
     fetchMeals();
-  }, []);
+  }, [isAuthenticated]);
 
   const handleAddToCart = async (e: React.MouseEvent, meal: Meal) => {
     e.stopPropagation();
+    if (!isAuthenticated) {
+      toast("Please login to add items to cart", { icon: "🔒" });
+      router.push("/login");
+      return;
+    }
     try {
       await dispatch(addToCartAsync({ itemId: meal._id, itemType: "meal" })).unwrap();
       toast.success(`${meal.name} added to cart!`);

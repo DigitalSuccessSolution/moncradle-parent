@@ -86,7 +86,7 @@ export default function BabyProfilePage() {
                  </div>
                  <div>
                    <h2 className="text-xl font-semibold text-gray-900 mb-1">{baby?.name || "Baby Profile"}</h2>
-                   <p className="text-sm text-gray-500 font-medium capitalize">{baby?.gender || "Not Specified"} • {baby?.ageInMonths ? `${baby.ageInMonths} Months` : "Age N/A"}</p>
+                   <p className="text-sm text-gray-500 font-medium capitalize">{baby?.gender || "Not Specified"} • {baby?.ageInMonths !== undefined && baby?.ageInMonths !== null ? `${baby.ageInMonths} Months` : "Age N/A"}</p>
                    <span className="inline-block mt-3 px-3 py-1 bg-white text-[var(--color-primary)] text-[10px] font-semibold tracking-widest uppercase rounded-md border border-gray-200">Primary Profile</span>
                  </div>
                </div>
@@ -132,7 +132,7 @@ export default function BabyProfilePage() {
                     <Droplet className="w-5 h-5 text-[var(--pastel-coral)]" />
                   </div>
                   <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-widest mb-1">Blood</p>
-                  <p className="text-xl font-semibold text-gray-900">{baby?.bloodType || "O+"}</p>
+                  <p className="text-xl font-semibold text-gray-900">{baby?.bloodType || "--"}</p>
                 </div>
               </div>
             </section>

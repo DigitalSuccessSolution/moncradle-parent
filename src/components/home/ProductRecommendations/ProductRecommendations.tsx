@@ -8,6 +8,8 @@ import { getProducts, Product } from "@/lib/api/productsApi";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { addToCartAsync, updateCartQuantityAsync, removeFromCartAsync } from "@/store/slices/cartSlice";
 import { ProductCard } from "@/components/shop/ProductCard";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 import toast from "react-hot-toast";
 
 function mapProduct(p: Product) {
@@ -33,6 +35,8 @@ export function ProductRecommendations() {
   const [products, setProducts] = useState<any[]>([]);
   const dispatch = useAppDispatch();
   const cartMap = useAppSelector(state => state.cart.cartMap);
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     getProducts({ limit: 5 }).then(res => {
@@ -44,6 +48,11 @@ export function ProductRecommendations() {
   }, []);
 
   const handleAddToCart = async (productId: string, productName: string) => {
+    if (!isAuthenticated) {
+      toast("Please login to add items to cart", { icon: "🔒" });
+      router.push("/login");
+      return;
+    }
     try {
       await dispatch(addToCartAsync({ itemId: productId, itemType: "product" })).unwrap();
       toast.success(`${productName} added to cart!`);
@@ -53,6 +62,10 @@ export function ProductRecommendations() {
   };
   
   const handleIncrement = async (productId: string, productName: string) => {
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
     const entry = cartMap[productId];
     if (!entry) { handleAddToCart(productId, productName); return; }
     try {

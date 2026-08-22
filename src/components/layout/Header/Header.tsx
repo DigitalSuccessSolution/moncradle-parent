@@ -30,8 +30,8 @@ export function Header() {
   return (
     <>
       {/* Desktop Header */}
-      <header className="hidden md:flex fixed top-0 left-0 z-[100] bg-white/70 backdrop-blur-2xl py-1 md:py-1.5 transition-all duration-300 w-full">
-        <div className="max-w-7xl mx-auto w-full px-3 lg:px-8 xl:px-12 flex items-center justify-between gap-1 lg:gap-4">
+      <header className="hidden md:flex sticky top-0 z-[100] shrink-0 bg-white/70 backdrop-blur-2xl py-3 md:py-4 transition-all duration-300 w-full shadow-sm">
+        <div className="max-w-7xl mx-auto w-full px-4 lg:px-8 xl:px-12 flex items-center justify-between gap-2 lg:gap-4">
           {/* Left: Logo */}
           <div className="flex-1 flex justify-start">
             <Link href="/" className="flex items-center group cursor-pointer -ml-1 lg:-ml-2 py-1 shrink-0">
@@ -108,8 +108,6 @@ export function Header() {
           </div>
         </div>
       </header>
-      {/* Spacer to prevent content from hiding behind fixed desktop header */}
-      <div className="hidden md:block h-[65px] lg:h-[73px] w-full shrink-0"></div>
 
       {/* Mobile Header */}
       {pathname === "/" && (

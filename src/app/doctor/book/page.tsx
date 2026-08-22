@@ -10,6 +10,8 @@ import {  ChevronLeft, CheckCircle2, ChevronRight, Check, ShieldCheck, Clock, St
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiClient } from "@/lib/apiClient";
+import { useAuth } from "@/context/AuthContext";
+import toast from "react-hot-toast";
 
 // Generate next 14 days
 const generateDates = () => {
@@ -29,6 +31,14 @@ export default function BookAppointmentPage() {
   const unreadNotificationsCount = useAppSelector(state => state.notifications.unreadCount);
 
   const router = useRouter();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+
+  useEffect(() => {
+    if (!isAuthLoading && !isAuthenticated) {
+      toast("Please login to book an appointment", { icon: "🔒" });
+      router.push("/login");
+    }
+  }, [isAuthenticated, isAuthLoading, router]);
   
   const [step, setStep] = useState(1);
   const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null);

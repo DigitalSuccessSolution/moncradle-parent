@@ -36,7 +36,8 @@ export function MobileBottomNav({ isHidden = false }: { isHidden?: boolean }) {
     "/shop/", // hides on product detail but not /shop
     "/baby-profile",
     "/address",
-    "/wallet"
+    "/wallet",
+    "/profile/edit"
   ];
 
   if (!mounted) {

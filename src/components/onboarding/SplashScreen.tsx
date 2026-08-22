@@ -96,7 +96,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
   const slide = slides[currentSlide];
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-white flex flex-col md:hidden overflow-hidden h-[100dvh] w-full">
+    <div className="fixed inset-0 z-[9999] bg-white flex flex-col overflow-hidden h-[100dvh] w-full">
 
       {/* Full Screen Image Background */}
       <div className="absolute inset-0 w-full h-full z-0">
