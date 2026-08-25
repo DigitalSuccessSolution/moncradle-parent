@@ -16,6 +16,7 @@ import { ExpertConsultation } from "@/components/home/ExpertConsultation/ExpertC
 import { Articles } from "@/components/home/Articles/Articles";
 import { HealthRecords } from "@/components/home/HealthRecords/HealthRecords";
 import { SplashScreen } from "@/components/onboarding/SplashScreen";
+import { StaffPortals } from "@/components/layout/StaffPortals/StaffPortals";
 import { AuthScreen } from "@/components/auth/AuthScreen";
 import { BabyProfileSetup } from "@/components/onboarding/BabyProfileSetup";
 import { ParentProfileSetup } from "@/components/onboarding/ParentProfileSetup";
@@ -147,11 +148,7 @@ export default function HomePage() {
         <Articles />
       </main>
 
-      
-
-
-
-
+      <StaffPortals />
     </div>
   );
 }
