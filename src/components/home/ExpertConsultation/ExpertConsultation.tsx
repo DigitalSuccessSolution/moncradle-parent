@@ -89,11 +89,11 @@ export function ExpertConsultation() {
             <div className="flex gap-4">
               {/* Image */}
               <div className="w-[72px] h-[72px] rounded-full overflow-hidden shrink-0 bg-slate-100 relative shadow-sm">
-                {doc.user.avatar ? (
-                  <img src={doc.user.avatar} alt={doc.user.name} className="w-full h-full object-cover" />
+                {doc.user?.avatar ? (
+                  <img src={doc.user.avatar} alt={doc.user.name || "Doctor"} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-slate-400 font-bold text-xl uppercase">
-                    {doc.user.name?.charAt(0) || "D"}
+                    {doc.user?.name?.charAt(0) || "D"}
                   </div>
                 )}
               </div>
@@ -101,7 +101,7 @@ export function ExpertConsultation() {
               {/* Info */}
               <div className="flex flex-col min-w-0">
                 <h3 className="font-semibold text-slate-800 text-[17px] leading-tight truncate">
-                  {doc.user.name}
+                  {doc.user?.name || "Unknown Doctor"}
                 </h3>
                 <p className="text-[13px] text-slate-500 truncate mt-0.5">
                   {doc.specialization || 'Pediatrician'}
