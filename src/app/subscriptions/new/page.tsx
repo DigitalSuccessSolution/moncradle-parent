@@ -205,7 +205,7 @@ export default function NewSubscriptionPage() {
 
       // Handle Online Payment
       if (activePayment === 'upi' || activePayment === 'card') {
-        const paymentRes = await initiatePayment({ subscriptionId: res._id || res.data?._id });
+        const paymentRes = await initiatePayment({ subscriptionId: res._id as string });
         if (paymentRes.success && paymentRes.redirectUrl) {
           window.location.href = paymentRes.redirectUrl;
           return;

@@ -35,10 +35,10 @@ export const addToCartAsync = createAsyncThunk(
     itemType: "product" | "meal";
     subscriptionData?: {
       isSubscription: boolean;
-      deliveryDates: string[];
-      timeSlot: string;
-      customizations: string[];
-      specialInstructions: string;
+      deliveryDates?: string[];
+      timeSlot?: string;
+      customizations?: string[];
+      specialInstructions?: string;
     }
   }) => {
     const cart = await addToCart(payload.itemId, payload.itemType, 1, payload.subscriptionData);
