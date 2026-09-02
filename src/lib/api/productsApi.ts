@@ -29,7 +29,8 @@ export interface Product {
  * GET /api/products
  */
 export async function getProducts(params: Record<string, string | number> = {}) {
-  const query = new URLSearchParams({ limit: "100", ...Object.fromEntries(Object.entries(params).map(([k,v]) => [k, String(v)])) }).toString();
+  const finalParams = { isActive: "true", limit: "100", ...params };
+  const query = new URLSearchParams(Object.entries(finalParams).map(([k,v]) => [k, String(v)])).toString();
   const response = await apiClient.get(`/products?${query}`);
   return response.data;
 }

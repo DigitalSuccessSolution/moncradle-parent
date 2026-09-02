@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ChevronLeft, Sparkles, Layers, ShieldCheck, RefreshCw, Zap, HeartPulse, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -56,28 +56,29 @@ export default function SubscriptionsPage() {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const [faqs, setFaqs] = useState<Faq[]>([]);
 
-  useEffect(() => {
-    const fetchSubs = async () => {
-      try {
-        const [resSubs, resPlans, allFaqs] = await Promise.all([
-          getSubscriptions(),
-          getSubscriptionPlans(),
-          getFaqs('parent'),
-        ]);
-        setSubscriptions(resSubs || []);
-        setExplorePlans(resPlans || []);
-        setFaqs(allFaqs.filter(f => f.category === 'subscriptions'));
-        if (resSubs.length === 0) {
-          setActiveTab("explore");
-        }
-      } catch (err) {
-        console.error("Failed to fetch subscriptions:", err);
-      } finally {
-        setIsLoading(false);
+  const fetchSubs = useCallback(async () => {
+    try {
+      const [resSubs, resPlans, allFaqs] = await Promise.all([
+        getSubscriptions(),
+        getSubscriptionPlans(),
+        getFaqs('parent'),
+      ]);
+      setSubscriptions(resSubs || []);
+      setExplorePlans(resPlans || []);
+      setFaqs(allFaqs.filter((f: Faq) => f.category === 'subscriptions'));
+      if (resSubs.length === 0) {
+        setActiveTab("explore");
       }
-    };
-    fetchSubs();
+    } catch (err) {
+      console.error("Failed to fetch subscriptions:", err);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchSubs();
+  }, [fetchSubs]);
 
 
 
@@ -176,6 +177,7 @@ export default function SubscriptionsPage() {
                       key={sub._id || i}
                       sub={sub}
                       index={i}
+                      onUpdate={fetchSubs}
                     />
                   ))
                 )}

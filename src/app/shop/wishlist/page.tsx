@@ -47,7 +47,8 @@ export default function WishlistPage() {
           tag: p.isFeatured ? "Featured" : "",
           img: p.images && p.images.length > 0 ? p.images[0] : (p.imageUrl || ""),
           rating: p.rating || 4.5,
-          reviews: p.numReviews || 0
+          reviews: p.numReviews || 0,
+          stockQuantity: p.stockQuantity || 0
         })));
         
         setMeals(fetchedMeals.filter(Boolean));

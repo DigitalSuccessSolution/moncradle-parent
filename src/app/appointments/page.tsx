@@ -239,11 +239,11 @@ export default function AppointmentsPage() {
                     <Image src={app.doctorId?.avatar || "/images/doctor_profile.png"} alt={app.doctorId?.name || "Doctor"} width={56} height={56} className="object-cover" />
                   </div>
                   <div className="pr-20">
-                    <h3 className="text-base font-semibold text-gray-900 group-hover:text-[var(--color-primary)] transition-colors">{app.doctorId.name}</h3>
-                    <p className="text-xs font-semibold text-gray-500 mb-1">{app.doctorId.specialization}</p>
+                    <h3 className="text-base font-semibold text-gray-900 group-hover:text-[var(--color-primary)] transition-colors">{app.doctorId?.name || "Unknown Doctor"}</h3>
+                    <p className="text-xs font-semibold text-gray-500 mb-1">{app.doctorId?.specialization || "General"}</p>
                     <div className="flex gap-2 flex-wrap">
                       <p className="text-[10px] font-semibold text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-2 py-0.5 rounded-md inline-block">
-                        For: {app.babyId.name}
+                        For: {app.babyId?.name || "Baby"}
                       </p>
                       <p className="text-[10px] font-semibold text-[var(--pastel-orange)] bg-[var(--pastel-orange)]/10 px-2 py-0.5 rounded-md flex items-center gap-1">
                         In-Clinic
@@ -289,9 +289,11 @@ export default function AppointmentsPage() {
                   </div>
                   <div>
                     <h3 className="text-base font-semibold text-gray-900">{app.doctorId?.name || "Doctor"}</h3>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-xs font-semibold text-gray-500">{formatDate(app.date)}</span>
-                      <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                    <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-gray-500">{formatDate(app.date)}</span>
+                        <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                      </div>
                       {app.status === "completed" ? (
                         <span className="flex items-center gap-1 text-[10px] font-semibold text-[var(--pastel-blue)] bg-[var(--pastel-blue)]/10 px-2 py-0.5 rounded-md">
                           <CheckCircle2 className="w-3 h-3" /> Completed
@@ -317,8 +319,8 @@ export default function AppointmentsPage() {
                 )}
 
                 {/* Actions */}
-                <div className="flex items-center gap-2 pt-2 mt-auto">
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => alert("View Prescription")}>
+                <div className="flex flex-wrap items-center gap-2 pt-2 mt-auto">
+                  <Button variant="outline" size="sm" className="flex-1 min-w-[100px] whitespace-nowrap" onClick={() => alert("View Prescription")}>
                     Records
                   </Button>
                   {app.status === "completed" && (
@@ -338,7 +340,7 @@ export default function AppointmentsPage() {
                       </button>
                     )
                   )}
-                  <Button variant="primary" size="sm" className="flex-1" onClick={() => router.push(`/doctor/book?doctorId=${app.doctorId?._id || app.doctorId}`)}>
+                  <Button variant="primary" size="sm" className="flex-1 min-w-[100px] whitespace-nowrap" onClick={() => router.push(`/doctor/book?doctorId=${app.doctorId?._id || app.doctorId}`)}>
                     Book Again
                   </Button>
                 </div>

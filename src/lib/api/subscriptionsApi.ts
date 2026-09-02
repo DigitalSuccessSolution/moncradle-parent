@@ -16,11 +16,33 @@ export interface Subscription {
   parentId: string;
   babyId: string;
   planId: string | SubscriptionPlan;
+  totalAmount?: number;
+  deliveryAddressId?: string;
   startDate: string;
   endDate: string;
   status: "active" | "expired" | "cancelled";
+  deliverySchedule?: {
+    _id: string;
+    date: string;
+    status: "pending" | "skipped" | "ordered" | "delivered";
+    mealId?: string | any;
+    productId?: string | any;
+    timeSlot?: string;
+    customizations?: string[];
+    specialInstructions?: string;
+  }[];
   createdAt?: string;
   updatedAt?: string;
+}
+
+export async function skipMeal(subscriptionId: string, scheduleId: string) {
+  const response = await apiClient.patch(`/subscriptions/${subscriptionId}/skip/${scheduleId}`);
+  return response.data.data;
+}
+
+export async function updateMealInstructions(subscriptionId: string, scheduleId: string, specialInstructions: string) {
+  const response = await apiClient.patch(`/subscriptions/${subscriptionId}/instructions/${scheduleId}`, { specialInstructions });
+  return response.data.data;
 }
 
 export async function getSubscriptions(): Promise<Subscription[]> {

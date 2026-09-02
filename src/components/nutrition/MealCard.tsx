@@ -91,13 +91,18 @@ export function MealCard({
         </button>
 
 
-        {(meal.discountedPrice && meal.discountedPrice < meal.price) ? (
-          <span className="absolute top-2.5 left-2.5 bg-[#F4A261] text-white text-[10px] font-semibold px-2 py-0.5 rounded-md shadow">
+        {/* Out of Stock or Discount Badge */}
+        {!meal.inStock ? (
+          <span className="absolute top-2.5 left-2.5 bg-gray-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded-md shadow z-10">
+            Out of Stock
+          </span>
+        ) : (meal.discountedPrice && meal.discountedPrice < meal.price) ? (
+          <span className="absolute top-2.5 left-2.5 bg-[#F4A261] text-white text-[10px] font-semibold px-2 py-0.5 rounded-md shadow z-10">
             {Math.round(((meal.price - meal.discountedPrice) / meal.price) * 100)}% OFF
           </span>
         ) : null}
 
-        <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5 bg-black/50 backdrop-blur-sm rounded-full px-2.5 py-1">
+        <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5 bg-black/50 backdrop-blur-sm rounded-full px-2.5 py-1 z-10">
           <span className="text-white text-[13px] font-black leading-none">₹{meal.discountedPrice || meal.price}</span>
           {(meal.discountedPrice && meal.discountedPrice < meal.price) ? (
             <span className="text-white/60 text-[10px] line-through leading-none">₹{meal.price}</span>
@@ -129,8 +134,12 @@ export function MealCard({
           </div>
         </div>
 
-        <div onClick={(e) => e.stopPropagation()} className="mt-1 flex justify-center">
-          {cartQuantity > 0 ? (
+        <div onClick={(e) => e.stopPropagation()} className="mt-1 flex justify-center z-20 relative">
+          {!meal.inStock ? (
+            <div className="w-[85%] h-[36px] flex items-center justify-center bg-gray-100 text-gray-500 text-[11px] font-semibold rounded-2xl border border-gray-200">
+              Out of Stock
+            </div>
+          ) : cartQuantity > 0 ? (
             <div
               onClick={() => router.push(`/shop/cart`)}
               className="w-[85%] h-[36px] flex items-center justify-center bg-[#8A84C8] text-white rounded-2xl cursor-pointer hover:bg-[#7a74b8] transition-colors"

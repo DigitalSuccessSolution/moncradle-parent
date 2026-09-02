@@ -14,15 +14,11 @@ import { useEffect } from "react";
 import { createOrder, OrderItem } from "@/lib/api/ordersApi";
 import { applyCoupon } from "@/lib/api/couponApi";
 import { clearCart } from "@/lib/api/cartApi";
+import { initiatePayment } from "@/lib/api/paymentsApi";
 import { useRouter } from "next/navigation";
-import { getAddresses, Address } from "@/lib/api/addressesApi";
+import { getAddresses, addAddress, updateAddress, Address } from "@/lib/api/addressesApi";
 import { useAuth } from "@/context/AuthContext";
-import { AddressModal } from "@/components/AddressModal";
-
-const deliveryOptions = [
-  { id: "standard", name: "Standard Delivery", time: "3-5 Business Days", price: 0 },
-  { id: "express", name: "Express Delivery", time: "1-2 Business Days", price: 50 }
-];
+import { AddressModal } from "@/components/address/AddressModal";
 
 const paymentMethods = [
   { id: "upi", name: "UPI", desc: "Google Pay, PhonePe, Paytm", icon: Banknote },
@@ -66,13 +62,17 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleAddressSuccess = (savedAddress: Address, isEdit: boolean) => {
-    if (isEdit) {
+  const handleSaveAddress = async (formData: Partial<Address>, isEditing: boolean, editingId: string | null) => {
+    let savedAddress: Address;
+    if (isEditing && editingId) {
+      savedAddress = await updateAddress(editingId, formData);
       setAddresses(addresses.map(a => a._id === savedAddress._id ? savedAddress : a));
     } else {
+      savedAddress = await addAddress(formData);
       setAddresses([...addresses, savedAddress]);
     }
     setSelectedAddressId(savedAddress._id);
+    setIsAddressModalOpen(false);
   };
 
   const handleEditClick = (e: React.MouseEvent, addr: Address) => {
@@ -81,12 +81,13 @@ export default function CheckoutPage() {
     setIsAddressModalOpen(true);
   };
 
-  const [activeDelivery, setActiveDelivery] = useState("standard");
-  const [activePayment, setActivePayment] = useState("upi");
+  const [activePayment, setActivePayment] = useState("cod");
+  const [globalTimeSlot, setGlobalTimeSlot] = useState<string>('Breakfast');
 
-  const shipping = deliveryOptions.find(d => d.id === activeDelivery)?.price || 0;
-  const discount = appliedCoupon ? appliedCoupon.discount : 0;
-  const total = subtotal + shipping - discount;
+  const shipping = subtotal > 500 ? 0 : 50;
+  const discount = Math.round(appliedCoupon ? appliedCoupon.discount : 0);
+  const total = Math.round(subtotal + shipping - discount);
+  const displaySubtotal = Math.round(subtotal);
 
   const handleApplyCoupon = async () => {
     if (!couponInput.trim()) return;
@@ -119,6 +120,11 @@ export default function CheckoutPage() {
         mealId: item.itemType === 'meal' && item.mealId ? item.mealId._id : undefined,
         quantity: item.quantity,
         priceAtAddition: item.priceAtAddition,
+        isSubscription: item.isSubscription,
+        deliveryDates: item.deliveryDates,
+        timeSlot: item.itemType === 'meal' ? (globalTimeSlot || item.timeSlot) : item.timeSlot,
+        customizations: item.customizations,
+        specialInstructions: item.specialInstructions,
       }));
 
       const selectedAddr = addresses.find(a => a._id === selectedAddressId);
@@ -128,7 +134,7 @@ export default function CheckoutPage() {
         return;
       }
 
-      await createOrder({
+      const order = await createOrder({
         items: orderItems,
         deliveryAddress: {
           street: selectedAddr.street,
@@ -136,11 +142,24 @@ export default function CheckoutPage() {
           state: selectedAddr.state,
           zipCode: selectedAddr.zipCode
         },
-        couponCode: appliedCoupon ? appliedCoupon.code : undefined
+        couponCode: appliedCoupon ? appliedCoupon.code : undefined,
+        paymentMethod: activePayment
       });
 
       await clearCart();
       await dispatch(fetchCartAsync());
+
+      // If online payment, initiate PhonePe payment
+      if (activePayment === 'upi' || activePayment === 'card') {
+        const paymentRes = await initiatePayment({ orderId: order._id });
+        if (paymentRes.success && paymentRes.redirectUrl) {
+          window.location.href = paymentRes.redirectUrl; // Redirect to PhonePe PG
+          return;
+        } else {
+          alert("Failed to initiate payment. " + (paymentRes.message || ''));
+        }
+      }
+
       router.replace('/shop/order-success');
     } catch (error) {
       console.error("Failed to place order:", error);
@@ -249,41 +268,44 @@ export default function CheckoutPage() {
               </div>
             </motion.section>
 
-            {/* 2. Delivery Options */}
-            <motion.section
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 border border-gray-100 shadow-sm"
-            >
-              <h2 className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2 mb-4 md:mb-6">
-                Delivery Method
-              </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {deliveryOptions.map((opt) => {
-                  const isActive = activeDelivery === opt.id;
-                  return (
-                    <div
-                      key={opt.id}
-                      onClick={() => setActiveDelivery(opt.id)}
-                      className={`relative p-3 md:p-4 rounded-lg md:rounded-xl border cursor-pointer flex items-start gap-3 transition-all duration-300 ${isActive ? 'border-[var(--color-primary)] bg-gray-50/50' : 'border-gray-100 hover:border-gray-300 bg-white'}`}
-                    >
-                      <div className={`w-4 h-4 md:w-5 md:h-5 rounded-full border-2 mt-0.5 md:mt-1 flex-shrink-0 flex items-center justify-center transition-colors ${isActive ? 'border-[var(--color-primary)]' : 'border-gray-300'}`}>
-                        {isActive && <div className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-[var(--color-primary)]" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start gap-2 mb-1">
-                          <span className="font-bold text-gray-900 truncate">{opt.name}</span>
-                          <span className="font-extrabold text-[var(--color-primary)] flex-shrink-0">{opt.price === 0 ? 'FREE' : `₹${opt.price}`}</span>
-                        </div>
-                        <span className="text-sm text-gray-500 font-medium">{opt.time}</span>
-                      </div>
+
+            {/* Meal Specific Details */}
+            {cartItems.some(item => item.itemType === 'meal') && (
+              <motion.section
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.05 }}
+                className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 border border-gray-100 shadow-sm"
+              >
+                <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-4">Meal Delivery Time</h2>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Select Preferred Time Slot</label>
+                    <div className="grid grid-cols-3 gap-2 md:gap-4">
+                      {[
+                        { slot: 'Breakfast', time: '8 AM - 10 AM' },
+                        { slot: 'Lunch', time: '1 PM - 3 PM' },
+                        { slot: 'Dinner', time: '7 PM - 9 PM' }
+                      ].map(({ slot, time }) => (
+                        <button
+                          key={slot}
+                          onClick={() => setGlobalTimeSlot(slot)}
+                          className={`relative overflow-hidden py-2.5 px-1 md:py-3 md:px-4 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-0.5 md:gap-1 ${
+                            globalTimeSlot === slot 
+                              ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5 shadow-sm' 
+                              : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50'
+                          }`}
+                        >
+                          <span className={`text-[12px] md:text-[15px] font-bold tracking-tight ${globalTimeSlot === slot ? 'text-[var(--color-primary)]' : 'text-gray-700'}`}>{slot}</span>
+                          <span className={`text-[10px] md:text-xs text-center font-medium whitespace-nowrap ${globalTimeSlot === slot ? 'text-[var(--color-primary)]/80' : 'text-gray-400'}`}>{time}</span>
+                        </button>
+                      ))}
                     </div>
-                  );
-                })}
-              </div>
-            </motion.section>
+                  </div>
+                </div>
+              </motion.section>
+            )}
 
             {/* 3. Payment Method */}
             <motion.section
@@ -350,7 +372,7 @@ export default function CheckoutPage() {
                       <p className="text-sm font-bold text-gray-900 truncate">{itemDetails.name}</p>
                       <p className="text-xs text-gray-500 font-medium mt-0.5">Qty: {item.quantity}</p>
                     </div>
-                    <span className="font-bold text-gray-900 text-sm">₹{item.priceAtAddition * item.quantity}</span>
+                    <span className="font-bold text-gray-900 text-sm">₹{Math.round(item.priceAtAddition * item.quantity)}</span>
                   </div>
                 );
               })}
@@ -404,7 +426,7 @@ export default function CheckoutPage() {
             <div className="space-y-3 mb-6">
               <div className="flex justify-between items-center text-sm md:text-base">
                 <span className="text-gray-500 font-medium">Subtotal</span>
-                <span className="font-bold text-gray-900">₹{subtotal}</span>
+                <span className="font-bold text-gray-900">₹{displaySubtotal}</span>
               </div>
 
               <div className="flex justify-between items-center text-sm md:text-base">
@@ -466,8 +488,9 @@ export default function CheckoutPage() {
       <AddressModal
         isOpen={isAddressModalOpen}
         onClose={() => setIsAddressModalOpen(false)}
-        onSuccess={handleAddressSuccess}
-        editingAddress={editingAddress}
+        onSave={handleSaveAddress}
+        initialData={editingAddress}
+        isFirstAddress={addresses.length === 0}
       />
     </div>
   );

@@ -30,8 +30,18 @@ export const fetchCartAsync = createAsyncThunk(
 
 export const addToCartAsync = createAsyncThunk(
   'cart/addToCart',
-  async ({ itemId, itemType }: { itemId: string; itemType: "product" | "meal" }) => {
-    const cart = await addToCart(itemId, itemType, 1);
+  async (payload: { 
+    itemId: string; 
+    itemType: "product" | "meal";
+    subscriptionData?: {
+      isSubscription: boolean;
+      deliveryDates: string[];
+      timeSlot: string;
+      customizations: string[];
+      specialInstructions: string;
+    }
+  }) => {
+    const cart = await addToCart(payload.itemId, payload.itemType, 1, payload.subscriptionData);
     return cart.items || [];
   }
 );
@@ -90,14 +100,23 @@ export const cartSlice = createSlice({
       })
       // Add to Cart
       .addCase(addToCartAsync.fulfilled, (state, action) => {
+        state.error = null;
         calculateDerivedState(state, action.payload);
+      })
+      .addCase(addToCartAsync.rejected, (state, action) => {
+        state.error = action.error.message || 'Failed to add item to cart';
       })
       // Update Quantity
       .addCase(updateCartQuantityAsync.fulfilled, (state, action) => {
+        state.error = null;
         calculateDerivedState(state, action.payload);
+      })
+      .addCase(updateCartQuantityAsync.rejected, (state, action) => {
+        state.error = action.error.message || 'Failed to update quantity';
       })
       // Remove from Cart
       .addCase(removeFromCartAsync.fulfilled, (state, action) => {
+        state.error = null;
         calculateDerivedState(state, action.payload);
       });
   },

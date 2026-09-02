@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react";
 
 
-import { ChevronLeft, Bell, ShoppingBag, Calendar, CheckCircle2, X, Search } from "lucide-react";
+import { ChevronLeft, Bell, ShoppingBag, Calendar, CheckCircle2, X, Search, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
-import { getNotifications, markAsRead, Notification } from "@/lib/api/notificationsApi";
+import { getNotifications, markAsRead, deleteNotification, Notification } from "@/lib/api/notificationsApi";
 import { useAppDispatch } from "@/store/hooks";
 import { decrementUnreadCount, markAllAsReadLocally as markAllAsReadRedux } from "@/store/slices/notificationsSlice";
 export default function NotificationsPage() {
@@ -72,6 +72,30 @@ export default function NotificationsPage() {
         // ignore errors for batch
       }
     }
+  };
+
+  const handleDeleteNotif = async (e: React.MouseEvent, notifId: string) => {
+    e.stopPropagation();
+    import('sweetalert2').then(async (Swal) => {
+      const result = await Swal.default.fire({
+        title: 'Delete notification?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#94a3b8',
+        confirmButtonText: 'Yes, delete it!'
+      });
+
+      if (result.isConfirmed) {
+        try {
+          setNotifications(prev => prev.filter(n => n._id !== notifId));
+          await deleteNotification(notifId);
+        } catch (error) {
+          console.error('Failed to delete notification', error);
+        }
+      }
+    });
   };
 
   const getIcon = (type: string) => {
@@ -304,12 +328,23 @@ export default function NotificationsPage() {
                 <div className={`w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center ${getIconBgColor(selectedNotif.type)}`}>
                   {getIcon(selectedNotif.type)}
                 </div>
-                <button
-                  onClick={() => setSelectedNotif(null)}
-                  className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
-                >
-                  <X className="w-4 h-4 sm:w-5 sm:h-5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={(e) => {
+                      setSelectedNotif(null);
+                      handleDeleteNotif(e, selectedNotif._id);
+                    }}
+                    className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-red-50 hover:bg-red-100 text-red-500 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                  </button>
+                  <button
+                    onClick={() => setSelectedNotif(null)}
+                    className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
+                  >
+                    <X className="w-4 h-4 sm:w-5 sm:h-5" />
+                  </button>
+                </div>
               </div>
 
               <div className="mt-2 sm:mt-3">

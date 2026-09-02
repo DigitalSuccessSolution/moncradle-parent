@@ -2,43 +2,43 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { sendOTP } from '@/lib/api/authApi';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const phoneSchema = z.object({
+  phone: z.string().regex(/^\d{10}$/, "Please enter a valid 10-digit mobile number")
+});
+
+type PhoneFormValues = z.infer<typeof phoneSchema>;
 
 interface PhoneLoginProps {
   onSuccess: (phone: string) => void;
 }
 
 export function PhoneLogin({ onSuccess }: PhoneLoginProps) {
-  const [phone, setPhone] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!phone) {
-      setError('Please enter a valid phone number');
-      return;
-    }
+  const { register, handleSubmit, formState: { errors, isValid } } = useForm<PhoneFormValues>({
+    resolver: zodResolver(phoneSchema),
+    mode: "onChange",
+    defaultValues: { phone: '' }
+  });
 
+  const onSubmit = async (data: PhoneFormValues) => {
     setIsLoading(true);
     setError('');
 
     try {
-      const response = await sendOTP(phone);
+      const response = await sendOTP(data.phone);
       toast.success(`OTP sent: ${response.otp}`);
-      onSuccess(phone);
+      onSuccess(data.phone);
     } catch (err: any) {
       setError(err?.response?.data?.message || err.message || 'Failed to send OTP. Please try again.');
       toast.error('Failed to send OTP');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, ''); // Only allow digits
-    if (value.length <= 10) {
-      setPhone(value);
-      if (error) setError('');
     }
   };
 
@@ -62,9 +62,9 @@ export function PhoneLogin({ onSuccess }: PhoneLoginProps) {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="w-full flex flex-col gap-4">
         <div>
-          <div className={`flex items-center bg-white rounded-full border ${error ? 'border-red-400' : 'border-[#7E57C2]'} shadow-sm px-5 py-3.5 focus-within:ring-2 focus-within:ring-[#7E57C2]/20 transition-all`}>
+          <div className={`flex items-center bg-white rounded-full border ${errors.phone || error ? 'border-red-400' : 'border-[#7E57C2]'} shadow-sm px-5 py-3.5 focus-within:ring-2 focus-within:ring-[#7E57C2]/20 transition-all`}>
             {/* Country Code */}
             <div className="flex items-center gap-2 pr-3 border-r border-gray-300">
               <span className="text-xl">🇮🇳</span>
@@ -73,22 +73,25 @@ export function PhoneLogin({ onSuccess }: PhoneLoginProps) {
             {/* Input Field */}
             <input
               type="tel"
-              value={phone}
-              onChange={handlePhoneChange}
+              {...register('phone', {
+                onChange: (e) => {
+                  e.target.value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                }
+              })}
               placeholder="Mobile Number"
               className="flex-1 min-w-0 w-full bg-transparent border-none outline-none pl-4 text-[#3A3368] font-semibold text-base sm:text-lg placeholder:text-gray-400 placeholder:font-medium"
             />
           </div>
-          {error && (
+          {(errors.phone || error) && (
             <p className="text-red-500 text-[11px] sm:text-xs font-medium mt-1.5 ml-4">
-              {error}
+              {errors.phone?.message || error}
             </p>
           )}
         </div>
 
         <button
           type="submit"
-          disabled={phone.length !== 10 || isLoading}
+          disabled={!isValid || isLoading}
           className="w-full bg-[#ED7A9C] text-white text-base sm:text-lg font-semibold py-3.5 mt-2 rounded-2xl shadow-lg shadow-pink-500/30 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:active:scale-100 flex justify-center items-center h-[54px]"
         >
           {isLoading ? (

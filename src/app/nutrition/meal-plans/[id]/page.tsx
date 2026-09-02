@@ -8,7 +8,6 @@ import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 import { getMealById, getMeals, Meal } from "@/lib/api/mealsApi";
 import { getBabies } from "@/lib/api/babiesApi";
-import { addMealToSchedule } from "@/lib/api/nutritionPlanApi";
 import { MealCard } from "@/components/nutrition/MealCard";
 import ReviewSection from "@/components/common/ReviewSection";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
@@ -25,13 +24,12 @@ export default function MealDetailPage() {
   const [meal, setMeal] = useState<Meal | null>(null);
   const [similarMeals, setSimilarMeals] = useState<Meal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  // New state for Add to Plan
   const [babyId, setBabyId] = useState<string | null>(null);
-  const [showPlanModal, setShowPlanModal] = useState(false);
-  const [isAddingToPlan, setIsAddingToPlan] = useState(false);
 
-  const FULL_DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+  // State for Order Type (One-time vs Subscription info)
+  const [isSubscription, setIsSubscription] = useState(false);
+  const [specialInstructions, setSpecialInstructions] = useState("");
 
   useEffect(() => {
     const fetchMeal = async () => {
@@ -66,29 +64,13 @@ export default function MealDetailPage() {
         if (babies.length > 0) {
           setBabyId(babies[0]._id);
         }
-      } catch (err) {
-        console.error("Failed to load baby profile");
+      } catch (err: any) {
+        console.error("Failed to load baby profile:", err?.response?.data || err?.message || err);
       }
     };
     fetchBaby();
   }, [isAuthenticated, isAuthLoading]);
 
-  const handleAddMealToPlan = async (day: string) => {
-    if (!babyId) {
-      toast.error('No baby profile found. Please add a baby first.');
-      return;
-    }
-    setIsAddingToPlan(true);
-    try {
-      await addMealToSchedule(babyId, day, mealId);
-      toast.success(`${meal?.name} added to ${day}'s plan!`);
-      setShowPlanModal(false);
-    } catch (error) {
-      toast.error(`Failed to add meal to ${day}`);
-    } finally {
-      setIsAddingToPlan(false);
-    }
-  };
 
   const [activeImgIdx, setActiveImgIdx] = useState(0);
 
@@ -104,12 +86,22 @@ export default function MealDetailPage() {
       return;
     }
     if (!meal) return;
+    
+    const cartData = {
+      isSubscription: false,
+      specialInstructions
+    };
+
     dispatch(addToCartAsync({
       itemId: meal._id,
       itemType: "meal",
+      subscriptionData: cartData
     }))
       .unwrap()
-      .then(() => toast.success("Added to cart!"))
+      .then(() => {
+         toast.success("Added to cart!");
+         setSpecialInstructions("");
+      })
       .catch((err: any) => toast.error(err.message || "Failed to add to cart"));
   };
 
@@ -413,21 +405,59 @@ export default function MealDetailPage() {
             )}
 
 
+            {/* Subscription & Preferences Section */}
+            <div className="mb-8 bg-white border border-gray-100 rounded-2xl p-4 md:p-5 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <h3 className="font-semibold text-gray-900 text-lg">Order Type</h3>
+                <div className="flex items-center w-full sm:w-auto gap-1 sm:gap-2 bg-gray-100 p-1 rounded-full">
+                  <button 
+                    onClick={() => setIsSubscription(false)} 
+                    className={`flex-1 sm:flex-none px-4 py-2 sm:py-1.5 rounded-full text-sm font-semibold transition-all ${!isSubscription ? 'bg-white text-[var(--color-primary)] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                  >
+                    One-time
+                  </button>
+                  <button 
+                    onClick={() => setIsSubscription(true)} 
+                    className={`flex-1 sm:flex-none px-4 py-2 sm:py-1.5 rounded-full text-sm font-semibold transition-all ${isSubscription ? 'bg-white text-[var(--color-primary)] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                  >
+                    Subscribe
+                  </button>
+                </div>
+              </div>
 
-            {/* Reviews */}
+              {isSubscription ? (
+                <div className="mb-5 animate-in slide-in-from-top-2 fade-in duration-300">
+                  <div className="bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/20 rounded-xl p-4 flex flex-col items-center text-center">
+                    <Calendar className="w-8 h-8 text-[var(--color-primary)] mb-2" />
+                    <h4 className="text-sm font-bold text-gray-900 mb-1">Subscribe and Save</h4>
+                    <p className="text-xs text-gray-600 mb-4">
+                      Get this and many other nutritious meals delivered regularly with our curated subscription plans.
+                    </p>
+                    <button 
+                      onClick={() => router.push('/subscriptions')}
+                      className="bg-[var(--color-primary)] text-white text-sm font-semibold px-6 py-2.5 rounded-full hover:shadow-md transition-all active:scale-95"
+                    >
+                      View Subscription Plans
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mb-5 animate-in slide-in-from-top-2 fade-in duration-300">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Special Instructions</h4>
+                  <textarea 
+                    value={specialInstructions}
+                    onChange={(e) => setSpecialInstructions(e.target.value)}
+                    placeholder="E.g., Please make it extra soft..."
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-700 focus:outline-none focus:border-[var(--color-primary)] focus:bg-white transition-all resize-none h-20"
+                  ></textarea>
+                </div>
+              )}
+            </div>
             {meal && <ReviewSection targetId={meal._id} targetType="meal" />}
 
             {/* Action Bar */}
             <div className="mt-auto bg-white p-3 lg:py-4 fixed bottom-0 left-0 w-full lg:sticky lg:bottom-0 z-40 flex gap-3 pb-safe border-t lg:border-t-0 border-gray-100">
 
-              {/* Add to Plan Button */}
-              <button
-                onClick={() => setShowPlanModal(true)}
-                className="flex-1 h-12 md:h-14 bg-white border border-[var(--color-primary)] text-[var(--color-primary)] font-semibold text-sm md:text-base rounded-2xl hover:bg-[var(--color-primary)]/5 transition-all duration-300 flex items-center justify-center gap-2 group/plan"
-              >
-                <Calendar className="w-4 h-4 md:w-5 md:h-5 group-hover/plan:scale-110 transition-transform" />
-                Add to Plan
-              </button>
 
               {/* Add to Cart Button */}
               {meal.inStock ? (
@@ -436,17 +466,27 @@ export default function MealDetailPage() {
                     onClick={() => router.push('/shop/cart')}
                     className="flex-1 h-12 md:h-14 bg-[var(--color-primary)] text-white font-semibold rounded-2xl flex items-center justify-center cursor-pointer hover:bg-[#527d89] transition-colors"
                   >
-                    <span className="tracking-wide font-semibold text-sm md:text-base">{cartQuantity} in cart</span>
+                    <span className="tracking-wide font-semibold text-sm md:text-base">{cartQuantity} in cart (View)</span>
                   </div>
                 ) : (
                   <button
-                    onClick={handleAddToCart}
+                    onClick={isSubscription ? () => router.push('/subscriptions') : handleAddToCart}
                     className="flex-1 h-12 md:h-14 bg-[var(--color-primary)] text-white font-semibold text-sm md:text-base rounded-2xl hover:bg-[#527d89] hover:shadow-md transition-all duration-300 flex items-center justify-center gap-2 group/btn"
                   >
-                    <ShoppingCart className="w-4 h-4 md:w-5 md:h-5 group-hover/btn:scale-110 transition-transform" />
-                    Add to Cart
+                    {isSubscription ? (
+                      <>
+                        <Calendar className="w-4 h-4 md:w-5 md:h-5 group-hover/btn:scale-110 transition-transform" />
+                        View Plans
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingCart className="w-4 h-4 md:w-5 md:h-5 group-hover/btn:scale-110 transition-transform" />
+                        Add to Cart
+                      </>
+                    )}
                   </button>
                 )
+
               ) : (
                 <button
                   disabled
@@ -489,63 +529,6 @@ export default function MealDetailPage() {
         </div>
       )}
 
-      {/* Select Day Modal */}
-      <AnimatePresence>
-        {showPlanModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowPlanModal(false)}
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative bg-white w-full max-w-sm rounded-2xl shadow-xl overflow-hidden"
-            >
-              <div className="p-5 border-b border-gray-100 flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Select Day</h3>
-                  <p className="text-xs text-gray-500 font-medium mt-0.5">Add this meal to baby's schedule</p>
-                </div>
-                <button
-                  onClick={() => setShowPlanModal(false)}
-                  className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 text-gray-500 hover:bg-gray-100 transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <div className="p-3 max-h-[60vh] overflow-y-auto">
-                {isAddingToPlan ? (
-                  <div className="flex flex-col items-center justify-center py-10 gap-3">
-                    <Loader2 className="w-8 h-8 text-[var(--color-primary)] animate-spin" />
-                    <p className="text-sm font-semibold text-gray-600">Updating plan...</p>
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-1.5">
-                    {FULL_DAY_NAMES.map((day) => (
-                      <button
-                        key={day}
-                        onClick={() => handleAddMealToPlan(day)}
-                        className="w-full flex items-center justify-between p-3.5 rounded-xl hover:bg-[var(--color-primary)]/5 border border-transparent hover:border-[var(--color-primary)]/20 transition-all text-left group"
-                      >
-                        <span className="font-semibold text-gray-700 group-hover:text-[var(--color-primary)]">{day}</span>
-                        <div className="w-6 h-6 rounded-full border-2 border-gray-200 flex items-center justify-center group-hover:border-[var(--color-primary)] group-hover:bg-[var(--color-primary)] transition-all">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-white opacity-0 group-hover:opacity-100" />
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
     </div>
   );

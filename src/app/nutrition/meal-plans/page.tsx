@@ -4,27 +4,28 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import {
   ChevronLeft, Calendar as CalendarIcon, Flame,
   X, ShoppingCart, LayoutGrid, Baby, Search,
-  Sun, Utensils, Moon, Cookie, Apple, SlidersHorizontal, Coffee, Soup, Loader2, Filter, Check
+  Sun, Utensils, Moon, Cookie, Apple, SlidersHorizontal, Coffee, Soup, Loader2, Filter, Check, Leaf, AlertTriangle
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import { getMeals, getMealFilters, Meal } from "@/lib/api/mealsApi";
 import { getBabies } from "@/lib/api/babiesApi";
-import { getNutritionPlan, NutritionPlan, addMealToSchedule, removeMealFromSchedule } from "@/lib/api/nutritionPlanApi";
+import { getSubscriptions, skipMeal, updateSubscription, updateMealInstructions, Subscription } from "@/lib/api/subscriptionsApi";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { useAuth } from "@/context/AuthContext";
 import { addToCartAsync } from "@/store/slices/cartSlice";
 import toast from "react-hot-toast";
 import { MealCard } from "@/components/nutrition/MealCard";
-import { Plus, Trash2 } from "lucide-react";
+import { MyMealSchedule } from "@/components/nutrition/MyMealSchedule";
+import { Plus } from "lucide-react";
 
-// Full day names matching backend schema
-const FULL_DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-// Today index (0=Mon…6=Sun, JS getDay returns 0=Sun so we adjust)
-const getTodayDayIndex = () => {
-  const d = new Date().getDay(); // 0=Sun
-  return d === 0 ? 6 : d - 1; // convert to 0=Mon…6=Sun
+// Helper to format Date object as YYYY-MM-DD
+const formatDateStr = (date: Date): string => {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 };
 
 const AGE_GROUPS = [
@@ -68,16 +69,19 @@ export default function MealPlansHub() {
   const [activeAge, setActiveAge] = useState("All Ages");
   const [ageGroups, setAgeGroups] = useState<string[]>(["All Ages"]);
   const [viewMode, setViewMode] = useState<"grid" | "calendar">("grid");
-  const [activeDay, setActiveDay] = useState(getTodayDayIndex()); // 0-indexed Mon-Sun
+  const [activeDay, setActiveDay] = useState<string>(""); // format: YYYY-MM-DD
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [selectedEntryDetail, setSelectedEntryDetail] = useState<any | null>(null);
+  const [mealToSkip, setMealToSkip] = useState<any | null>(null);
+  const [isEditingInstructions, setIsEditingInstructions] = useState(false);
+  const [instructionsText, setInstructionsText] = useState("");
+  const [isSavingInstructions, setIsSavingInstructions] = useState(false);
 
-  // Nutrition plan states
-  const [nutritionPlan, setNutritionPlan] = useState<NutritionPlan | null>(null);
+  // Subscription states
+  const [activeSubscription, setActiveSubscription] = useState<Subscription | null>(null);
   const [isPlanLoading, setIsPlanLoading] = useState(true);
-  // Map: day name -> meals for that day
-  const [planDayMap, setPlanDayMap] = useState<Record<string, Meal[]>>({});
-  // Baby ID (for plan mutations)
-  const [babyId, setBabyId] = useState<string | null>(null);
+  // Map: day name -> delivery schedule items for that day
+  const [planDayMap, setPlanDayMap] = useState<Record<string, { meal: Meal; scheduleId: string; timeSlot?: string; status: string; specialInstructions?: string; subscriptionId: string }[]>>({});
   // Meal picker modal
   const [isMealPickerOpen, setIsMealPickerOpen] = useState(false);
   const [mealPickerQuery, setMealPickerQuery] = useState("");
@@ -194,39 +198,49 @@ export default function MealPlansHub() {
     }).catch(console.error);
   }, []);
 
-  // Fetch baby's nutrition plan once auth is ready
+  // Fetch user's active subscription once auth is ready and user views schedule
   useEffect(() => {
-    if (isAuthLoading || !isAuthenticated) return;
-    const loadPlan = async () => {
+    if (isAuthLoading || !isAuthenticated || viewMode !== 'calendar') return;
+    const loadSubscription = async () => {
       setIsPlanLoading(true);
       try {
-        const babyRes = await getBabies();
-        const babies = babyRes.data || babyRes || [];
-        if (babies.length > 0) {
-          setBabyId(babies[0]._id);
-          const plan = await getNutritionPlan(babies[0]._id);
-          setNutritionPlan(plan);
-          if (plan?.weeklySchedule?.length) {
-            setPlanDayMap(buildDayMap(plan.weeklySchedule));
+        const subscriptions = await getSubscriptions();
+        // Find the first active subscription
+        const active = subscriptions.find(s => s.status === 'active') || null;
+        setActiveSubscription(active);
+        if (active?.deliverySchedule?.length) {
+          const map = buildDeliveryDayMap(active.deliverySchedule, active._id as string);
+          setPlanDayMap(map);
+          const sorted = Object.keys(map).sort();
+          if (sorted.length > 0 && !activeDay) {
+            setActiveDay(sorted[0]);
           }
         }
       } catch (err) {
-        console.error("Failed to load nutrition plan:", err);
+        console.error("Failed to load subscription:", err);
       } finally {
         setIsPlanLoading(false);
       }
     };
-    loadPlan();
-  }, [isAuthLoading, isAuthenticated]);
+    loadSubscription();
+  }, [isAuthLoading, isAuthenticated, viewMode]);
 
-  // Helper: build day map from weeklySchedule
-  const buildDayMap = (schedule: any[]): Record<string, Meal[]> => {
-    const dayMap: Record<string, Meal[]> = {};
-    schedule.forEach((slot: any) => {
-      if (slot.mealId && slot.day) {
-        if (!dayMap[slot.day]) dayMap[slot.day] = [];
-        dayMap[slot.day].push(slot.mealId as Meal);
-      }
+  // Helper: build day map from subscription deliverySchedule
+  // Groups deliveries by exact date string YYYY-MM-DD
+  const buildDeliveryDayMap = (schedule: NonNullable<Subscription['deliverySchedule']>, subId: string) => {
+    const dayMap: Record<string, { meal: Meal; scheduleId: string; timeSlot?: string; status: string; specialInstructions?: string; subscriptionId: string }[]> = {};
+    schedule.forEach((item) => {
+      if (!item.mealId) return;
+      const dateStr = formatDateStr(new Date(item.date));
+      if (!dayMap[dateStr]) dayMap[dateStr] = [];
+      dayMap[dateStr].push({
+        meal: item.mealId as Meal,
+        scheduleId: item._id,
+        timeSlot: item.timeSlot,
+        status: item.status,
+        specialInstructions: item.specialInstructions,
+        subscriptionId: subId
+      });
     });
     return dayMap;
   };
@@ -287,39 +301,58 @@ export default function MealPlansHub() {
     return () => observer.disconnect();
   }, [isMealPickerOpen, isPickerLoading, pickerHasMore]);
 
-  // Add meal to selected day
+  // Add meal to selected day → adds to Cart as a subscription order
   const handleAddMealToDay = async (meal: Meal) => {
-    if (!babyId) { toast.error('No baby profile found'); return; }
+    if (!isAuthenticated) {
+      toast("Please login to add meals", { icon: "🔒" });
+      router.push("/login");
+      return;
+    }
+    if (!activeDay) {
+      toast.error("Please select a valid date first.");
+      return;
+    }
     setIsSavingMeal(true);
     try {
-      const selectedDayName = FULL_DAY_NAMES[activeDay];
-      const updatedPlan = await addMealToSchedule(babyId, selectedDayName, meal._id);
-      if (updatedPlan) {
-        setNutritionPlan(updatedPlan);
-        setPlanDayMap(buildDayMap(updatedPlan.weeklySchedule));
-        toast.success(`${meal.name} added to ${selectedDayName}!`);
-      }
+      const selectedDateObj = new Date(activeDay);
+      const displayDate = selectedDateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+      await dispatch(addToCartAsync({
+        itemId: meal._id,
+        itemType: "meal",
+        subscriptionData: {
+          isSubscription: true,
+          deliveryDates: [activeDay], // send YYYY-MM-DD directly
+          timeSlot: "Lunch (12 PM - 1 PM)",
+          customizations: [],
+          specialInstructions: "",
+        }
+      })).unwrap();
+      toast.success(`${meal.name} added to cart for ${displayDate}! Complete checkout to confirm delivery.`, { duration: 4000 });
       setIsMealPickerOpen(false);
     } catch {
-      toast.error('Failed to add meal');
+      toast.error('Failed to add meal to cart');
     } finally {
       setIsSavingMeal(false);
     }
   };
 
-  // Remove meal from selected day
-  const handleRemoveMealFromDay = async (meal: Meal) => {
-    if (!babyId) return;
+  // Skip a delivery from an active subscription
+  const handleRemoveMealFromDay = async (entry: { meal: Meal; scheduleId: string; status: string }) => {
+    if (!activeSubscription?._id) return;
+    if (entry.status === 'delivered') {
+      toast("This meal has already been delivered and cannot be skipped.", { icon: "❌" });
+      return;
+    }
+
     try {
-      const selectedDayName = FULL_DAY_NAMES[activeDay];
-      const updatedPlan = await removeMealFromSchedule(babyId, selectedDayName, meal._id);
-      if (updatedPlan) {
-        setNutritionPlan(updatedPlan);
-        setPlanDayMap(buildDayMap(updatedPlan.weeklySchedule));
-        toast.success(`${meal.name} removed from ${selectedDayName}`);
-      }
+      const updatedSub = await skipMeal(activeSubscription._id as string, entry.scheduleId);
+      // Update local state completely using the returned subscription to reflect carry-forward date changes
+      setActiveSubscription(updatedSub);
+      setPlanDayMap(buildDeliveryDayMap(updatedSub.deliverySchedule, updatedSub._id as string));
+      toast.success(`Delivery for ${entry.meal.name} skipped.`);
     } catch {
-      toast.error('Failed to remove meal');
+      toast.error('Failed to skip delivery');
     }
   };
 
@@ -447,8 +480,8 @@ export default function MealPlansHub() {
                   key={i}
                   onClick={() => setActiveType(type)}
                   className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300 border ${isSelected
-                      ? 'border-[var(--color-primary)]/50 bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
-                      : 'bg-white border-gray-200 text-[#122B54] hover:bg-gray-50'
+                    ? 'border-[var(--color-primary)]/50 bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
+                    : 'bg-white border-gray-200 text-[#122B54] hover:bg-gray-50'
                     }`}
                 >
                   <Icon className={`w-4 h-4 ${isSelected ? 'text-[var(--color-primary)]' : colorClass}`} />
@@ -605,8 +638,8 @@ export default function MealPlansHub() {
           <button
             onClick={() => setViewMode("grid")}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs md:text-sm font-semibold transition-all duration-300 border ${viewMode === "grid"
-                ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)] shadow-md"
-                : "bg-white text-gray-500 border-gray-200 hover:border-[var(--color-primary)]/50"
+              ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)] shadow-md"
+              : "bg-white text-gray-500 border-gray-200 hover:border-[var(--color-primary)]/50"
               }`}
           >
             <LayoutGrid className="w-4 h-4 md:w-5 md:h-5" />
@@ -615,12 +648,12 @@ export default function MealPlansHub() {
           <button
             onClick={() => setViewMode("calendar")}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs md:text-sm font-semibold transition-all duration-300 border ${viewMode === "calendar"
-                ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)] shadow-md"
-                : "bg-white text-gray-500 border-gray-200 hover:border-[var(--color-primary)]/50"
+              ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)] shadow-md"
+              : "bg-white text-gray-500 border-gray-200 hover:border-[var(--color-primary)]/50"
               }`}
           >
             <CalendarIcon className="w-4 h-4 md:w-5 md:h-5" />
-            Weekly Calendar
+            My Schedule
           </button>
         </motion.div>
 
@@ -676,169 +709,16 @@ export default function MealPlansHub() {
 
           </motion.div>
         ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-8 md:mt-10 flex flex-col"
-          >
-            <h3 className="text-[18px] md:text-xl font-semibold text-black leading-tight mb-5 md:mb-6 px-1">
-              Weekly Meal Calendar <span className="text-[var(--color-primary)]">({activeAge})</span>
-            </h3>
-
-            <div className="flex gap-2 md:gap-3 overflow-x-auto no-scrollbar py-2 mb-8 md:mb-10">
-              {WEEK_DAYS.map((dayName, idx) => {
-                const isToday = idx === getTodayDayIndex();
-                const hasMeals = planDayMap[FULL_DAY_NAMES[idx]]?.length > 0;
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => setActiveDay(idx)}
-                    className={`relative px-4 md:px-6 py-2 md:py-2.5 rounded-lg text-xs md:text-sm font-semibold whitespace-nowrap transition-all ${activeDay === idx
-                        ? 'bg-[var(--color-primary)] text-white shadow-md'
-                        : 'bg-white border border-gray-200 text-gray-600 hover:border-[var(--color-primary)]/50'
-                      }`}
-                  >
-                    {dayName}
-                    {isToday && (
-                      <span className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ${activeDay === idx ? 'bg-white' : 'bg-[var(--color-primary)]'}`} />
-                    )}
-                    {hasMeals && activeDay !== idx && (
-                      <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-emerald-400" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Calendar Day View */}
-            {isPlanLoading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 md:gap-4">
-                {[1, 2, 3, 4, 5].map(i => (
-                  <div key={i} className="animate-pulse bg-white rounded-lg border border-gray-100 overflow-hidden">
-                    <div className="w-full h-28 bg-gray-100"></div>
-                    <div className="p-3 space-y-2">
-                      <div className="h-3 bg-gray-100 rounded w-1/2"></div>
-                      <div className="h-4 bg-gray-100 rounded w-3/4"></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (() => {
-              const selectedDayName = FULL_DAY_NAMES[activeDay];
-              const dayMeals = planDayMap[selectedDayName] || [];
-              const isEmpty = dayMeals.length === 0;
-
-              const MEAL_SLOTS = [
-                { type: "Breakfast", icon: Coffee, color: "text-amber-600" },
-                { type: "Snack", icon: Apple, color: "text-red-500" },
-                { type: "Lunch", icon: Utensils, color: "text-blue-500" },
-                { type: "Evening Snack", icon: Cookie, color: "text-purple-500" },
-                { type: "Dinner", icon: Soup, color: "text-emerald-600" },
-              ];
-
-              if (isEmpty && !nutritionPlan) {
-                return (
-                  <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
-                    <CalendarIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                    <p className="text-base font-semibold text-gray-500">No nutrition plan assigned yet</p>
-                    <p className="text-sm text-gray-400 mt-2 max-w-xs mx-auto">Click the '+' button below to start building your baby's weekly meal schedule!</p>
-
-                    <div className="mt-6 flex justify-center">
-                      <button
-                        onClick={handleOpenMealPicker}
-                        className="flex items-center gap-2 bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 text-white px-5 py-2.5 rounded-full text-sm font-semibold transition-colors"
-                      >
-                        <Plus className="w-4 h-4" /> Add First Meal
-                      </button>
-                    </div>
-                  </div>
-                );
-              }
-
-              if (isEmpty) {
-                return (
-                  <div className="text-center py-12 bg-[#F8FAFC] rounded-xl border border-gray-100">
-                    <Utensils className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                    <p className="text-[15px] font-semibold text-gray-600">No meals scheduled for {selectedDayName}</p>
-                    <p className="text-xs text-gray-400 mt-1 mb-5">Keep your baby's nutrition on track by adding meals.</p>
-                    <button
-                      onClick={handleOpenMealPicker}
-                      className="inline-flex items-center gap-1.5 bg-white border border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-white px-4 py-2 rounded-full text-sm font-semibold transition-colors"
-                    >
-                      <Plus className="w-4 h-4" /> Add Meal for {selectedDayName}
-                    </button>
-                  </div>
-                );
-              }
-
-              return (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 md:gap-4 pt-2">
-                  {dayMeals.map((meal, idx) => {
-                    const slot = MEAL_SLOTS[idx] || { type: "Meal", icon: Utensils, color: "text-gray-500" };
-                    const Icon = slot.icon;
-                    return (
-                      <div key={`${meal._id || 'meal'}-${idx}`} className="relative bg-white rounded-lg border border-gray-100 flex flex-col group overflow-hidden hover:border-[var(--color-primary)] transition-all duration-300">
-                        {/* Remove button */}
-                        <button
-                          onClick={() => handleRemoveMealFromDay(meal)}
-                          className="absolute top-1.5 left-1.5 z-10 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-red-600"
-                          title="Remove from schedule"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                        <div
-                          className="w-full h-28 md:h-32 relative bg-[#F8FAFC] border-b border-gray-100 overflow-hidden flex-shrink-0 cursor-pointer"
-                          onClick={() => handleCardClick(meal._id)}
-                        >
-                          {(meal?.imageUrl || (meal?.images && meal.images.length > 0)) ? (
-                            <Image
-                              src={(meal?.imageUrl || meal?.images?.[0]) as string}
-                              alt={meal?.name || slot.type}
-                              fill
-                              className="object-cover group-hover:scale-110 transition-transform duration-500"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
-                              <Utensils className="w-8 h-8 mb-1 opacity-50" />
-                              <span className="text-[9px] font-semibold">No Image</span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="p-2.5 md:p-3.5 flex flex-col flex-1">
-                          <div className="flex items-center gap-1.5 mb-1.5">
-                            <Icon className={`w-3.5 h-3.5 md:w-4 md:h-4 ${slot.color}`} strokeWidth={2.5} />
-                            <span className="text-[10px] md:text-[11px] font-extrabold text-black uppercase tracking-wider">{slot.type}</span>
-                          </div>
-                          <h4
-                            className="text-xs md:text-sm font-semibold text-[#122B54] leading-snug line-clamp-2 group-hover:text-[var(--color-primary)] transition-colors cursor-pointer"
-                            onClick={() => handleCardClick(meal._id)}
-                          >
-                            {meal?.name || "No meal assigned"}
-                          </h4>
-                          {meal.nutritionalInfo?.calories && (
-                            <p className="text-[10px] text-gray-400 mt-1">{meal.nutritionalInfo.calories} kcal</p>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  {/* Add Meal Card */}
-                  <button
-                    onClick={() => { setMealPickerQuery(""); setIsMealPickerOpen(true); }}
-                    className="flex flex-col items-center justify-center gap-2 bg-white rounded-lg border-2 border-dashed border-gray-200 hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 transition-all duration-300 min-h-[160px] group cursor-pointer"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-[var(--color-primary)]/10 flex items-center justify-center group-hover:bg-[var(--color-primary)]/20 transition-colors">
-                      <Plus className="w-5 h-5 text-[var(--color-primary)]" />
-                    </div>
-                    <span className="text-xs font-semibold text-gray-400 group-hover:text-[var(--color-primary)] transition-colors">
-                      Add another meal
-                    </span>
-                  </button>
-                </div>
-              );
-            })()}
-          </motion.div>
+          <MyMealSchedule
+            planDayMap={planDayMap}
+            activeDay={activeDay}
+            setActiveDay={setActiveDay}
+            isPlanLoading={isPlanLoading}
+            activeSubscription={activeSubscription}
+            handleOpenMealPicker={handleOpenMealPicker}
+            handleRemoveMealFromDay={handleRemoveMealFromDay}
+            setSelectedEntryDetail={setSelectedEntryDetail}
+          />
         )}
 
       </main>
@@ -913,7 +793,7 @@ export default function MealPlansHub() {
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                 <div>
                   <h3 className="text-lg font-bold text-gray-900">Add Meal</h3>
-                  <p className="text-xs text-gray-400 mt-0.5">For {FULL_DAY_NAMES[activeDay]}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">For {activeDay ? new Date(activeDay).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) : ''}</p>
                 </div>
                 <button
                   onClick={() => setIsMealPickerOpen(false)}
@@ -1001,6 +881,310 @@ export default function MealPlansHub() {
                     </div>
                   </>
                 )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Meal Details Bottom Drawer */}
+      <AnimatePresence>
+        {selectedEntryDetail && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => { setSelectedEntryDetail(null); setIsEditingInstructions(false); }}
+              className="fixed inset-0 bg-[#0F172A]/40 backdrop-blur-sm z-[110]"
+            />
+
+            {/* Container for alignment */}
+            <div className="fixed inset-0 z-[120] flex flex-col justify-end md:justify-center md:items-center pointer-events-none">
+              <motion.div
+                initial={{ y: "100%", opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: "100%", opacity: 0 }}
+                transition={{ type: "spring", damping: 28, stiffness: 300 }}
+                className="w-full md:max-w-2xl bg-white rounded-t-3xl md:rounded-3xl max-h-[85vh] md:max-h-[90vh] flex flex-col pointer-events-auto shadow-2xl overflow-hidden relative"
+              >
+                {/* Drag Handle (Mobile only) */}
+                <div className="flex justify-center pt-3 pb-2 md:hidden bg-white shrink-0">
+                  <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
+                </div>
+
+                {/* Scrollable Body */}
+                <div className="overflow-y-auto no-scrollbar flex-1 pb-10">
+                  {/* Image */}
+                  <div className="relative h-56 md:h-[340px] mx-4 md:mx-6 md:mt-6 rounded-2xl overflow-hidden bg-gray-100 mb-6 shadow-sm border border-gray-100/50">
+                    <Image
+                      src={selectedEntryDetail.meal?.imageUrl || selectedEntryDetail.meal?.images?.[0] || "/images/meal_food.png"}
+                      alt={selectedEntryDetail.meal?.name || "Meal"}
+                      fill
+                      className="object-cover"
+                    />
+                    <button
+                      onClick={() => { setSelectedEntryDetail(null); setIsEditingInstructions(false); }}
+                      className="absolute top-3 right-3 w-8 h-8 bg-black/40 hover:bg-black/60 transition-colors rounded-full flex items-center justify-center backdrop-blur-md"
+                    >
+                      <X className="w-4 h-4 text-white" />
+                    </button>
+                  </div>
+
+                  <div className="px-5 md:px-6 space-y-5">
+                    {/* Header: Time Slot & Status */}
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-1.5">
+                        <Utensils className="w-4 h-4 text-gray-400" strokeWidth={2.5} />
+                        <span className="text-[11px] font-extrabold text-gray-700 uppercase tracking-wider">
+                          {selectedEntryDetail.timeSlot ? selectedEntryDetail.timeSlot.split(' (')[0] : 'MEAL'}
+                        </span>
+                      </div>
+                      {(() => {
+                        const status = selectedEntryDetail.status;
+                        if (status === 'delivered') return <span className="text-[9px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full uppercase tracking-wide">✓ Delivered</span>;
+                        if (status === 'skipped') return <span className="text-[9px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full uppercase tracking-wide">⏭ Skipped</span>;
+                        if (status === 'ordered') return <span className="text-[9px] font-bold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full uppercase tracking-wide">📦 Ordered</span>;
+                        return <span className="text-[9px] font-bold bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full uppercase tracking-wide">⏳ Pending</span>;
+                      })()}
+                    </div>
+
+                    {/* Name */}
+                    <div className="flex items-start justify-between gap-4">
+                      <h2 className="text-xl font-bold text-gray-900 flex-1 leading-tight">{selectedEntryDetail.meal?.name}</h2>
+                    </div>
+
+                    {/* Tags */}
+                    <div className="flex flex-wrap gap-2">
+                      {selectedEntryDetail.meal?.category && (
+                        <span className="text-[10px] font-bold bg-[var(--color-primary)]/10 text-[var(--color-primary)] px-2.5 py-1 rounded-full uppercase tracking-wider">
+                          {selectedEntryDetail.meal.category}
+                        </span>
+                      )}
+                      {selectedEntryDetail.meal?.suitableForAgeGroup && (
+                        <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                          👶 {selectedEntryDetail.meal.suitableForAgeGroup}
+                        </span>
+                      )}
+                      {(selectedEntryDetail.meal?.tags || []).map((tag: string, i: number) => (
+                        <span key={i} className="text-[10px] font-bold bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Description */}
+                    {selectedEntryDetail.meal?.description && (
+                      <p className="text-gray-500 text-sm leading-relaxed font-medium">{selectedEntryDetail.meal.description}</p>
+                    )}
+
+                    {/* Special Instructions Section */}
+                    <div className="bg-white border-t border-gray-100 pt-5 mt-2">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                          <span className="text-lg">📝</span> Special Instructions
+                        </h3>
+                        {!isEditingInstructions && (
+                          <button
+                            onClick={() => {
+                              setInstructionsText(selectedEntryDetail.specialInstructions || "");
+                              setIsEditingInstructions(true);
+                            }}
+                            className="text-[11px] font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/10 hover:bg-[var(--color-primary)]/20 px-3 py-1.5 rounded-full transition-colors"
+                          >
+                            {selectedEntryDetail.specialInstructions ? "Edit Note" : "+ Add Note"}
+                          </button>
+                        )}
+                      </div>
+
+                      {isEditingInstructions ? (
+                        <div className="flex flex-col gap-3">
+                          <textarea
+                            value={instructionsText}
+                            onChange={(e) => setInstructionsText(e.target.value)}
+                            placeholder="E.g. Less spicy, make it extra soft..."
+                            className="w-full text-sm p-3 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] resize-none"
+                            rows={2}
+                          />
+                          <div className="flex gap-2 justify-end">
+                            <button
+                              onClick={() => setIsEditingInstructions(false)}
+                              className="px-4 py-2 text-xs font-bold text-gray-500 hover:text-gray-700 transition-colors"
+                              disabled={isSavingInstructions}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={async () => {
+                                setIsSavingInstructions(true);
+                                try {
+                                  const sub = activeSubscription;
+                                  if (sub && sub.deliverySchedule) {
+                                    // Send to backend using the optimized instructions API
+                                    await updateMealInstructions(sub._id as string, selectedEntryDetail.scheduleId, instructionsText);
+
+                                    // Manually update local state to preserve populated meal objects
+                                    const localUpdatedSchedule = (sub.deliverySchedule || []).map(sch => {
+                                      if (sch._id === selectedEntryDetail.scheduleId) {
+                                        return { ...sch, specialInstructions: instructionsText };
+                                      }
+                                      return sch;
+                                    });
+                                    const localUpdatedSub = { ...sub, deliverySchedule: localUpdatedSchedule };
+
+                                    setActiveSubscription(localUpdatedSub);
+                                    setPlanDayMap(buildDeliveryDayMap(localUpdatedSchedule, sub._id as string));
+                                    setSelectedEntryDetail({ ...selectedEntryDetail, specialInstructions: instructionsText });
+                                    setIsEditingInstructions(false);
+                                    toast.success("Instructions saved successfully!");
+                                  }
+                                } catch (err: any) {
+                                  console.error("Failed to save instructions", err?.response?.data || err);
+                                  toast.error(`Failed to save instructions: ${err?.response?.data?.message || err.message}`);
+                                } finally {
+                                  setIsSavingInstructions(false);
+                                }
+                              }}
+                              className="px-4 py-2 text-xs font-bold bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary)]/90 rounded-full flex items-center gap-2 shadow-sm transition-colors"
+                              disabled={isSavingInstructions}
+                            >
+                              {isSavingInstructions ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                              Save Note
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-gray-50 rounded-xl p-3.5 border border-gray-100">
+                          <p className="text-xs text-gray-600 font-medium whitespace-pre-wrap leading-relaxed">
+                            {selectedEntryDetail.specialInstructions || <span className="text-gray-400 italic">No special instructions added for this meal.</span>}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Nutrition */}
+                    {selectedEntryDetail.meal?.nutritionalInfo && (
+                      <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4 md:p-5">
+                        <h3 className="text-sm font-bold text-gray-900 mb-3">Nutritional Info</h3>
+                        <div className="grid grid-cols-4 gap-2 text-center">
+                          {[
+                            { label: "Calories", value: `${selectedEntryDetail.meal.nutritionalInfo.calories || 0}`, unit: "kcal" },
+                            { label: "Protein", value: `${selectedEntryDetail.meal.nutritionalInfo.protein || 0}`, unit: "g" },
+                            { label: "Carbs", value: `${selectedEntryDetail.meal.nutritionalInfo.carbs || 0}`, unit: "g" },
+                            { label: "Fat", value: `${selectedEntryDetail.meal.nutritionalInfo.fat || 0}`, unit: "g" },
+                          ].map(({ label, value, unit }) => (
+                            <div key={label} className="bg-white rounded-xl p-2.5 border border-gray-100 shadow-sm">
+                              <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">{label}</p>
+                              <p className="text-base font-black text-gray-900 mt-1">{value}</p>
+                              <p className="text-[9px] text-gray-400 font-semibold">{unit}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Ingredients */}
+                    {selectedEntryDetail.meal?.ingredients && selectedEntryDetail.meal.ingredients.length > 0 && (
+                      <div>
+                        <h3 className="text-sm font-bold text-gray-900 mb-2.5">Ingredients</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedEntryDetail.meal.ingredients.map((ing: string, i: number) => (
+                            <span key={i} className="text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">
+                              <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                              {ing}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Allergens */}
+                    {selectedEntryDetail.meal?.allergens && selectedEntryDetail.meal.allergens.length > 0 && (
+                      <div className="bg-red-50 border border-red-100 rounded-2xl p-4 shadow-sm mt-4">
+                        <h3 className="text-sm font-bold text-red-800 mb-2">⚠️ Contains Allergens</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedEntryDetail.meal.allergens.map((a: string, i: number) => (
+                            <span key={i} className="text-[10px] font-black text-red-700 bg-red-100 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                              {a}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Action Buttons - Sticky Bottom */}
+                <div className="bg-white border-t border-gray-100 px-5 py-4 flex gap-3 shrink-0 rounded-b-3xl">
+                  {selectedEntryDetail.status !== 'skipped' && selectedEntryDetail.status !== 'delivered' && (
+                    <button
+                      onClick={() => setMealToSkip(selectedEntryDetail)}
+                      className="flex-1 h-12 rounded-xl bg-orange-50 text-orange-600 font-bold text-[14px] border-2 border-orange-100 hover:bg-orange-500 hover:text-white hover:border-orange-500 transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <X className="w-4 h-4" strokeWidth={2.5} />
+                      Skip Delivery
+                    </button>
+                  )}
+                  <button
+                    onClick={() => { setSelectedEntryDetail(null); setIsEditingInstructions(false); }}
+                    className="flex-1 h-12 rounded-xl border-2 border-gray-200 text-gray-600 font-bold text-[14px] hover:bg-gray-50 transition-colors flex items-center justify-center"
+                  >
+                    Close
+                  </button>
+                </div>
+
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Custom Skip Confirmation Modal */}
+      <AnimatePresence>
+        {mealToSkip && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMealToSkip(null)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[130]"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed inset-0 z-[140] flex items-center justify-center p-4 pointer-events-none"
+            >
+              <div className="bg-white rounded-3xl p-6 w-full max-w-sm pointer-events-auto shadow-2xl border border-gray-100">
+                <div className="w-12 h-12 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center mb-4 mx-auto">
+                  <AlertTriangle className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-bold text-center text-gray-900 mb-2">Skip this delivery?</h3>
+                <p className="text-center text-gray-500 text-sm mb-6 leading-relaxed">
+                  Are you sure you want to skip <span className="font-bold text-gray-700">{mealToSkip.meal?.name || "this meal"}</span>? 
+                  This delivery will be carried forward to the end of your subscription.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setMealToSkip(null)}
+                    className="flex-1 py-3.5 rounded-xl font-bold text-gray-600 bg-gray-50 hover:bg-gray-100 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={async () => {
+                      const m = mealToSkip;
+                      setMealToSkip(null);
+                      await handleRemoveMealFromDay(m);
+                      setSelectedEntryDetail(null);
+                      setIsEditingInstructions(false);
+                    }}
+                    className="flex-1 py-3.5 rounded-xl font-bold text-white bg-orange-500 hover:bg-orange-600 transition-colors shadow-sm shadow-orange-500/20"
+                  >
+                    Yes, Skip
+                  </button>
+                </div>
               </div>
             </motion.div>
           </>

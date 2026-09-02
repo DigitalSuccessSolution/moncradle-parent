@@ -9,6 +9,7 @@ import ReviewModal from "@/components/ui/ReviewModal";
 import CancelOrderModal from "@/components/ui/CancelOrderModal";
 import { getOrderById, cancelOrder } from "@/lib/api/ordersApi";
 import { checkHasReviewed, ReviewTargetType } from "@/lib/api/reviewsApi";
+import { getSocket } from "@/lib/socket";
 
 export default function OrderDetailPage() {
   const { orderId } = useParams();
@@ -35,6 +36,26 @@ export default function OrderDetailPage() {
   useEffect(() => {
     if (orderId) {
       fetchOrder();
+      
+      const socket = getSocket();
+      socket.emit('join_order_room', orderId);
+      
+      socket.on('driver_location', (data: any) => {
+        // Handle live location data (can be integrated with a Map component later)
+        console.log('Live Driver Location:', data);
+      });
+
+      socket.on('order_status_update', (data: any) => {
+         if(data.orderId === orderId) {
+            setOrder((prev: any) => prev ? { ...prev, status: data.status } : null);
+         }
+      });
+
+      return () => {
+        socket.off('driver_location');
+        socket.off('order_status_update');
+        // Do not call disconnectSocket() here because other pages might need it, just remove listeners
+      };
     }
   }, [orderId]);
 
@@ -299,6 +320,20 @@ export default function OrderDetailPage() {
           <h2 className="text-lg font-bold text-gray-900 mb-4">Payment Summary</h2>
           <div className="space-y-3 text-sm">
             <div className="flex justify-between text-gray-600">
+              <span>Payment Method</span>
+              <span className="font-bold text-gray-900 uppercase tracking-wide">{order.paymentMethod || 'cod'}</span>
+            </div>
+            <div className="flex justify-between text-gray-600">
+              <span>Payment Status</span>
+              {order.paymentStatus === 'paid' ? (
+                <span className="font-bold text-green-600 uppercase tracking-wide">Paid</span>
+              ) : order.paymentStatus === 'failed' ? (
+                <span className="font-bold text-red-600 uppercase tracking-wide">Failed</span>
+              ) : (
+                <span className="font-bold text-yellow-600 uppercase tracking-wide">Pending</span>
+              )}
+            </div>
+            <div className="pt-3 border-t border-gray-100 flex justify-between text-gray-600">
               <span>Item Total</span>
               <span className="font-medium flex items-center"><IndianRupee className="w-3 h-3" />{order.totalAmount}</span>
             </div>

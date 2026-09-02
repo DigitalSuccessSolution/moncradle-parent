@@ -5,7 +5,7 @@ import { useState } from "react";
 
 
 
-import {  ChevronLeft, User, Wallet, Lock, Globe, HelpCircle, FileText, LogOut, ChevronRight, MapPin , Bell } from "lucide-react";
+import {  ChevronLeft, User, Lock, Globe, HelpCircle, FileText, LogOut, ChevronRight, MapPin , Bell } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -92,26 +92,6 @@ export default function SettingsPage() {
             </div>
           </section>
 
-          {/* Payments & Wallet Section */}
-          <section>
-            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-2">Payments & Billing</h2>
-            <div className="space-y-1">
-              
-              <Link href="/wallet" className="flex items-center justify-between p-4 md:p-5 hover:bg-gray-50 rounded-xl transition-colors group">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
-                     <Wallet className="w-5 h-5 text-emerald-500 group-hover:text-emerald-600 transition-colors" />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="text-sm md:text-base font-semibold text-gray-900">My Wallet</h3>
-                    <p className="text-xs text-gray-500 font-semibold">View balance and transactions</p>
-                  </div>
-                </div>
-                <ChevronRight className="w-5 h-5 text-gray-300" />
-              </Link>
-              
-            </div>
-          </section>
 
           {/* Support Section */}
           <section>

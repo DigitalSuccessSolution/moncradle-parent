@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { usePathname, useRouter } from "next/navigation";
 import { requestForToken, setupMessageListener } from "@/lib/firebase";
 import toast from "react-hot-toast";
+import Cookies from "js-cookie";
 
 interface User {
   _id?: string;
@@ -39,7 +40,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const protectedRoutes = [
     "/growth", 
     "/nutrition", 
-    "/wallet", 
     "/account", 
     "/address",
     "/appointments", 
@@ -67,10 +67,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Check if user is already authenticated on mount
-    const savedToken = localStorage.getItem("token");
+    const savedToken = Cookies.get("token") || localStorage.getItem("token");
     const savedUser = localStorage.getItem("user");
 
     if (savedToken) {
+      Cookies.set("token", savedToken, { expires: 7, path: '/' });
       setToken(savedToken);
       setIsAuthenticated(true);
       if (savedUser) {
@@ -94,7 +95,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if ('Notification' in window) {
             requestForToken().then(fcmToken => {
               if (fcmToken) {
-                updateUserProfile({ fcmToken }).catch(console.error);
+                const savedFcmToken = localStorage.getItem("syncedFcmToken");
+                if (savedFcmToken !== fcmToken) {
+                  updateUserProfile({ fcmToken }).then(() => {
+                    localStorage.setItem("syncedFcmToken", fcmToken);
+                  }).catch(console.error);
+                }
               }
             }).catch(console.error);
           }
@@ -143,6 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [isAuthenticated, router]);
 
   const login = (newToken: string, newUser: User) => {
+    Cookies.set("token", newToken, { expires: 7, path: '/' });
     localStorage.setItem("token", newToken);
     localStorage.setItem("user", JSON.stringify(newUser));
     setToken(newToken);
@@ -162,7 +169,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if ('Notification' in window) {
           requestForToken().then(fcmToken => {
             if (fcmToken) {
-              updateUserProfile({ fcmToken }).catch(console.error);
+              const savedFcmToken = localStorage.getItem("syncedFcmToken");
+              if (savedFcmToken !== fcmToken) {
+                updateUserProfile({ fcmToken }).then(() => {
+                  localStorage.setItem("syncedFcmToken", fcmToken);
+                }).catch(console.error);
+              }
             }
           }).catch(console.error);
         }
@@ -171,6 +183,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    Cookies.remove("token", { path: '/' });
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("hasSetBabyProfile");

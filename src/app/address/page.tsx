@@ -2,33 +2,24 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {  ChevronLeft, MapPin, Plus, Edit2, Trash2, Home, Briefcase, Star, CheckCircle2, X , Bell } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Plus, Edit2, Trash2, Home, Briefcase, Bell, MoreVertical, Phone } from "lucide-react";
 import { getAddresses, addAddress, updateAddress, deleteAddress, Address } from "@/lib/api/addressesApi";
 import { Button } from "@/components/ui/Button";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import Swal from "sweetalert2";
 import { useAppSelector } from "@/store/hooks";
+import { AddressModal } from "@/components/address/AddressModal";
 
 export default function AddressPage() {
   const unreadNotificationsCount = useAppSelector(state => state.notifications.unreadCount);
   const router = useRouter();
-  const cartTotalCount = useAppSelector((state: any) => state.cart.totalCount);
 
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   const [showModal, setShowModal] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState<Partial<Address>>({
-    street: "",
-    city: "",
-    state: "",
-    zipCode: "",
-    country: "India",
-    isDefault: false
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingAddress, setEditingAddress] = useState<Address | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAddresses();
@@ -47,36 +38,19 @@ export default function AddressPage() {
 
   const handleOpenModal = (address?: Address) => {
     if (address) {
-      setIsEditing(true);
-      setEditingId(address._id);
-      setFormData({
-        street: address.street,
-        city: address.city,
-        state: address.state,
-        zipCode: address.zipCode,
-        country: address.country,
-        isDefault: address.isDefault
-      });
+      setEditingAddress(address);
     } else {
-      setIsEditing(false);
-      setEditingId(null);
-      setFormData({ street: "", city: "", state: "", zipCode: "", country: "India", isDefault: addresses.length === 0 });
+      setEditingAddress(null);
     }
     setShowModal(true);
   };
 
   const handleCloseModal = () => {
     setShowModal(false);
-    setFormData({ street: "", city: "", state: "", zipCode: "", country: "India", isDefault: false });
+    setEditingAddress(null);
   };
 
-  const handleSubmit = async () => {
-    if (!formData.street || !formData.city || !formData.state || !formData.zipCode) {
-      Swal.fire("Error", "Please fill in all required fields.", "error");
-      return;
-    }
-    
-    setIsSubmitting(true);
+  const handleSaveAddress = async (formData: Partial<Address>, isEditing: boolean, editingId: string | null) => {
     try {
       if (isEditing && editingId) {
         await updateAddress(editingId, formData);
@@ -90,8 +64,6 @@ export default function AddressPage() {
     } catch (err) {
       console.error(err);
       Swal.fire("Error", "Failed to save address", "error");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -129,20 +101,16 @@ export default function AddressPage() {
   return (
     <div className="min-h-screen bg-[var(--color-background)] font-sans pb-24 md:pb-0">
             
-      <main className="max-w-[1200px] mx-auto px-4 md:px-8 py-4 md:py-8 space-y-6">
+      <main className="max-w-[1200px] mx-auto px-4 md:px-8 py-4 md:py-8 space-y-4 md:space-y-6">
         
         {/* Mobile Back Header */}
-        <div className="md:hidden flex items-center justify-between px-4 py-3 -mx-4 -mt-4 sticky top-0 z-40 bg-white">
-          <div className="flex items-center gap-2">
+        <div className="md:hidden flex items-center justify-between px-4 py-3 -mx-4 -mt-4 sticky top-0 z-40 bg-white mb-4">
+          <div className="flex items-center">
             <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all">
               <ChevronLeft className="w-6 h-6" strokeWidth={2} />
             </button>
-            <h1 className="text-[17px] font-medium text-[#0F172A] ml-1">Addresses</h1>
+            <h1 className="text-[17px] font-semibold text-[#0F172A] ml-1">Saved Addresses</h1>
           </div>
-          
-          <button onClick={() => handleOpenModal()} className="p-2 text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 rounded-full transition-all">
-            <Plus className="w-5 h-5" />
-          </button>
         </div>
 
         {/* Desktop Navigation */}
@@ -171,17 +139,28 @@ export default function AddressPage() {
           </Button>
         </div>
 
-        {/* Mobile Add Button */}
+        {/* Mobile Add New Button (from screenshot) */}
         <div className="md:hidden">
-           <Button variant="primary" fullWidth onClick={() => handleOpenModal()} leftIcon={<Plus className="w-4 h-4"/>}>
-            Add New Address
-          </Button>
+          <button 
+            onClick={() => handleOpenModal()} 
+            className="w-full flex items-center justify-between p-3.5 rounded-xl border border-blue-100 bg-blue-50/50 hover:bg-blue-50 transition-colors"
+          >
+            <div className="flex items-center gap-2 text-[var(--color-primary)] font-bold text-[15px]">
+              <Plus className="w-5 h-5" strokeWidth={2.5} /> Add New
+            </div>
+            <ChevronRight className="w-5 h-5 text-[var(--color-primary)]" />
+          </button>
+        </div>
+
+        {/* Saved Addresses Title (from screenshot) */}
+        <div className="md:hidden pt-2">
+          <h2 className="text-[14px] font-bold text-gray-600 px-1">Saved addresses</h2>
         </div>
 
         {isLoading ? (
           <div className="text-center py-10 text-gray-400 font-medium">Loading addresses...</div>
         ) : addresses.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm">
+          <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm mt-4">
             <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
               <MapPin className="w-8 h-8 text-gray-300" />
             </div>
@@ -191,49 +170,63 @@ export default function AddressPage() {
         ) : (
           <div className="space-y-4">
             {addresses.map((address) => (
-              <div key={address._id} className={`bg-white p-5 md:p-6 rounded-2xl border transition-all duration-300 ${address.isDefault ? 'border-[var(--color-primary)] shadow-md ring-2 ring-[var(--color-primary)]/10' : 'border-gray-200 shadow-sm hover:border-gray-300'}`}>
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${address.isDefault ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary)]' : 'bg-gray-100 text-gray-500'}`}>
-                      <Home className="w-4 h-4" />
-                    </div>
-                    {address.isDefault && (
-                      <span className="text-[10px] bg-emerald-100 text-emerald-700 font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide">
-                        Default
-                      </span>
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => handleOpenModal(address)} className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => handleDelete(address._id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-          <div className="flex items-center gap-1">
-            <button onClick={() => router.push('/notifications')} className="relative p-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors cursor-pointer group">
-              <Bell className="w-6 h-6 text-gray-800 group-hover:text-black transition-colors" />
-              {unreadNotificationsCount > 0 && <span className="absolute top-1.5 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white shadow-sm"></span>}
-            </button>
-          </div>
-        </div>
+              <div key={address._id} className={`bg-white p-2.5 md:p-3.5 rounded-xl border transition-all duration-300 ${address.isDefault ? 'border-[var(--color-primary)] shadow-sm ring-1 ring-[var(--color-primary)]/10' : 'border-gray-200 shadow-sm hover:border-gray-300'}`}>
                 
-                <div className="mt-4">
-                  <p className="text-[15px] font-semibold text-gray-800 leading-relaxed">
-                    {address.street}
-                  </p>
-                  <p className="text-[15px] text-gray-600">
-                    {address.city}, {address.state} {address.zipCode}
-                  </p>
-                  <p className="text-[14px] text-gray-500 mt-1">
-                    {address.country}
-                  </p>
+                <div className="flex items-center gap-2.5">
+                  {/* Left Icon Box */}
+                  <div className="w-[42px] h-[42px] rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
+                    {address.title === "Work" ? <Briefcase className="w-4 h-4 text-gray-800" strokeWidth={1.5} /> : address.title === "Other" ? <MapPin className="w-4 h-4 text-gray-800" strokeWidth={1.5} /> : <Home className="w-4 h-4 text-gray-800" strokeWidth={1.5} />}
+                  </div>
+
+                  {/* Right Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-col py-1">
+                        <div className="flex items-center gap-2">
+                           <p className="text-[14px] font-bold text-gray-900 mb-0">{address.name}</p>
+                           {address.isDefault && <span className="text-[9px] bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-bold px-1.5 py-0.5 rounded uppercase">Default</span>}
+                        </div>
+                        <p className="text-[12px] text-gray-500 leading-tight mb-0.5 line-clamp-2 pr-2">
+                          {[address.flat, address.street, address.city, address.state, address.zipCode, address.country]
+                            .filter(Boolean)
+                            .join(", ")}
+                        </p>
+                        <div className="flex items-center gap-1.5 text-[12px] font-bold text-gray-700 mt-0.5">
+                          <Phone className="w-3 h-3 text-gray-500" />
+                          <span>{address.phone}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="relative flex-shrink-0 -mr-2">
+                        <button onClick={() => setOpenMenuId(openMenuId === address._id ? null : address._id)} className="p-1.5 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-colors">
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+                        {openMenuId === address._id && (
+                          <>
+                            <div className="fixed inset-0 z-10" onClick={() => setOpenMenuId(null)}></div>
+                            <div className="absolute right-0 top-10 mt-1 w-32 bg-white rounded-xl shadow-lg border border-gray-100 z-20 overflow-hidden py-1">
+                              <button 
+                                onClick={() => { handleOpenModal(address); setOpenMenuId(null); }} 
+                                className="w-full text-left px-4 py-2 text-[14px] font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                              >
+                                <Edit2 className="w-4 h-4" /> Edit
+                              </button>
+                              <button 
+                                onClick={() => { handleDelete(address._id); setOpenMenuId(null); }} 
+                                className="w-full text-left px-4 py-2 text-[14px] font-medium text-red-600 hover:bg-red-50 flex items-center gap-2"
+                              >
+                                <Trash2 className="w-4 h-4" /> Delete
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {!address.isDefault && (
-                  <div className="mt-5 pt-4 border-t border-gray-50">
+                  <div className="mt-4 pt-3 border-t border-gray-50 hidden md:block">
                     <button onClick={() => handleSetDefault(address._id)} className="text-sm font-semibold text-[var(--color-primary)] hover:opacity-80 transition-opacity">
                       Set as default
                     </button>
@@ -246,98 +239,13 @@ export default function AddressPage() {
 
       </main>
 
-      
-      {/* Address Modal */}
-      <AnimatePresence>
-        {showModal && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={handleCloseModal} />
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-              
-              <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-gray-50">
-                <h3 className="font-semibold text-gray-900 text-lg">
-                  {isEditing ? "Edit Address" : "Add New Address"}
-                </h3>
-                <button onClick={handleCloseModal} className="p-1.5 text-gray-400 hover:text-gray-800 hover:bg-gray-200 rounded-full transition-colors">
-                  <X className="w-5 h-5"/>
-                </button>
-              </div>
-              
-              <div className="p-5 md:p-6 space-y-5 overflow-y-auto">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Street Address *</label>
-                  <textarea 
-                    value={formData.street} 
-                    onChange={e => setFormData({...formData, street: e.target.value})} 
-                    className="w-full border border-gray-200 rounded-xl p-3 text-[15px] font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none resize-none min-h-[80px]"
-                    placeholder="House/Flat No, Building Name, Area"
-                  ></textarea>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">City *</label>
-                    <input 
-                      type="text" 
-                      value={formData.city} 
-                      onChange={e => setFormData({...formData, city: e.target.value})} 
-                      className="w-full border border-gray-200 rounded-xl p-3 text-[15px] font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">State *</label>
-                    <input 
-                      type="text" 
-                      value={formData.state} 
-                      onChange={e => setFormData({...formData, state: e.target.value})} 
-                      className="w-full border border-gray-200 rounded-xl p-3 text-[15px] font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Pincode *</label>
-                    <input 
-                      type="text" 
-                      value={formData.zipCode} 
-                      onChange={e => setFormData({...formData, zipCode: e.target.value})} 
-                      className="w-full border border-gray-200 rounded-xl p-3 text-[15px] font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Country</label>
-                    <input 
-                      type="text" 
-                      value={formData.country} 
-                      readOnly
-                      className="w-full border border-gray-200 rounded-xl p-3 text-[15px] font-medium bg-gray-50 text-gray-500 outline-none"
-                    />
-                  </div>
-                </div>
-
-                {!isEditing && (
-                  <label className="flex items-center gap-3 cursor-pointer p-3 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors mt-2">
-                    <input 
-                      type="checkbox" 
-                      checked={formData.isDefault}
-                      onChange={e => setFormData({...formData, isDefault: e.target.checked})}
-                      className="w-5 h-5 rounded text-[var(--color-primary)] focus:ring-[var(--color-primary)] border-gray-300 cursor-pointer"
-                    />
-                    <span className="text-sm font-semibold text-gray-700">Set as default address</span>
-                  </label>
-                )}
-              </div>
-
-              <div className="p-5 border-t border-gray-100 bg-gray-50">
-                <Button variant="primary" fullWidth onClick={handleSubmit} disabled={isSubmitting}>
-                  {isSubmitting ? "Saving..." : (isEditing ? "Update Address" : "Save Address")}
-                </Button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <AddressModal 
+        isOpen={showModal} 
+        onClose={handleCloseModal} 
+        onSave={handleSaveAddress} 
+        initialData={editingAddress} 
+        isFirstAddress={addresses.length === 0}
+      />
 
     </div>
   );

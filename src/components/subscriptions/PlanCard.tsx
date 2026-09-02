@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { CalendarDays, Check, ChevronRight, Star } from "lucide-react";
 import { SubscriptionPlan } from "@/lib/api/subscriptionsApi";
+import { useRouter } from "next/navigation";
 
 interface PlanCardProps {
   plan: SubscriptionPlan;
@@ -10,6 +11,7 @@ interface PlanCardProps {
 }
 
 export default function PlanCard({ plan, index }: PlanCardProps) {
+  const router = useRouter();
   const isPopular = index === 1 || plan.title?.toLowerCase().includes("month");
 
   return (
@@ -49,43 +51,25 @@ export default function PlanCard({ plan, index }: PlanCardProps) {
           }`}
         >
           <CalendarDays
-            className={`w-5 h-5 ${
-              isPopular ? "text-white" : "text-[var(--color-primary)]"
-            }`}
+            className={`w-5 h-5 ${isPopular ? "text-white" : "text-[var(--color-primary)]"}`}
             strokeWidth={1.5}
           />
         </div>
 
         {/* Title & description */}
-        <h3
-          className={`text-lg md:text-xl font-semibold mb-1.5 ${
-            isPopular ? "text-white" : "text-gray-900"
-          }`}
-        >
+        <h3 className={`text-lg md:text-xl font-semibold mb-1.5 ${isPopular ? "text-white" : "text-gray-900"}`}>
           {plan.title}
         </h3>
-        <p
-          className={`text-[13px] md:text-[15px] leading-relaxed mb-5 min-h-[36px] ${
-            isPopular ? "text-white/70" : "text-gray-500"
-          }`}
-        >
+        <p className={`text-[13px] md:text-[15px] leading-relaxed mb-5 min-h-[36px] ${isPopular ? "text-white/70" : "text-gray-500"}`}>
           {plan.description}
         </p>
 
         {/* Price */}
         <div className="flex items-baseline gap-1.5 mb-6">
-          <span
-            className={`text-3xl md:text-4xl font-bold ${
-              isPopular ? "text-white" : "text-gray-900"
-            }`}
-          >
+          <span className={`text-3xl md:text-4xl font-bold ${isPopular ? "text-white" : "text-gray-900"}`}>
             ₹{plan.price}
           </span>
-          <span
-            className={`text-sm md:text-base font-medium ${
-              isPopular ? "text-white/60" : "text-gray-400"
-            }`}
-          >
+          <span className={`text-sm md:text-base font-medium ${isPopular ? "text-white/60" : "text-gray-400"}`}>
             / {plan.durationInDays} days
           </span>
         </div>
@@ -104,11 +88,7 @@ export default function PlanCard({ plan, index }: PlanCardProps) {
                 >
                   <Check className="w-3 h-3 stroke-[3]" />
                 </div>
-                <span
-                  className={`text-[13px] md:text-[15px] font-medium leading-relaxed ${
-                    isPopular ? "text-white/90" : "text-gray-700"
-                  }`}
-                >
+                <span className={`text-[13px] md:text-[15px] font-medium leading-relaxed ${isPopular ? "text-white/90" : "text-gray-700"}`}>
                   {feature}
                 </span>
               </li>
@@ -116,15 +96,16 @@ export default function PlanCard({ plan, index }: PlanCardProps) {
           </ul>
         </div>
 
-        {/* CTA */}
+        {/* CTA → goes to proper multi-step subscription page */}
         <button
+          onClick={() => router.push(`/subscriptions/new?planId=${plan._id}`)}
           className={`w-full font-semibold text-[14px] md:text-[16px] py-3 md:py-3.5 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer ${
             isPopular
               ? "bg-white text-[var(--color-primary)] hover:bg-white/90"
               : "bg-[var(--color-primary)] text-white hover:opacity-90"
           }`}
         >
-          Subscribe Now
+          Select Meals
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>

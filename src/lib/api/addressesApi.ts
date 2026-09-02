@@ -4,13 +4,19 @@ export interface Address {
   _id: string;
   userId: string;
   title: string;
+  name: string;
+  flat?: string;
   street: string;
   city: string;
   state: string;
   zipCode: string;
   country: string;
   isDefault: boolean;
-  phone?: string;
+  phone: string;
+  location?: {
+    type: 'Point';
+    coordinates: number[]; // [longitude, latitude]
+  };
 }
 
 /** GET /api/addresses — fetch current user's addresses */

@@ -105,7 +105,7 @@ export default function HelpSupportPage() {
     
     const fetchDynamicFaqs = async () => {
       const allFaqs = await getFaqs('parent');
-      setFaqs(allFaqs.filter(f => f.category === 'general'));
+      setFaqs(allFaqs);
     };
     fetchDynamicFaqs();
   }, []);

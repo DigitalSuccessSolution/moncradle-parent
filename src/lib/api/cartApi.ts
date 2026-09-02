@@ -22,6 +22,11 @@ export interface CartItem {
   };
   quantity: number;
   priceAtAddition: number;
+  isSubscription?: boolean;
+  deliveryDates?: string[];
+  timeSlot?: string;
+  customizations?: string[];
+  specialInstructions?: string;
 }
 
 export interface Cart {
@@ -38,9 +43,25 @@ export async function getCart(): Promise<Cart> {
 }
 
 /** POST /api/cart — add item to cart */
-export async function addToCart(itemId: string, itemType: "product" | "meal" = "product", quantity = 1): Promise<Cart> {
-  const response = await apiClient.post("/cart", { itemId, itemType, quantity });
-  return response.data.data;
+export async function addToCart(
+  itemId: string, 
+  itemType: "product" | "meal" = "product", 
+  quantity = 1,
+  subscriptionData?: {
+    isSubscription: boolean;
+    deliveryDates: string[];
+    timeSlot: string;
+    customizations: string[];
+    specialInstructions: string;
+  }
+): Promise<Cart> {
+  try {
+    const payload = { itemId, itemType, quantity, ...subscriptionData };
+    const response = await apiClient.post("/cart", payload);
+    return response.data.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || "Failed to add to cart");
+  }
 }
 
 /** DELETE /api/cart/:itemId — remove single item */
@@ -51,8 +72,12 @@ export async function removeFromCart(itemId: string): Promise<Cart> {
 
 /** PATCH /api/cart/:itemId — update quantity */
 export async function updateCartQuantity(itemId: string, quantity: number): Promise<Cart> {
-  const response = await apiClient.patch(`/cart/${itemId}`, { quantity });
-  return response.data.data;
+  try {
+    const response = await apiClient.patch(`/cart/${itemId}`, { quantity });
+    return response.data.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || "Failed to update quantity");
+  }
 }
 
 /** DELETE /api/cart — clear entire cart */

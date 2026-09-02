@@ -14,6 +14,8 @@ import { useAppSelector } from "@/store/hooks";
 import { useAuth } from "@/context/AuthContext";
 import toast from "react-hot-toast";
 
+const indianStates = ["All India", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Delhi", "Chandigarh"];
+
 export default function DoctorPage() {
   const unreadNotificationsCount = useAppSelector(state => state.notifications.unreadCount);
   const router = useRouter();
@@ -23,6 +25,10 @@ export default function DoctorPage() {
   const [doctors, setDoctors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("All Specialists");
+
+  const [selectedLocation, setSelectedLocation] = useState<string>("All India");
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [isLocationInitialized, setIsLocationInitialized] = useState(false);
 
   const filteredDoctors = doctors.filter(doc => {
     if (activeCategory === "All Specialists") return true;
@@ -42,9 +48,41 @@ export default function DoctorPage() {
   const dynamicCategories = ["All Specialists", ...Array.from(new Set(doctors.map(doc => doc.spec).filter(Boolean)))];
 
   useEffect(() => {
+    if (isAuthLoading) return;
+    
+    if (isAuthenticated) {
+       import("@/lib/api/addressesApi").then(({ getAddresses }) => {
+          getAddresses().then(addresses => {
+             if (addresses && addresses.length > 0) {
+               const defaultAddress = addresses.find((a: any) => a.isDefault) || addresses[0];
+               if (defaultAddress && defaultAddress.state) {
+                 setSelectedLocation(defaultAddress.state);
+               }
+             }
+             setIsLocationInitialized(true);
+          }).catch((e) => {
+             console.error("Failed to fetch user state for doctor filtering:", e);
+             setIsLocationInitialized(true);
+          });
+       });
+    } else {
+       setIsLocationInitialized(true);
+    }
+  }, [isAuthenticated, isAuthLoading]);
+
+
+  useEffect(() => {
+    if (!isLocationInitialized) return;
+
     const fetchDoctors = async () => {
+      setLoading(true);
       try {
-        const response = await apiClient.get('/doctors');
+        let stateQuery = "";
+        if (selectedLocation !== "All India") {
+           stateQuery = `?clinicAddress[regex]=${encodeURIComponent(selectedLocation)}&clinicAddress[options]=i`;
+        }
+        
+        const response = await apiClient.get('/doctors' + stateQuery);
         if (response.data.success) {
           const formattedDoctors = response.data.data.map((doc: any) => ({
             id: doc.user?._id || doc._id,
@@ -71,7 +109,7 @@ export default function DoctorPage() {
       }
     };
     fetchDoctors();
-  }, []);
+  }, [selectedLocation, isLocationInitialized]);
 
   useEffect(() => {
     if (selectedDoctor) {
@@ -106,16 +144,26 @@ export default function DoctorPage() {
       <main className="max-w-[1200px] mx-auto px-4 md:px-8 py-4 md:py-8 space-y-6">
 
         {/* Mobile Back Header */}
-        <div className="md:hidden flex items-center justify-between px-4 py-3 -mx-4 -mt-4 sticky top-0 z-40 bg-white mb-4">
-          <div className="flex items-center">
-            <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all">
-              <ChevronLeft className="w-6 h-6" strokeWidth={2} />
-            </button>
-            <h1 className="text-[17px] font-medium text-[#0F172A] ml-1">Find a Doctor</h1>
-          </div>
-          <div className="flex items-center gap-1">
-            <button onClick={() => router.push('/notifications')} className="relative p-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors cursor-pointer group">
-              <Bell className="w-6 h-6 text-gray-800 group-hover:text-black transition-colors" />
+        <div className="md:hidden px-4 py-3 -mx-4 -mt-4 sticky top-0 z-40 bg-white mb-4 shadow-sm border-b border-gray-100">
+          <div className="flex items-start justify-between">
+            <div className="flex flex-col">
+              <div className="flex items-center mt-0.5">
+                <button onClick={() => router.back()} className="p-1 -ml-1 rounded-full hover:bg-gray-100 active:scale-95 transition-all shrink-0">
+                  <ChevronLeft className="w-6 h-6" strokeWidth={2} />
+                </button>
+                <h1 className="text-[17px] font-semibold text-[#0F172A] ml-1">Find a Doctor</h1>
+              </div>
+              <button 
+                onClick={() => setShowLocationModal(true)} 
+                className="flex items-center gap-1 ml-8 mt-0.5 text-[12px] text-gray-500 hover:text-[var(--color-primary)] transition-colors text-left"
+              >
+                <MapPin className="w-3 h-3 text-[var(--color-primary)] shrink-0" />
+                <span className="truncate max-w-[180px] font-medium border-b border-dashed border-gray-300 pb-[1px]">{selectedLocation}</span>
+              </button>
+            </div>
+            
+            <button onClick={() => router.push('/notifications')} className="relative p-2 -mr-2 mt-0.5 rounded-full hover:bg-gray-100 transition-colors cursor-pointer shrink-0">
+              <Bell className="w-6 h-6 text-gray-800" />
               {unreadNotificationsCount > 0 && <span className="absolute top-1.5 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white shadow-sm"></span>}
             </button>
           </div>
@@ -143,7 +191,13 @@ export default function DoctorPage() {
           className="hidden md:flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4 px-1"
         >
           <div>
-            <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">Find a Doctor</h1>
+            <div className="flex items-center gap-4">
+              <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">Find a Doctor</h1>
+              <button onClick={() => setShowLocationModal(true)} className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200 transition-colors shadow-sm mt-1">
+                <MapPin className="w-4 h-4 text-[var(--color-primary)]" />
+                {selectedLocation}
+              </button>
+            </div>
             <p className="text-sm text-gray-500 font-medium mt-1">Book a clinic consultation with top pediatric specialists.</p>
           </div>
           <div className="bg-[var(--pastel-green)]/10 text-[var(--pastel-green)] px-4 py-2 rounded-xl font-semibold text-sm flex items-center gap-2 border shadow-sm" style={{ borderColor: 'var(--pastel-green)' }}>
@@ -328,6 +382,46 @@ export default function DoctorPage() {
                     Book Appointment
                   </Button>
                 </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Location Modal */}
+      <AnimatePresence>
+        {showLocationModal && (
+          <div className="fixed inset-0 z-[200] flex items-end md:items-center justify-center p-0 md:p-4">
+             <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => setShowLocationModal(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: "100%" }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: "100%" }}
+              transition={{ type: "tween", ease: [0.25, 1, 0.5, 1], duration: 0.3 }}
+              className="relative w-full md:max-w-sm bg-white rounded-t-3xl md:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+            >
+              <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-white sticky top-0 z-10">
+                <h2 className="text-lg font-semibold text-gray-900">Select Location</h2>
+                <button onClick={() => setShowLocationModal(false)} className="p-2 bg-gray-50 text-gray-500 rounded-full hover:bg-gray-100">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-4 overflow-y-auto space-y-1">
+                 {indianStates.map(state => (
+                    <button
+                      key={state}
+                      onClick={() => { setSelectedLocation(state); setShowLocationModal(false); }}
+                      className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-colors ${selectedLocation === state ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-gray-700 hover:bg-gray-50"}`}
+                    >
+                      {state}
+                    </button>
+                 ))}
               </div>
             </motion.div>
           </div>

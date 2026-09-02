@@ -172,6 +172,32 @@ export default function CartPage() {
                         ₹{getItemPrice(item)} each
                       </p>
 
+                      {/* Subscription Badges */}
+                      {item.isSubscription && (
+                        <div className="mt-2 space-y-1">
+                          <div className="flex flex-wrap gap-1">
+                            <span className="text-[10px] font-semibold bg-[var(--color-primary)]/10 text-[var(--color-primary)] px-2 py-0.5 rounded uppercase tracking-wider">
+                              Subscription
+                            </span>
+                            {item.timeSlot && (
+                              <span className="text-[10px] font-medium bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+                                {item.timeSlot}
+                              </span>
+                            )}
+                          </div>
+                          {item.deliveryDates && item.deliveryDates.length > 0 && (
+                            <p className="text-[11px] text-gray-500 font-medium line-clamp-1">
+                              Dates: {item.deliveryDates.length} days selected
+                            </p>
+                          )}
+                          {item.customizations && item.customizations.length > 0 && (
+                            <p className="text-[11px] text-gray-500 font-medium line-clamp-1">
+                              Custom: {item.customizations.join(', ')}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
                       <div className="flex items-center justify-between mt-auto pt-2">
                         <span className="text-base md:text-lg font-black text-[#122B54]">
                           ₹{getItemPrice(item) * item.quantity}

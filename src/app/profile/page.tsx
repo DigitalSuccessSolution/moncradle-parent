@@ -10,9 +10,9 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { getUserProfile, UserProfile } from "@/lib/api/usersApi";
-import { getAddresses, Address } from "@/lib/api/addressesApi";
+import { getAddresses, addAddress, updateAddress, Address } from "@/lib/api/addressesApi";
 import { getBabies, BabyProfile } from "@/lib/api/babiesApi";
-import { AddressModal } from "@/components/AddressModal";
+import { AddressModal } from "@/components/address/AddressModal";
 
 export default function ProfilePage() {
   const unreadNotificationsCount = useAppSelector(state => state.notifications.unreadCount);
@@ -50,12 +50,16 @@ export default function ProfilePage() {
     fetchData();
   }, []);
 
-  const handleAddressSuccess = (savedAddress: Address, isEdit: boolean) => {
-    if (isEdit) {
+  const handleSaveAddress = async (formData: Partial<Address>, isEditing: boolean, editingId: string | null) => {
+    let savedAddress: Address;
+    if (isEditing && editingId) {
+      savedAddress = await updateAddress(editingId, formData);
       setAddresses(addresses.map(a => a._id === savedAddress._id ? savedAddress : a));
     } else {
+      savedAddress = await addAddress(formData);
       setAddresses([...addresses, savedAddress]);
     }
+    setIsAddressModalOpen(false);
   };
 
   const handleEditClick = (e: React.MouseEvent, addr: Address) => {
@@ -220,8 +224,9 @@ export default function ProfilePage() {
       <AddressModal
         isOpen={isAddressModalOpen}
         onClose={() => setIsAddressModalOpen(false)}
-        onSuccess={handleAddressSuccess}
-        editingAddress={editingAddress}
+        onSave={handleSaveAddress}
+        initialData={editingAddress}
+        isFirstAddress={addresses.length === 0}
       />
     </div>
   );

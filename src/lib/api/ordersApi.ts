@@ -6,6 +6,11 @@ export interface OrderItem {
   mealId?: string;
   quantity: number;
   priceAtAddition: number;
+  isSubscription?: boolean;
+  deliveryDates?: string[];
+  timeSlot?: string;
+  customizations?: string[];
+  specialInstructions?: string;
 }
 
 export interface CreateOrderPayload {
@@ -18,6 +23,7 @@ export interface CreateOrderPayload {
   };
   specialInstructions?: string;
   couponCode?: string;
+  paymentMethod?: string;
 }
 
 /** POST /api/orders — create a new order */

@@ -19,6 +19,7 @@ export interface ProductCardProps {
     img: string;
     rating: number;
     reviews: number;
+    stockQuantity?: number;
   };
   variants?: Variants;
   cartQuantity?: number;
@@ -142,7 +143,14 @@ export function ProductCard({
 
         {/* Add to Cart — stopPropagation here prevents card navigation */}
         <div onClick={(e) => e.stopPropagation()} className="mt-1 flex justify-center">
-          {cartQuantity > 0 ? (
+          {product.stockQuantity === 0 ? (
+            <button
+              disabled
+              className="w-[85%] h-[36px] flex items-center justify-center gap-1.5 bg-gray-300 text-gray-500 text-[11px] font-semibold rounded-2xl cursor-not-allowed"
+            >
+              Out of Stock
+            </button>
+          ) : cartQuantity > 0 ? (
             <div
               onClick={() => router.push(`/shop/cart`)}
               className="w-[85%] h-[36px] flex items-center justify-center bg-[#8A84C8] text-white rounded-2xl cursor-pointer hover:bg-[#7a74b8] transition-colors"
