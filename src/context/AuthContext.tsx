@@ -38,17 +38,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // List of routes that require authentication
   const protectedRoutes = [
-    "/growth", 
-    "/nutrition", 
-    "/account", 
+    "/account",
     "/address",
-    "/appointments", 
-    "/baby-profile", 
-    "/health-records", 
-    "/orders", 
-    "/profile", 
-    "/settings", 
-    "/subscriptions", 
+    "/appointments",
+    "/baby-profile",
+    "/health-records",
+    "/orders",
+    "/profile",
+    "/settings",
+    "/subscriptions",
     "/notifications",
     "/shop/cart",
     "/shop/wishlist",
@@ -113,7 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Listen for foreground push notifications
   useEffect(() => {
     let unsubscribe: any;
-    
+
     if (isAuthenticated) {
       setupMessageListener((payload) => {
         const title = payload.notification?.title || "New Notification";
@@ -121,12 +119,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           body: payload.notification?.body || "",
           icon: '/moncradle-icon.png',
         };
-        
+
         // Show native browser notification even when app is open
         if ('Notification' in window && Notification.permission === 'granted') {
           const notification = new Notification(title, options);
-          
-          notification.onclick = function() {
+
+          notification.onclick = function () {
             window.focus();
             if (payload.data?.url) {
               router.push(payload.data.url);
@@ -164,7 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(userData);
           localStorage.setItem("user", JSON.stringify(userData));
         });
-        
+
         // Prompt for notification permission automatically after login
         if ('Notification' in window) {
           requestForToken().then(fcmToken => {

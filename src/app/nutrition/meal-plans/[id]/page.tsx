@@ -86,7 +86,7 @@ export default function MealDetailPage() {
       return;
     }
     if (!meal) return;
-    
+
     const cartData = {
       isSubscription: false,
       specialInstructions
@@ -99,8 +99,8 @@ export default function MealDetailPage() {
     }))
       .unwrap()
       .then(() => {
-         toast.success("Added to cart!");
-         setSpecialInstructions("");
+        toast.success("Added to cart!");
+        setSpecialInstructions("");
       })
       .catch((err: any) => toast.error(err.message || "Failed to add to cart"));
   };
@@ -164,10 +164,12 @@ export default function MealDetailPage() {
         {/* Mobile Back Header */}
         <div className="md:hidden flex items-center justify-between px-4 py-3 -mx-4 -mt-4 sticky top-0 z-40 bg-white">
           <div className="flex items-center gap-2">
-            <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all">
+            <Link href="/nutrition/meal-plans" className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all flex items-center justify-center">
               <ChevronLeft className="w-6 h-6" strokeWidth={2} />
-            </button>
-            <h1 className="text-[17px] font-medium text-[#0F172A] ml-1">Back</h1>
+            </Link>
+            <Link href="/nutrition/meal-plans" className="text-[17px] font-medium text-[#0F172A] ml-1">
+              Back
+            </Link>
           </div>
           <button onClick={() => router.push('/shop/cart')} className="relative text-[#0F172A] active:scale-95 transition-transform mr-1">
             <ShoppingCart className="w-6 h-6" strokeWidth={2} />
@@ -186,13 +188,13 @@ export default function MealDetailPage() {
           animate={{ opacity: 1, x: 0 }}
           className="hidden md:flex items-center mb-2 -ml-3 md:ml-0"
         >
-          <button
-            onClick={() => router.back()}
+          <Link
+            href="/nutrition/meal-plans"
             className="flex items-center gap-1 px-3 py-2 rounded-full text-gray-700 hover:bg-gray-100 hover:text-[var(--color-primary)] transition-colors"
           >
             <ChevronLeft className="w-6 h-6" />
-            <span className="font-semibold text-[15px]">Back</span>
-          </button>
+            <span className="font-semibold text-[15px]">Back to Meal Plans</span>
+          </Link>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 mt-0 md:mt-6">
@@ -410,14 +412,14 @@ export default function MealDetailPage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                 <h3 className="font-semibold text-gray-900 text-lg">Order Type</h3>
                 <div className="flex items-center w-full sm:w-auto gap-1 sm:gap-2 bg-gray-100 p-1 rounded-full">
-                  <button 
-                    onClick={() => setIsSubscription(false)} 
+                  <button
+                    onClick={() => setIsSubscription(false)}
                     className={`flex-1 sm:flex-none px-4 py-2 sm:py-1.5 rounded-full text-sm font-semibold transition-all ${!isSubscription ? 'bg-white text-[var(--color-primary)] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                   >
                     One-time
                   </button>
-                  <button 
-                    onClick={() => setIsSubscription(true)} 
+                  <button
+                    onClick={() => setIsSubscription(true)}
                     className={`flex-1 sm:flex-none px-4 py-2 sm:py-1.5 rounded-full text-sm font-semibold transition-all ${isSubscription ? 'bg-white text-[var(--color-primary)] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                   >
                     Subscribe
@@ -433,7 +435,7 @@ export default function MealDetailPage() {
                     <p className="text-xs text-gray-600 mb-4">
                       Get this and many other nutritious meals delivered regularly with our curated subscription plans.
                     </p>
-                    <button 
+                    <button
                       onClick={() => router.push('/subscriptions')}
                       className="bg-[var(--color-primary)] text-white text-sm font-semibold px-6 py-2.5 rounded-full hover:shadow-md transition-all active:scale-95"
                     >
@@ -444,7 +446,7 @@ export default function MealDetailPage() {
               ) : (
                 <div className="mb-5 animate-in slide-in-from-top-2 fade-in duration-300">
                   <h4 className="text-sm font-semibold text-gray-700 mb-2">Special Instructions</h4>
-                  <textarea 
+                  <textarea
                     value={specialInstructions}
                     onChange={(e) => setSpecialInstructions(e.target.value)}
                     placeholder="E.g., Please make it extra soft..."
@@ -528,8 +530,6 @@ export default function MealDetailPage() {
           </div>
         </div>
       )}
-
-
     </div>
   );
 }

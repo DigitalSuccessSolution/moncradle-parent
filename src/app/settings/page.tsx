@@ -27,7 +27,7 @@ export default function SettingsPage() {
             <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all">
               <ChevronLeft className="w-6 h-6" strokeWidth={2} />
             </button>
-            <h1 className="text-[17px] font-semibold text-[#0F172A] ml-1">Settings</h1>
+            <h1 className="text-[17px] font-normal text-black ml-1">Settings</h1>
           </div>
           <div className="flex items-center gap-1">
             <button onClick={() => router.push('/notifications')} className="relative p-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors cursor-pointer group">
@@ -54,8 +54,10 @@ export default function SettingsPage() {
 
         {/* Page Header */}
         <div className="hidden md:flex flex-col mb-4">
-          <h1 className="text-2xl md:text-3xl font-semibold text-gray-900 px-1">Settings</h1>
-          <p className="text-sm text-gray-500 font-semibold mt-1 px-1">Manage your account preferences and app configurations.</p>
+          <h1 className="text-2xl md:text-3xl font-normal text-black tracking-tight leading-tight px-1">
+            Settings
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-500 font-light mt-1 leading-relaxed px-1">Manage your account preferences, delivery addresses, and support options.</p>
         </div>
 
         <div className="space-y-6">
@@ -70,8 +72,8 @@ export default function SettingsPage() {
                      <User className="w-5 h-5 text-blue-500 group-hover:text-[var(--color-primary)] transition-colors" />
                   </div>
                   <div>
-                    <h3 className="text-sm md:text-base font-semibold text-gray-900">Personal Information</h3>
-                    <p className="text-xs text-gray-500 font-semibold">Update your name, email, and phone</p>
+                    <h3 className="text-sm md:text-base font-normal text-black">Personal Information</h3>
+                    <p className="text-xs text-gray-500 font-light">Update your name, email, and phone</p>
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-gray-300" />
@@ -83,8 +85,8 @@ export default function SettingsPage() {
                      <MapPin className="w-5 h-5 text-indigo-500 group-hover:text-[var(--color-primary)] transition-colors" />
                   </div>
                   <div>
-                    <h3 className="text-sm md:text-base font-semibold text-gray-900">Manage Addresses</h3>
-                    <p className="text-xs text-gray-500 font-semibold">Delivery addresses for meal plans</p>
+                    <h3 className="text-sm md:text-base font-normal text-black">Manage Addresses</h3>
+                    <p className="text-xs text-gray-500 font-light">Delivery addresses for meal plans</p>
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-gray-300" />
@@ -104,8 +106,8 @@ export default function SettingsPage() {
                      <HelpCircle className="w-5 h-5 text-gray-600 group-hover:text-[var(--color-primary)] transition-colors" />
                   </div>
                   <div className="text-left">
-                    <h3 className="text-sm md:text-base font-semibold text-gray-900">Help Center</h3>
-                    <p className="text-xs text-gray-500 font-semibold">FAQs and customer support</p>
+                    <h3 className="text-sm md:text-base font-normal text-black">Help Center</h3>
+                    <p className="text-xs text-gray-500 font-light">FAQs and customer support</p>
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-gray-300" />
@@ -117,8 +119,8 @@ export default function SettingsPage() {
                      <FileText className="w-5 h-5 text-gray-600 group-hover:text-[var(--color-primary)] transition-colors" />
                   </div>
                   <div className="text-left">
-                    <h3 className="text-sm md:text-base font-semibold text-gray-900">Privacy Policy & Terms</h3>
-                    <p className="text-xs text-gray-500 font-semibold">Legal information</p>
+                    <h3 className="text-sm md:text-base font-normal text-black">Privacy Policy & Terms</h3>
+                    <p className="text-xs text-gray-500 font-light">Legal information</p>
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-gray-300" />

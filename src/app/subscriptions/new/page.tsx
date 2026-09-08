@@ -205,7 +205,7 @@ export default function NewSubscriptionPage() {
 
       // Handle Online Payment
       if (activePayment === 'upi' || activePayment === 'card') {
-        const paymentRes = await initiatePayment({ subscriptionId: res._id || res.data?._id });
+        const paymentRes = await initiatePayment({ subscriptionId: res._id as string });
         if (paymentRes.success && paymentRes.redirectUrl) {
           window.location.href = paymentRes.redirectUrl;
           return;
@@ -431,13 +431,20 @@ export default function NewSubscriptionPage() {
                       {/* Scrollable Body */}
                       <div className="overflow-y-auto hide-scroll flex-1 pb-6">
                         {/* Image */}
-                        <div className="relative h-56 md:h-[340px] mx-4 md:mx-6 md:mt-6 rounded-2xl overflow-hidden bg-gray-100 mb-6 shadow-sm border border-gray-100/50">
-                          <Image
-                            src={mealDetail.imageUrl || mealDetail.images?.[0] || "/images/meal_food.png"}
-                            alt={mealDetail.name}
-                            fill
-                            className="object-cover"
-                          />
+                        <div className="relative h-56 md:h-[340px] mx-4 md:mx-6 md:mt-6 rounded-2xl overflow-hidden bg-gray-100 mb-6 shadow-sm border border-gray-100/50 flex items-center justify-center">
+                          {(mealDetail.imageUrl || mealDetail.images?.[0]) ? (
+                            <Image
+                              src={(mealDetail.imageUrl || mealDetail.images?.[0]) as string}
+                              alt={mealDetail.name}
+                              fill
+                              className="object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50">
+                              <Utensils className="w-12 h-12 mb-2 text-gray-300" />
+                              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Fresh Meal</span>
+                            </div>
+                          )}
                           <button
                             onClick={() => setMealDetail(null)}
                             className="absolute top-3 right-3 w-8 h-8 bg-black/40 hover:bg-black/60 transition-colors rounded-full flex items-center justify-center backdrop-blur-md"
@@ -600,8 +607,12 @@ export default function NewSubscriptionPage() {
                             {dayMeals.map(item => (
                               <div key={item.id} className="flex items-center justify-between bg-gray-50 p-2 rounded-xl border border-gray-100">
                                 <div className="flex items-center gap-2">
-                                  <div className="w-10 h-10 rounded-lg overflow-hidden relative bg-gray-200 shrink-0">
-                                    <Image src={item.meal.imageUrl || item.meal.images?.[0] || '/images/meal_food.png'} alt={item.meal.name} fill className="object-cover" />
+                                  <div className="w-10 h-10 rounded-lg overflow-hidden relative bg-gray-100 shrink-0 flex items-center justify-center">
+                                    {(item.meal.imageUrl || item.meal.images?.[0]) ? (
+                                      <Image src={(item.meal.imageUrl || item.meal.images?.[0]) as string} alt={item.meal.name} fill className="object-cover" />
+                                    ) : (
+                                      <Utensils className="w-5 h-5 text-gray-400" />
+                                    )}
                                   </div>
                                   <div className="min-w-0">
                                     <p className="text-xs font-bold text-gray-900 truncate pr-2">{item.meal.name}</p>
@@ -659,8 +670,12 @@ export default function NewSubscriptionPage() {
                               onClick={() => setMealDetail(meal)}
                               className="text-left rounded-2xl border-2 border-gray-100 bg-white hover:border-gray-300 overflow-hidden transition-all duration-200"
                             >
-                              <div className="relative h-28 bg-gray-50">
-                                <Image src={meal.imageUrl || meal.images?.[0] || "/images/meal_food.png"} alt={meal.name} fill className="object-cover" />
+                              <div className="relative h-28 bg-gray-50 flex items-center justify-center">
+                                {(meal.imageUrl || meal.images?.[0]) ? (
+                                  <Image src={(meal.imageUrl || meal.images?.[0]) as string} alt={meal.name} fill className="object-cover" />
+                                ) : (
+                                  <Utensils className="w-8 h-8 text-gray-300" />
+                                )}
                                 <div className="absolute bottom-1.5 left-1.5">
                                   <span className="text-[10px] font-bold bg-black/60 text-white px-1.5 py-0.5 rounded-full">₹{meal.price}</span>
                                 </div>
@@ -884,8 +899,12 @@ export default function NewSubscriptionPage() {
                     <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
                       {customSchedule.length > 0 ? customSchedule.map(item => (
                         <div key={item.id} className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-lg overflow-hidden relative bg-gray-100 shrink-0">
-                            <Image src={item.meal.imageUrl || item.meal.images?.[0] || '/images/meal_food.png'} alt={item.meal.name} fill className="object-cover" />
+                          <div className="w-8 h-8 rounded-lg overflow-hidden relative bg-gray-100 shrink-0 flex items-center justify-center">
+                            {(item.meal.imageUrl || item.meal.images?.[0]) ? (
+                              <Image src={(item.meal.imageUrl || item.meal.images?.[0]) as string} alt={item.meal.name} fill className="object-cover" />
+                            ) : (
+                              <Utensils className="w-4 h-4 text-gray-400" />
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-bold text-gray-800 truncate">{item.meal.name}</p>

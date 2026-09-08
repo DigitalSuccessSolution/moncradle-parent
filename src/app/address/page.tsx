@@ -109,7 +109,7 @@ export default function AddressPage() {
             <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all">
               <ChevronLeft className="w-6 h-6" strokeWidth={2} />
             </button>
-            <h1 className="text-[17px] font-semibold text-[#0F172A] ml-1">Saved Addresses</h1>
+            <h1 className="text-[17px] font-normal text-black ml-1">Delivery Addresses</h1>
           </div>
         </div>
 
@@ -131,8 +131,10 @@ export default function AddressPage() {
         {/* Desktop Page Header */}
         <div className="hidden md:flex flex-row items-center justify-between mb-4 gap-4 px-1">
           <div>
-            <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">Address Book</h1>
-            <p className="text-sm text-gray-500 font-medium mt-1">Manage your delivery addresses for meal plans.</p>
+            <h1 className="text-2xl md:text-3xl font-normal text-black tracking-tight leading-tight">
+              Delivery Addresses
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-500 font-light mt-1 leading-relaxed">Manage your home and work delivery locations for meals & essentials.</p>
           </div>
           <Button variant="primary" onClick={() => handleOpenModal()} leftIcon={<Plus className="w-4 h-4"/>} className="hidden md:flex">
             Add New Address
@@ -154,7 +156,7 @@ export default function AddressPage() {
 
         {/* Saved Addresses Title (from screenshot) */}
         <div className="md:hidden pt-2">
-          <h2 className="text-[14px] font-bold text-gray-600 px-1">Saved addresses</h2>
+          <h2 className="text-[14px] font-normal text-gray-600 px-1">Saved Addresses</h2>
         </div>
 
         {isLoading ? (

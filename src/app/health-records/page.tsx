@@ -4,7 +4,7 @@ import { useAppSelector } from "@/store/hooks";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
 import { ChevronLeft, FileText, Bell, UploadCloud } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { getBabies } from "@/lib/api/babiesApi";
 import { getPrescriptions, Prescription } from "@/lib/api/healthRecordsApi";
@@ -15,14 +15,23 @@ import { UploadModal } from "./components/UploadModal";
 import { VaccinationsTab } from "./components/VaccinationsTab";
 import { PrescriptionsTab } from "./components/PrescriptionsTab";
 import { ReportsTab } from "./components/ReportsTab";
+import { calculateBabyAgeMonths } from "@/lib/utils/babyAge";
 
 export default function HealthRecordsPage() {
   const unreadNotificationsCount = useAppSelector(state => state.notifications.unreadCount);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedRecord, setSelectedRecord] = useState<Prescription | null>(null);
   const [records, setRecords] = useState<Prescription[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("Reports");
+  const [activeTab, setActiveTab] = useState(() => searchParams.get("tab") || "Reports");
+  
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam && ["Reports", "Prescriptions", "Vaccinations"].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
   
   // Upload State
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -32,6 +41,9 @@ export default function HealthRecordsPage() {
   const [babyId, setBabyId] = useState<string | null>(null);
   const [babyAgeMonths, setBabyAgeMonths] = useState<number>(0);
 
+  const [babiesList, setBabiesList] = useState<any[]>([]);
+  const [selectedBaby, setSelectedBaby] = useState<any>(null);
+
   const tabs = ["Reports", "Prescriptions", "Vaccinations"];
 
   const filteredRecords = records.filter(record => {
@@ -40,21 +52,23 @@ export default function HealthRecordsPage() {
     return true;
   });
 
+  // Load babies list
   useEffect(() => {
-    const fetchRecords = async () => {
+    const fetchBabiesAndRecords = async () => {
       try {
+        setIsLoading(true);
         const babyRes = await getBabies();
         const babies = babyRes.data || babyRes;
         if (babies && babies.length > 0) {
-          const bId = babies[0]._id;
-          setBabyId(bId);
-          if (babies[0].dateOfBirth) {
-            const dob = new Date(babies[0].dateOfBirth);
-            const now = new Date();
-            const months = (now.getFullYear() - dob.getFullYear()) * 12 + now.getMonth() - dob.getMonth();
-            setBabyAgeMonths(Math.max(0, months));
-          }
-          const presRes = await getPrescriptions(bId);
+          setBabiesList(babies);
+          const queryBabyId = searchParams.get("babyId");
+          const target = (queryBabyId && babies.find((b: any) => b._id === queryBabyId)) || babies[0];
+          setSelectedBaby(target);
+          setBabyId(target._id);
+
+          setBabyAgeMonths(calculateBabyAgeMonths(target.dateOfBirth, target.ageInMonths));
+
+          const presRes = await getPrescriptions(target._id);
           setRecords(presRes || []);
         }
       } catch (err) {
@@ -63,8 +77,23 @@ export default function HealthRecordsPage() {
         setIsLoading(false);
       }
     };
-    fetchRecords();
-  }, []);
+    fetchBabiesAndRecords();
+  }, [searchParams]);
+
+  const handleSelectBaby = async (b: any) => {
+    setSelectedBaby(b);
+    setBabyId(b._id);
+    setBabyAgeMonths(calculateBabyAgeMonths(b.dateOfBirth, b.ageInMonths));
+    try {
+      setIsLoading(true);
+      const presRes = await getPrescriptions(b._id);
+      setRecords(presRes || []);
+    } catch (err) {
+      console.error("Failed to fetch prescriptions for baby:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleUpload = async () => {
     if (!file || !babyId) return;
@@ -115,7 +144,7 @@ export default function HealthRecordsPage() {
             <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all">
               <ChevronLeft className="w-6 h-6" strokeWidth={2} />
             </button>
-            <h1 className="text-[17px] font-medium text-[#0F172A] ml-1">Health Records</h1>
+            <h1 className="text-[17px] font-medium text-black ml-1 tracking-tight">Health Records</h1>
           </div>
           <div className="flex items-center gap-1">
             <button onClick={() => router.push('/notifications')} className="relative p-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors cursor-pointer group">
@@ -143,8 +172,12 @@ export default function HealthRecordsPage() {
         {/* Desktop Page Header */}
         <div className="hidden md:flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4 px-1">
           <div>
-            <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">Health Records</h1>
-            <p className="text-sm text-gray-500 font-medium mt-1">Manage prescriptions, doctor notes, and dietary recommendations.</p>
+            <h1 className="text-2xl md:text-3xl font-normal text-black tracking-tight leading-tight">
+              Digital Health &amp; Medical Records
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-500 font-light mt-1 leading-relaxed">
+              Securely manage prescriptions, vaccine charts, doctor notes, and clinical reports.
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <div className="bg-blue-50 text-blue-600 px-4 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 border border-blue-100 shadow-sm">
@@ -178,7 +211,7 @@ export default function HealthRecordsPage() {
         </AnimatePresence>
 
         {/* Tabs Navigation */}
-        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 -mx-4 px-4 md:mx-0 md:px-0 mb-4">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 -mx-4 px-4 md:mx-0 md:px-0 mb-3">
           {tabs.map((tab) => (
             <button
               key={tab}
@@ -193,6 +226,26 @@ export default function HealthRecordsPage() {
             </button>
           ))}
         </div>
+
+        {/* Baby Selector (if parent has multiple babies) */}
+        {babiesList.length > 1 && (
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 mb-2">
+            <span className="text-xs font-medium text-gray-400 whitespace-nowrap">Patient:</span>
+            {babiesList.map((baby) => (
+              <button
+                key={baby._id}
+                onClick={() => handleSelectBaby(baby)}
+                className={`text-xs px-3 py-1 rounded-full transition-all cursor-pointer ${
+                  selectedBaby?._id === baby._id
+                    ? "bg-[var(--color-primary)]/15 text-[var(--color-primary)] font-semibold border border-[var(--color-primary)]/30 shadow-xs"
+                    : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+                }`}
+              >
+                {baby.name || "Baby"}
+              </button>
+            ))}
+          </div>
+        )}
 
         {isLoading ? (
           <div className="flex justify-center py-20">

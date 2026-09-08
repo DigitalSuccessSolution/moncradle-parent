@@ -37,7 +37,7 @@ export function SmartParentingBanner() {
           className="text-3xl sm:text-4xl md:text-[2.75rem] font-bold text-slate-800 leading-[1.2] md:leading-[1.15] mb-3 md:mb-4 tracking-tight"
         >
           Smarter Care for <br className="hidden sm:block" />
-          <span className="text-[var(--color-primary)]">Your Little One</span>
+          Your Little One
         </motion.h3>
 
         <motion.p
@@ -119,7 +119,7 @@ export function SmartParentingBanner() {
               <div className="flex gap-2 overflow-hidden">
                 <div className="w-[90px] h-[100px] rounded-[0.8rem] bg-white shadow-sm border border-slate-100 p-2 flex flex-col shrink-0">
                   <div className="w-full h-[42px] bg-slate-100 rounded-md mb-2 relative overflow-hidden">
-                    <Image src="/images/meal_food.png" alt="food" fill className="object-cover" />
+                    <Image src="/images/kitchen_hero.jpg" alt="food" fill className="object-cover" />
                   </div>
                   <div className="h-1.5 w-full bg-slate-100 rounded-full mb-1"></div>
                   <div className="h-1.5 w-2/3 bg-slate-100 rounded-full"></div>

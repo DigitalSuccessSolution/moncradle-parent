@@ -166,7 +166,7 @@ export default function NotificationsPage() {
             <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all">
               <ChevronLeft className="w-6 h-6" strokeWidth={2} />
             </button>
-            <h1 className="text-base sm:text-lg font-semibold text-[#0F172A] ml-1">Notifications</h1>
+            <h1 className="text-[17px] font-normal text-black ml-1">Notifications</h1>
           </div>
 
         </div>
@@ -188,8 +188,10 @@ export default function NotificationsPage() {
 
         {/* Desktop Page Header */}
         <div className="hidden md:flex flex-col mb-4 px-1 lg:mb-6">
-          <h1 className="text-2xl md:text-3xl lg:text-4xl font-semibold text-gray-900">Notifications</h1>
-          <p className="text-sm md:text-base lg:text-lg text-gray-500 font-medium mt-1 lg:mt-2">Stay updated with your baby's appointments and orders.</p>
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-normal text-black tracking-tight leading-tight">
+            Notifications
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-500 font-light mt-1 leading-relaxed">Stay updated with your baby's appointments, subscriptions, and orders.</p>
         </div>
 
         {/* Filters and Mark Read */}
@@ -253,8 +255,8 @@ export default function NotificationsPage() {
               <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-gray-100/60 rounded-full flex items-center justify-center mb-4 sm:mb-5 md:mb-6">
                 <Bell className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-gray-400" />
               </div>
-              <h3 className="text-base sm:text-[17px] md:text-xl font-semibold text-[#2a2d3a] mb-1.5 md:mb-2">No notifications yet</h3>
-              <p className="text-xs sm:text-[14px] md:text-base text-gray-500 max-w-[200px] sm:max-w-[250px] md:max-w-[300px] mx-auto">When you get updates about orders or appointments, they'll show up here.</p>
+              <h3 className="text-base sm:text-[17px] md:text-xl font-normal text-black mb-1.5 md:mb-2">No notifications yet</h3>
+              <p className="text-xs sm:text-[14px] md:text-base text-gray-500 font-light max-w-[200px] sm:max-w-[250px] md:max-w-[300px] mx-auto">When you get updates about orders or appointments, they'll show up here.</p>
             </div>
           ) : (
             <div className="px-3 sm:px-5 md:px-6 pt-2 sm:pt-4">
@@ -262,7 +264,7 @@ export default function NotificationsPage() {
                 if (!groupedNotifications[group] || groupedNotifications[group].length === 0) return null;
                 return (
                   <div key={group} className="mb-6 sm:mb-8 last:mb-2">
-                    <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-[#444a56] mb-3 sm:mb-4 px-1">{group}</h2>
+                    <h2 className="text-base sm:text-lg lg:text-xl font-normal text-black tracking-tight leading-tight mb-3 sm:mb-4 px-1">{group}</h2>
                     <div className="flex flex-col">
                       {groupedNotifications[group].map((notif, idx) => (
                         <div
@@ -278,7 +280,7 @@ export default function NotificationsPage() {
                           {/* Text Content */}
                           <div className="flex-1 min-w-0">
                             <div className="flex justify-between items-start">
-                              <h3 className="text-sm sm:text-[15px] md:text-[16px] lg:text-lg font-semibold text-[#2a2d3a] truncate pr-2">
+                              <h3 className="text-sm sm:text-[15px] md:text-[16px] lg:text-lg font-normal text-black tracking-tight truncate pr-2">
                                 {notif.title}
                               </h3>
                               {!notif.isRead && (
@@ -286,10 +288,10 @@ export default function NotificationsPage() {
                               )}
                             </div>
                             <div className="flex justify-between items-center mt-0.5 sm:mt-1 md:mt-1.5">
-                              <p className="text-xs sm:text-[13px] md:text-[14px] lg:text-base text-gray-500 truncate pr-2 sm:pr-3">
+                              <p className="text-xs sm:text-[13px] md:text-[14px] lg:text-base text-gray-500 font-light truncate pr-2 sm:pr-3">
                                 {notif.message}
                               </p>
-                              <span className="text-[10px] sm:text-[11px] md:text-[12px] lg:text-sm text-gray-400 whitespace-nowrap flex-shrink-0 font-medium">
+                              <span className="text-[10px] sm:text-[11px] md:text-[12px] lg:text-sm text-gray-400 whitespace-nowrap flex-shrink-0 font-light">
                                 {formatTimeAgo(notif.createdAt)}
                               </span>
                             </div>
@@ -348,7 +350,7 @@ export default function NotificationsPage() {
               </div>
 
               <div className="mt-2 sm:mt-3">
-                <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold text-black mb-1 sm:mb-2 leading-tight">{selectedNotif.title}</h2>
+                <h2 className="text-lg sm:text-xl md:text-2xl font-normal text-black tracking-tight mb-1 sm:mb-2 leading-tight">{selectedNotif.title}</h2>
                 <span className="text-xs sm:text-sm md:text-[15px] font-semibold text-gray-500">
                   {new Date(selectedNotif.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </span>

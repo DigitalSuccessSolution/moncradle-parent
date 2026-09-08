@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, MoreVertical, LogOut } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { createBaby } from "@/lib/api/babiesApi";
+import { calculateBabyAgeMonths } from "@/lib/utils/babyAge";
 
 const COMMON_ALLERGIES = ["Milk", "Eggs", "Peanuts", "Tree Nuts", "Soy", "Wheat", "Fish", "Shellfish"];
 
@@ -40,13 +41,8 @@ export function BabyProfileSetup({ onComplete }: BabyProfileSetupProps) {
     setError("");
 
     try {
-      // Calculate age in months
-      const birthDate = new Date(dob);
-      const today = new Date();
-      let months = (today.getFullYear() - birthDate.getFullYear()) * 12;
-      months -= birthDate.getMonth();
-      months += today.getMonth();
-      const ageInMonths = months <= 0 ? 0 : months;
+      // Calculate age in months accurately
+      const ageInMonths = calculateBabyAgeMonths(dob);
 
       await createBaby({
         name,

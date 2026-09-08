@@ -65,7 +65,7 @@ export default function MobileProfileMenuPage() {
           <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all">
             <ChevronLeft className="w-6 h-6" strokeWidth={2} />
           </button>
-          <h1 className="text-[17px] font-semibold text-[#0F172A] ml-1">Account</h1>
+          <h1 className="text-[17px] font-normal text-black ml-1">Account</h1>
         </div>
         <div className="flex items-center gap-1">
           <Link href="/shop/cart" className="relative p-2 rounded-full hover:bg-gray-100 transition-colors cursor-pointer group">
@@ -105,7 +105,7 @@ export default function MobileProfileMenuPage() {
                 <Edit3 className="w-3.5 h-3.5 text-black" />
               </Link>
             </div>
-            <span className="font-semibold text-gray-900 text-sm">{user?.name ? user.name.split(" ")[0] : "Parent"}</span>
+            <span className="font-normal text-black text-sm">{user?.name ? user.name.split(" ")[0] : "Parent"}</span>
           </div>
 
           {/* Baby Profile */}
@@ -125,7 +125,7 @@ export default function MobileProfileMenuPage() {
                 <Edit3 className="w-3.5 h-3.5 text-black" />
               </Link>
             </div>
-            <span className="font-semibold text-gray-900 text-sm">{baby?.name ? baby.name.split(" ")[0] : "Baby"}</span>
+            <span className="font-normal text-black text-sm">{baby?.name ? baby.name.split(" ")[0] : "Baby"}</span>
           </div>
 
         </div>
@@ -152,7 +152,7 @@ export default function MobileProfileMenuPage() {
                       <Icon className="w-5 h-5" />
                     </div>
                   )}
-                  <span className="font-semibold text-gray-800 text-[15px]">{item.label}</span>
+                  <span className="font-normal text-black text-[15px]">{item.label}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-gray-500 transition-colors" />

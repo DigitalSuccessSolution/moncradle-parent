@@ -82,7 +82,7 @@ export default function ProfilePage() {
             <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all">
               <ChevronLeft className="w-6 h-6" strokeWidth={2} />
             </button>
-            <h1 className="text-[17px] font-semibold text-[#0F172A]">My Profile</h1>
+            <h1 className="text-[17px] font-medium text-black ml-1 tracking-tight">Parent Profile</h1>
           </div>
           <div className="flex items-center gap-3 pr-1">
             <Link href="/shop/cart" className="relative text-[#0F172A] active:scale-95 transition-transform">
@@ -100,8 +100,8 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <motion.h1 initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="text-2xl md:text-3xl font-semibold text-gray-900 mb-8 tracking-tight max-w-2xl mx-auto">
-          Profile & Records
+        <motion.h1 initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="text-2xl md:text-3xl font-normal text-black tracking-tight leading-tight mb-8 max-w-2xl mx-auto">
+          Profile &amp; Account Settings
         </motion.h1>
 
         <div className="max-w-2xl mx-auto">
@@ -110,7 +110,7 @@ export default function ProfilePage() {
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
 
             {/* Parent Profile Card */}
-            <div className="bg-white p-6 shadow-sm relative">
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-xs relative">
               <Link href="/profile/edit" className="absolute top-4 right-4 p-2 bg-gray-50 hover:bg-gray-100 rounded-full transition-colors cursor-pointer text-gray-500 z-50">
                 <Edit3 className="w-4 h-4" />
               </Link>
@@ -119,8 +119,8 @@ export default function ProfilePage() {
                   <Image src={user?.avatar || "/images/splashscreen2.png"} alt="Profile" width={64} height={64} className="object-cover w-full h-full" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900 pr-8">{user?.name || "Parent Name"}</h2>
-                  <p className="text-xs text-gray-500 font-medium">{user?.email || "No email provided"}</p>
+                  <h2 className="text-lg font-normal text-black tracking-tight pr-8">{user?.name || "Parent Name"}</h2>
+                  <p className="text-xs text-gray-500 font-light">{user?.email || "No email provided"}</p>
                   <span className="inline-block mt-1 px-2 py-0.5 bg-purple-50 text-purple-600 text-[10px] font-semibold rounded border border-purple-100">Parent Account</span>
                 </div>
               </div>
@@ -140,11 +140,11 @@ export default function ProfilePage() {
             </div>
 
             {/* Saved Delivery Addresses */}
-            <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
+            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-xs">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-[var(--color-primary)]" />
-                  <h3 className="text-sm font-semibold text-gray-900">Delivery Addresses</h3>
+                  <h3 className="text-sm font-normal text-black tracking-tight">Delivery Addresses</h3>
                 </div>
                 <button onClick={() => {
                   setEditingAddress(null);
@@ -184,17 +184,17 @@ export default function ProfilePage() {
             </div>
 
             {/* Primary Pediatrician */}
-            <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
+            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-xs">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <Stethoscope className="w-4 h-4 text-emerald-600" />
-                  <h3 className="text-sm font-semibold text-gray-900">Primary Doctor</h3>
+                  <h3 className="text-sm font-normal text-black tracking-tight">Primary Doctor</h3>
                 </div>
               </div>
               <div className="text-center py-4">
                 {babies.length > 0 && babies[0].assignedDoctorId ? (
                   <>
-                    <p className="text-sm text-gray-800 font-semibold mb-1">
+                    <p className="text-sm text-black font-normal mb-1">
                       {babies[0].assignedDoctorId.name.startsWith('Dr') ? babies[0].assignedDoctorId.name : `Dr. ${babies[0].assignedDoctorId.name}`}
                     </p>
                     <p className="text-xs text-gray-500 font-medium mb-3">{babies[0].assignedDoctorId.email || 'Pediatrician'}</p>

@@ -204,7 +204,7 @@ export default function BookAppointmentPage() {
             <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all">
               <ChevronLeft className="w-6 h-6" strokeWidth={2} />
             </button>
-            <h1 className="text-[17px] font-medium text-[#0F172A] ml-1">Book Appointment</h1>
+            <h1 className="text-[17px] font-normal text-black ml-1">Book Appointment</h1>
           </div>
           <div className="flex items-center gap-1">
             <button onClick={() => router.push('/notifications')} className="relative p-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors cursor-pointer group">
@@ -236,8 +236,10 @@ export default function BookAppointmentPage() {
           className="hidden md:flex flex-col md:flex-row md:items-center justify-between gap-4 px-1"
         >
           <div>
-            <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">Book Appointment</h1>
-            <p className="text-sm md:text-base text-gray-500 font-medium mt-1">Complete the steps below to confirm your consultation.</p>
+            <h1 className="text-2xl md:text-3xl font-normal text-black tracking-tight leading-tight">
+              Book Pediatric Appointment
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-500 font-light mt-1 leading-relaxed">Schedule a visit with our certified pediatricians for personalized baby care.</p>
           </div>
         </motion.div>
 
@@ -262,10 +264,10 @@ export default function BookAppointmentPage() {
                   return (
                     <div key={s.num} className="flex flex-col items-center bg-white px-2">
                       <div className={`w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center font-semibold text-xs md:text-sm transition-all duration-300 border ${isActive
-                          ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-[var(--color-primary)]/5"
-                          : isPast
-                            ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
-                            : "border-gray-200 text-gray-400 bg-white"
+                        ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-[var(--color-primary)]/5"
+                        : isPast
+                          ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
+                          : "border-gray-200 text-gray-400 bg-white"
                         }`}>
                         {isPast ? <Check className="w-3 h-3 md:w-4 md:h-4" /> : s.num}
                       </div>
@@ -290,16 +292,18 @@ export default function BookAppointmentPage() {
                     className="space-y-4"
                   >
                     <div>
-                      <h2 className="text-base md:text-xl font-semibold text-gray-900 mb-0.5">Select a Specialist</h2>
-                      <p className="text-xs md:text-base text-gray-500 mb-3">Choose the doctor you would like to consult with.</p>
+                      <h2 className="text-base md:text-xl font-normal text-black tracking-tight leading-tight mb-0.5">
+                        Select a Specialist
+                      </h2>
+                      <p className="text-xs sm:text-sm text-gray-500 font-light mb-3">Choose the doctor you would like to consult with.</p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
                         {doctors.map((doc) => (
                           <button
                             key={doc.id}
                             onClick={() => setSelectedDoctor(doc.id)}
                             className={`flex p-3 md:p-4 rounded-lg border transition-all duration-200 text-left relative overflow-hidden group cursor-pointer ${selectedDoctor === doc.id
-                                ? "bg-[var(--color-primary)]/5 border-[var(--color-primary)] ring-1 ring-[var(--color-primary)] shadow-sm"
-                                : "bg-white border-gray-100 hover:border-[var(--color-primary)]/30 hover:bg-gray-50/50"
+                              ? "bg-[var(--color-primary)]/5 border-[var(--color-primary)] ring-1 ring-[var(--color-primary)] shadow-sm"
+                              : "bg-white border-gray-100 hover:border-[var(--color-primary)]/30 hover:bg-gray-50/50"
                               }`}
                           >
                             <div className="flex items-center gap-3 w-full">
@@ -334,7 +338,9 @@ export default function BookAppointmentPage() {
                     className="space-y-6"
                   >
                     <div>
-                      <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-3">Select Date</h2>
+                      <h2 className="text-lg md:text-xl font-normal text-black tracking-tight leading-tight mb-3">
+                        Select Date
+                      </h2>
                       <div className="flex overflow-x-auto gap-2 pb-2 no-scrollbar -mx-5 px-5 md:mx-0 md:px-0">
                         {DATES.map((date, idx) => {
                           const isSelected = selectedDate?.toDateString() === date.toDateString();
@@ -347,8 +353,8 @@ export default function BookAppointmentPage() {
                               key={idx}
                               onClick={() => { setSelectedDate(date); setSelectedTime(null); }}
                               className={`flex-shrink-0 w-16 py-3 rounded-lg flex flex-col items-center justify-center transition-all duration-200 border cursor-pointer ${isSelected
-                                  ? "bg-[var(--color-primary)] border-[var(--color-primary)] shadow-sm text-white"
-                                  : "bg-white border-gray-100 hover:border-gray-200 hover:bg-gray-50 text-gray-700"
+                                ? "bg-[var(--color-primary)] border-[var(--color-primary)] shadow-sm text-white"
+                                : "bg-white border-gray-100 hover:border-gray-200 hover:bg-gray-50 text-gray-700"
                                 }`}
                             >
                               <span className={`text-[9px] md:text-[11px] font-semibold uppercase tracking-wide mb-1 ${isSelected ? "text-white/80" : "text-gray-400"}`}>{monthName}</span>
@@ -362,7 +368,9 @@ export default function BookAppointmentPage() {
 
                     <div className={`transition-opacity duration-300 ${!selectedDate ? "opacity-50 pointer-events-none" : ""}`}>
                       <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-lg md:text-xl font-semibold text-gray-900">Select Time</h2>
+                        <h2 className="text-lg md:text-xl font-normal text-black tracking-tight leading-tight">
+                          Select Time
+                        </h2>
                         {loadingSlots && <div className="w-4 h-4 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin"></div>}
                       </div>
 
@@ -383,8 +391,8 @@ export default function BookAppointmentPage() {
                                   key={time}
                                   onClick={() => setSelectedTime(time)}
                                   className={`px-4 py-2 rounded-lg text-xs md:text-sm font-semibold border transition-all duration-200 cursor-pointer ${selectedTime === time
-                                      ? "bg-[var(--color-primary)] border-[var(--color-primary)] text-white shadow-sm"
-                                      : "bg-white border-gray-100 text-gray-600 hover:border-[var(--color-primary)]/30 hover:bg-[var(--color-primary)]/5"
+                                    ? "bg-[var(--color-primary)] border-[var(--color-primary)] text-white shadow-sm"
+                                    : "bg-white border-gray-100 text-gray-600 hover:border-[var(--color-primary)]/30 hover:bg-[var(--color-primary)]/5"
                                     }`}
                                 >
                                   {time}
@@ -406,8 +414,8 @@ export default function BookAppointmentPage() {
                                   key={time}
                                   onClick={() => setSelectedTime(time)}
                                   className={`px-4 py-2 rounded-lg text-xs md:text-sm font-semibold border transition-all duration-200 cursor-pointer ${selectedTime === time
-                                      ? "bg-[var(--color-primary)] border-[var(--color-primary)] text-white shadow-sm"
-                                      : "bg-white border-gray-100 text-gray-600 hover:border-[var(--color-primary)]/30 hover:bg-[var(--color-primary)]/5"
+                                    ? "bg-[var(--color-primary)] border-[var(--color-primary)] text-white shadow-sm"
+                                    : "bg-white border-gray-100 text-gray-600 hover:border-[var(--color-primary)]/30 hover:bg-[var(--color-primary)]/5"
                                     }`}
                                 >
                                   {time}
@@ -429,8 +437,8 @@ export default function BookAppointmentPage() {
                                   key={time}
                                   onClick={() => setSelectedTime(time)}
                                   className={`px-4 py-2 rounded-lg text-xs md:text-sm font-semibold border transition-all duration-200 cursor-pointer ${selectedTime === time
-                                      ? "bg-[var(--color-primary)] border-[var(--color-primary)] text-white shadow-sm"
-                                      : "bg-white border-gray-100 text-gray-600 hover:border-[var(--color-primary)]/30 hover:bg-[var(--color-primary)]/5"
+                                    ? "bg-[var(--color-primary)] border-[var(--color-primary)] text-white shadow-sm"
+                                    : "bg-white border-gray-100 text-gray-600 hover:border-[var(--color-primary)]/30 hover:bg-[var(--color-primary)]/5"
                                     }`}
                                 >
                                   {time}
@@ -454,8 +462,10 @@ export default function BookAppointmentPage() {
                     className="space-y-5"
                   >
                     <div>
-                      <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-1">Reason for Visit</h2>
-                      <p className="text-sm md:text-base text-gray-500 mb-3">Briefly describe the symptoms or reason for this appointment so the doctor is prepared.</p>
+                      <h2 className="text-lg md:text-xl font-normal text-black tracking-tight leading-tight mb-1">
+                        Reason for Visit
+                      </h2>
+                      <p className="text-xs sm:text-sm text-gray-500 font-light mb-3">Briefly describe the symptoms or reason for this appointment so the doctor is prepared.</p>
                       <textarea
                         className="w-full bg-gray-50/50 border border-gray-100 rounded-lg p-3 text-sm md:text-base font-medium focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)]/50 min-h-[120px] resize-none transition-all"
                         placeholder="E.g. Baby has mild fever since last night, and needs routine vaccination."

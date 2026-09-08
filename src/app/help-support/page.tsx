@@ -302,7 +302,7 @@ export default function HelpSupportPage() {
             <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all">
               <ChevronLeft className="w-6 h-6" strokeWidth={2} />
             </button>
-            <h1 className="text-[17px] font-medium text-[#0F172A] ml-1">Help & Support</h1>
+            <h1 className="text-[17px] font-normal text-black ml-1">Help & Support</h1>
           </div>
 
         </div>
@@ -324,8 +324,10 @@ export default function HelpSupportPage() {
 
         {/* Desktop Page Header */}
         <div className="hidden md:flex flex-col mb-4 px-1">
-          <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">Help & Support</h1>
-          <p className="text-sm text-gray-500 font-medium mt-1">Search our knowledge base or reach out to our team.</p>
+          <h1 className="text-2xl md:text-3xl font-normal text-black tracking-tight leading-tight">
+            Help & Support
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-500 font-light mt-1 leading-relaxed">Search our knowledge base or reach out directly to our dedicated care team.</p>
         </div>
 
         {/* Hero Search Section */}
@@ -334,8 +336,8 @@ export default function HelpSupportPage() {
             <LifeBuoy className="w-24 h-24 md:w-40 md:h-40 transform translate-x-1/4 -translate-y-1/4" />
           </div>
           <div className="relative z-10 max-w-2xl">
-            <h2 className="text-lg md:text-3xl font-semibold mb-1 md:mb-3">How can we help?</h2>
-            <p className="text-white/80 text-xs md:text-base font-medium mb-4 md:mb-8">Search our knowledge base for answers.</p>
+            <h2 className="text-lg md:text-3xl font-normal text-white mb-1 md:mb-3">How can we help you?</h2>
+            <p className="text-white/80 text-xs md:text-base font-light mb-4 md:mb-8">Search our knowledge base for answers.</p>
             <div className="relative">
               <input
                 type="text"
@@ -363,7 +365,7 @@ export default function HelpSupportPage() {
           {/* Left Column: Contact Us */}
           <div className="lg:col-span-1 space-y-8">
             <section className="bg-white rounded-2xl md:rounded-3xl p-4 md:p-8 border border-gray-100 shadow-sm">
-              <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-6">Contact Us</h3>
+              <h3 className="text-base md:text-lg font-normal text-black mb-3 md:mb-6">Contact Us</h3>
               {/* Mobile: horizontal grid of 3 | Desktop: vertical list */}
               <div className="grid grid-cols-3 gap-2 md:grid-cols-1 md:gap-0 md:divide-y md:divide-gray-100">
                 <div className="flex flex-col md:flex-row items-center md:items-center gap-2 md:gap-4 p-2 md:py-4 hover:bg-gray-50 rounded-xl md:rounded-2xl transition-all cursor-pointer group text-center md:text-left" onClick={() => setShowTicketModal(true)}>
@@ -372,7 +374,7 @@ export default function HelpSupportPage() {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 text-[11px] md:text-[14px] leading-tight">New Ticket</h4>
-                    <p className="text-[10px] md:text-xs text-gray-500 mt-0.5 hidden md:block">We reply within 24h</p>
+                    <p className="text-[10px] md:text-xs text-gray-500 mt-0.5 hidden md:block font-light">We reply within 24h</p>
                   </div>
                 </div>
 
@@ -382,7 +384,7 @@ export default function HelpSupportPage() {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 text-[11px] md:text-[14px] leading-tight">Email Us</h4>
-                    <p className="text-[10px] md:text-xs text-gray-500 mt-0.5 hidden md:block">support@moncradle.com</p>
+                    <p className="text-[10px] md:text-xs text-gray-500 mt-0.5 hidden md:block font-light">support@moncradle.com</p>
                   </div>
                 </a>
 
@@ -392,7 +394,7 @@ export default function HelpSupportPage() {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 text-[11px] md:text-[14px] leading-tight">Call Us</h4>
-                    <p className="text-[10px] md:text-xs text-gray-500 mt-0.5 hidden md:block">1800-123-4567</p>
+                    <p className="text-[10px] md:text-xs text-gray-500 mt-0.5 hidden md:block font-light">1800-123-4567</p>
                   </div>
                 </a>
               </div>
@@ -405,7 +407,7 @@ export default function HelpSupportPage() {
             {/* My Support Tickets */}
             <div className="bg-white rounded-2xl md:rounded-3xl p-4 md:p-8 border border-gray-100 shadow-sm">
               <div className="flex items-center justify-between mb-4 md:mb-6">
-                <h2 className="text-base md:text-xl font-semibold text-gray-900 whitespace-nowrap">My Support Tickets</h2>
+                <h2 className="text-base md:text-xl font-normal text-black whitespace-nowrap">My Support Tickets</h2>
                 <button
                   onClick={() => setShowTicketModal(true)}
                   className="flex items-center gap-1.5 text-xs md:text-sm font-semibold text-[var(--color-primary)] border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/5 hover:bg-[var(--color-primary)]/10 px-3 py-1.5 rounded-lg transition-colors shrink-0 ml-2"
@@ -416,19 +418,19 @@ export default function HelpSupportPage() {
               </div>
               {tickets.length === 0 ? (
                 <div className="py-8 bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-center">
-                  <p className="text-sm font-medium text-gray-500">You don't have any open support tickets.</p>
+                  <p className="text-sm font-light text-gray-500">You don't have any open support tickets.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {tickets.map(ticket => (
                     <div key={ticket._id} className="p-4 bg-white border border-gray-100 rounded-xl shadow-sm hover:border-gray-200 transition-colors">
                       <div className="flex justify-between items-center mb-1.5">
-                        <h4 className="font-semibold text-gray-900 capitalize text-sm md:text-base">{ticket.issueType.replace(/_/g, ' ')}</h4>
+                        <h4 className="font-normal text-black capitalize text-sm md:text-base">{ticket.issueType.replace(/_/g, ' ')}</h4>
                         <span className={`text-[9px] md:text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider shrink-0 ml-2 ${ticket.status === 'open' ? 'bg-orange-100 text-orange-600' : ticket.status === 'in_progress' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}>{ticket.status.replace('_',' ')}</span>
                       </div>
-                      <p className="text-xs md:text-sm text-gray-500 font-medium mb-3 line-clamp-2">{ticket.description}</p>
+                      <p className="text-xs md:text-sm text-gray-500 font-light mb-3 line-clamp-2">{ticket.description}</p>
                       <div className="flex items-center justify-between">
-                        <p className="text-[10px] md:text-xs text-gray-400 font-medium">{new Date(ticket.createdAt || '').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                        <p className="text-[10px] md:text-xs text-gray-400 font-light">{new Date(ticket.createdAt || '').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                         <button onClick={() => setSelectedChatTicket(ticket)} className="text-xs md:text-sm font-semibold text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-2.5 py-1 md:px-3 md:py-1.5 rounded-lg hover:bg-[var(--color-primary)]/20 transition-colors">View Chat</button>
                       </div>
                     </div>
@@ -462,7 +464,7 @@ export default function HelpSupportPage() {
           transition={{ delay: 0.2 }}
           className="mt-8 pb-4"
         >
-          <h2 className="text-base md:text-lg font-semibold text-gray-900 mb-4 px-1">
+          <h2 className="text-base md:text-lg font-normal text-black mb-4 px-1">
             {debouncedQuery ? 'Search Results' : 'Frequently Asked Questions'}
           </h2>
           <div className="space-y-2">

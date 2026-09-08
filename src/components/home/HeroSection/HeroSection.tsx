@@ -62,7 +62,7 @@ export function HeroSection() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: premiumEase }}
-        className="md:hidden w-full aspect-video sm:aspect-[21/9] relative rounded-lg overflow-hidden shadow-sm border border-gray-100 bg-gray-50"
+        className="md:hidden w-full aspect-[16/9] sm:aspect-[21/9] relative rounded-2xl overflow-hidden shadow-xs border border-slate-100 bg-slate-50"
       >
         {/* Sliding Track */}
         <div
@@ -100,12 +100,13 @@ export function HeroSection() {
           })}
         </div>
         {/* Pagination Dots */}
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
+        <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20 bg-black/20 backdrop-blur-xs px-2.5 py-1 rounded-full">
           {slides.map((_, index) => (
             <div
               key={index}
-              className={`h-1.5 rounded-full transition-all duration-300 shadow-sm ${index === (currentSlide % slides.length) ? "w-4 bg-white" : "w-1.5 bg-white/50"
-                }`}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                index === (currentSlide % slides.length) ? "w-4 bg-white" : "w-1.5 bg-white/60"
+              }`}
             />
           ))}
         </div>
@@ -139,7 +140,7 @@ export function HeroSection() {
               className="text-6xl font-normal text-black leading-tight"
             >
               Baby's Growth, <br />
-              <span className="text-[var(--color-primary)]"> Nutrition and Care</span> <br />
+              Nutrition and Care <br />
               in one place
             </motion.h1>
 

@@ -166,11 +166,10 @@ export default function ReviewModal({
                           className="transition-transform hover:scale-110 active:scale-95"
                         >
                           <Star
-                            className={`w-9 h-9 transition-colors ${
-                              star <= displayRating
+                            className={`w-9 h-9 transition-colors ${star <= displayRating
                                 ? "fill-amber-400 text-amber-400"
                                 : "text-gray-200 fill-gray-100"
-                            }`}
+                              }`}
                           />
                         </button>
                       ))}

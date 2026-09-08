@@ -17,7 +17,7 @@ export function StaffPortals() {
         <div className="mb-10 md:mb-16 text-center md:text-left flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="max-w-2xl">
             <h3 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 tracking-tight">
-              Partner <span className="text-[var(--color-primary)]">Hub</span>
+              Partner Hub
             </h3>
             <p className="text-base md:text-lg text-gray-500 leading-relaxed">
               Secure and quick access to Moncradle ecosystem portals for our doctors, kitchen staff, and delivery partners.

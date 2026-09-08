@@ -45,15 +45,19 @@ export default function OrderDetailPage() {
         console.log('Live Driver Location:', data);
       });
 
-      socket.on('order_status_update', (data: any) => {
-         if(data.orderId === orderId) {
-            setOrder((prev: any) => prev ? { ...prev, status: data.status } : null);
-         }
-      });
+      const handleStatusUpdate = (data: any) => {
+        if (data.orderId === orderId) {
+          setOrder((prev: any) => prev ? { ...prev, status: data.status } : null);
+        }
+      };
+
+      socket.on('order_status_update', handleStatusUpdate);
+      socket.on('status_update', handleStatusUpdate);
 
       return () => {
         socket.off('driver_location');
-        socket.off('order_status_update');
+        socket.off('order_status_update', handleStatusUpdate);
+        socket.off('status_update', handleStatusUpdate);
         // Do not call disconnectSocket() here because other pages might need it, just remove listeners
       };
     }
@@ -240,9 +244,11 @@ export default function OrderDetailPage() {
               <div className="w-12 h-12 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-3">
                 <X className="w-6 h-6" />
               </div>
-              <p className="text-base font-bold text-red-600 mb-1">This order has been cancelled</p>
+              <p className="text-base font-bold text-red-600 mb-1">
+                This order has been cancelled
+              </p>
               {order.cancellationReason && (
-                <p className="text-sm text-red-500 mt-1 max-w-sm"><span className="font-semibold">Reason:</span> {order.cancellationReason}</p>
+                <p className="text-sm text-red-600/90 mt-1 max-w-sm"><span className="font-semibold">Reason:</span> {order.cancellationReason}</p>
               )}
             </div>
           )}
@@ -265,14 +271,14 @@ export default function OrderDetailPage() {
           <div className="space-y-4">
             {order.items?.map((item: any, idx: number) => {
               const detail = item.itemType === 'product' ? item.productId : item.mealId;
-              const imgUrl = detail?.imageUrl || detail?.images?.[0];
+              const imgUrl = detail?.imageUrl || detail?.images?.[0] || item?.imageUrl || item?.img;
               return (
                 <div key={idx} className="flex gap-4 p-3 bg-gray-50 rounded-xl border border-gray-100 items-center">
-                  <div className="w-16 h-16 rounded-lg bg-white p-1 shadow-sm flex-shrink-0 flex items-center justify-center">
+                  <div className="w-16 h-16 rounded-xl bg-white p-1 shadow-sm flex-shrink-0 flex items-center justify-center overflow-hidden relative border border-gray-100">
                     {imgUrl ? (
-                      <Image src={imgUrl} alt={detail?.name || "Item"} width={64} height={64} className="w-full h-full object-contain rounded-md" />
+                      <Image src={imgUrl} alt={detail?.name || "Item"} fill className="object-cover rounded-lg" sizes="64px" />
                     ) : (
-                      <Package className="w-8 h-8 text-gray-300" />
+                      <Package className="w-7 h-7 text-gray-300" />
                     )}
                   </div>
                   <div className="flex-1">

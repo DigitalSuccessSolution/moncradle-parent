@@ -20,9 +20,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Allow local network IP for mobile testing
-  allowedDevOrigins: ['192.168.29.77'],
-  turbopack: {},
+  allowedDevOrigins: ['192.168.29.77', '192.168.29.160'],
 };
 
 export default withPWA(nextConfig);

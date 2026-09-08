@@ -49,10 +49,10 @@ export async function addToCart(
   quantity = 1,
   subscriptionData?: {
     isSubscription: boolean;
-    deliveryDates: string[];
-    timeSlot: string;
-    customizations: string[];
-    specialInstructions: string;
+    deliveryDates?: string[];
+    timeSlot?: string;
+    customizations?: string[];
+    specialInstructions?: string;
   }
 ): Promise<Cart> {
   try {

@@ -42,27 +42,22 @@
   --color-border: #F1F5F9;
   /* Slate 100 border */
 
-  --shadow-soft: none;
-  --shadow-float: none;
+  --shadow-soft: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  --shadow-float: 0 10px 30px -4px rgba(0, 0, 0, 0.08);
 
-  /* Disable standard shadows globally for a completely flat design */
-  --shadow-sm: none;
-  --shadow-md: none;
-  --shadow-lg: none;
-  --shadow-xl: none;
-  --shadow-2xl: none;
-  --shadow: none;
+  /* Modern subtle shadows for clean depth and elevation */
+  --shadow-2xs: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  --shadow-xs: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.03);
+  --shadow-sm: 0 2px 5px -1px rgba(0, 0, 0, 0.06), 0 1px 3px -1px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 6px 16px -3px rgba(0, 0, 0, 0.06), 0 2px 6px -2px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.07), 0 4px 8px -3px rgba(0, 0, 0, 0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  --shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.05);
 
   --radius-xl: 20px;
   --radius-2xl: 24px;
   --radius-3xl: 28px;
-
-  /* Adjusting Poppins font weights to be less bold globally */
-  --font-weight-medium: 400;
-  --font-weight-semibold: 500;
-  --font-weight-bold: 600;
-  --font-weight-extrabold: 700;
-  --font-weight-black: 700;
 }
 
 

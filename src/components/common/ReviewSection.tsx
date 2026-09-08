@@ -79,8 +79,8 @@ export default function ReviewSection({ targetId, targetType, title = 'Customer 
 
   return (
     <div className="py-6">
-      <div 
-        className="flex items-center justify-between mb-2 cursor-pointer select-none" 
+      <div
+        className="flex items-center justify-between mb-2 cursor-pointer select-none"
         onClick={() => setIsOpen(!isOpen)}
       >
         <div>
@@ -91,7 +91,7 @@ export default function ReviewSection({ targetId, targetType, title = 'Customer 
             <span>based on {totalReviews} rating{totalReviews !== 1 ? 's' : ''}</span>
           </div>
         </div>
-        <button 
+        <button
           className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 transition-colors hover:bg-gray-200"
           aria-label="Toggle reviews"
           onClick={(e) => {

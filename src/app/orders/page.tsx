@@ -16,6 +16,15 @@ import { getOrders, cancelOrder } from "@/lib/api/ordersApi";
 import { checkHasReviewed, ReviewTargetType } from "@/lib/api/reviewsApi";
 import { useAppSelector } from "@/store/hooks";
 
+const getOrderItemImg = (item: any) => {
+  const details = item?.itemType === 'product' ? item?.productId : item?.mealId;
+  const directImg = details?.imageUrl || details?.images?.[0] || item?.imageUrl || item?.img;
+  if (directImg && typeof directImg === 'string' && directImg.trim() !== '') {
+    return directImg;
+  }
+  return "";
+};
+
 const mapOrderForUI = (order: any) => {
   const firstItem = order.items?.[0];
   const firstItemType = firstItem?.itemType;
@@ -33,12 +42,12 @@ const mapOrderForUI = (order: any) => {
         name: details?.name || 'Unknown Item',
         qty: item.quantity,
         price: `₹${item.priceAtAddition || 0}`,
-        img: details?.imageUrl || ""
+        img: getOrderItemImg(item)
       };
     }),
     total: `₹${order.totalAmount}`,
-    img: firstItem ? (firstItemType === 'product' ? firstItem.productId?.imageUrl : firstItem.mealId?.imageUrl) : "",
-    name: firstItem ? (firstItemType === 'product' ? firstItem.productId?.name : firstItem.mealId?.name) : "Order Item",
+    img: firstItem ? getOrderItemImg(firstItem) : "",
+    name: firstItem ? (firstItemType === 'product' ? (firstItem.productId?.name || 'Baby Product') : (firstItem.mealId?.name || 'Baby Meal')) : "Order Item",
     qty: order.items ? order.items.reduce((acc: number, curr: any) => acc + curr.quantity, 0) : 0,
     // IDs needed for reviews
     rawMealId: firstMealId,
@@ -134,7 +143,7 @@ export default function OrdersPage() {
             <button onClick={() => router.push('/')} className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all">
               <ChevronLeft className="w-6 h-6" strokeWidth={2} />
             </button>
-            <h1 className="text-[17px] font-medium text-[#0F172A] ml-1">My Orders</h1>
+            <h1 className="text-[17px] font-medium text-black ml-1 tracking-tight">My Orders</h1>
           </div>
           <button onClick={() => router.push('/shop/cart')} className="relative text-[#0F172A] active:scale-95 transition-transform mr-1">
             <ShoppingCart className="w-6 h-6" strokeWidth={2} />
@@ -163,8 +172,12 @@ export default function OrdersPage() {
 
         {/* Desktop Page Header */}
         <div className="hidden md:flex flex-col mb-4 px-1">
-          <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">My Orders</h1>
-          <p className="text-sm text-gray-500 font-medium mt-1">Track your active deliveries and view past orders.</p>
+          <h1 className="text-2xl md:text-3xl font-normal text-black tracking-tight leading-tight">
+            My Orders &amp; Deliveries
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-500 font-light mt-1 leading-relaxed">
+            Track active baby food &amp; product deliveries and view past invoices.
+          </p>
         </div>
 
         {isLoading ? (
@@ -177,10 +190,10 @@ export default function OrdersPage() {
 
             {/* Active Orders List */}
             <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Active Orders</h2>
+            <h2 className="text-lg font-normal text-black tracking-tight mb-4">Active Orders</h2>
             <div className="space-y-4">
               {activeOrders.length === 0 && !isLoading && (
-                <p className="text-gray-500 text-sm">No active orders.</p>
+                <p className="text-gray-500 font-light text-sm">No active orders.</p>
               )}
               {activeOrders.map((order, i) => (
                 <motion.div
@@ -189,11 +202,11 @@ export default function OrdersPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.1 }}
                   onClick={() => router.push(`/orders/${order.fullId}`)}
-                  className="bg-white rounded-lg p-5 border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-5 cursor-pointer hover:border-[var(--color-primary)] transition-colors group"
+                  className="bg-white rounded-2xl p-5 border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-5 cursor-pointer hover:border-[var(--color-primary)]/40 transition-colors group shadow-xs"
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
-                      <h3 className="font-semibold text-lg text-gray-900">Order #{order.id}</h3>
+                      <h3 className="font-normal text-base md:text-lg text-black tracking-tight">Order #{order.id}</h3>
                       <span className="text-[11px] font-semibold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md border border-orange-100 flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></span>
                         {order.status}
@@ -203,16 +216,16 @@ export default function OrdersPage() {
                     <div className="flex flex-wrap items-center gap-4">
                       {order.items.map((item: any, j: number) => (
                         <div key={j} className="flex items-center gap-3">
-                          {item.img ? (
-                            <Image src={item.img} alt={item.name} width={48} height={48} className="object-contain rounded-lg flex-shrink-0" />
-                          ) : (
-                            <div className="w-12 h-12 bg-gray-50 rounded-lg border border-gray-100 flex items-center justify-center flex-shrink-0">
+                          <div className="w-12 h-12 bg-gray-50 rounded-lg border border-gray-100 flex items-center justify-center flex-shrink-0 overflow-hidden relative">
+                            {item.img ? (
+                              <Image src={item.img} alt={item.name} fill className="object-cover rounded-lg" sizes="48px" />
+                            ) : (
                               <ShoppingCart className="w-4 h-4 text-gray-300" />
-                            </div>
-                          )}
+                            )}
+                          </div>
                           <div>
-                            <p className="text-xs font-semibold text-gray-900">{item.name}</p>
-                            <p className="text-[10px] font-medium text-gray-500">Qty: {item.qty}</p>
+                            <p className="text-xs font-normal text-black">{item.name}</p>
+                            <p className="text-[10px] font-light text-gray-500">Qty: {item.qty}</p>
                           </div>
                         </div>
                       ))}
@@ -221,7 +234,7 @@ export default function OrdersPage() {
 
                   <div className="flex flex-col md:flex-col items-stretch md:items-end justify-between md:justify-center gap-4 md:gap-3 pt-4 border-t border-gray-100 md:pt-0 md:border-t-0 md:pl-5 md:border-l">
                     <div className="flex items-center justify-between md:justify-end md:flex-col md:items-end md:gap-0.5">
-                      <p className="text-sm md:text-[11px] font-medium text-gray-500 whitespace-nowrap">Total Amount:</p>
+                      <p className="text-sm md:text-[11px] font-light text-gray-500 whitespace-nowrap">Total Amount:</p>
                       <p className="text-base md:text-lg font-bold text-[var(--color-primary)]">{order.total}</p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -253,7 +266,7 @@ export default function OrdersPage() {
 
           {/* Past Orders List */}
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Past Orders</h2>
+            <h2 className="text-lg font-normal text-black tracking-tight mb-4">Past Orders</h2>
             <div className="space-y-4">
               {pastOrders.length === 0 && !isLoading && (
                 <p className="text-gray-500 text-sm">No past orders.</p>
@@ -269,23 +282,23 @@ export default function OrdersPage() {
                 >
                   {/* Top row — image + order info */}
                   <div className="flex items-center gap-3">
-                    {order.img ? (
-                      <Image src={order.img} alt="Order" width={52} height={52} className="object-contain rounded-lg flex-shrink-0" />
-                    ) : (
-                      <div className="w-[52px] h-[52px] bg-gray-50 rounded-lg border border-gray-100 flex items-center justify-center flex-shrink-0">
+                    <div className="w-[52px] h-[52px] bg-gray-50 rounded-lg border border-gray-100 flex items-center justify-center flex-shrink-0 overflow-hidden relative">
+                      {order.img ? (
+                        <Image src={order.img} alt="Order" fill className="object-cover rounded-lg" sizes="52px" />
+                      ) : (
                         <ShoppingCart className="w-5 h-5 text-gray-300" />
-                      </div>
-                    )}
+                      )}
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <h5 className="font-semibold text-gray-900 text-sm truncate">Order #{order.id}</h5>
+                      <h5 className="font-normal text-black text-sm truncate">Order #{order.id}</h5>
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
                         <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 flex-shrink-0">
                           {order.status}
                         </span>
-                        <span className="text-[11px] font-medium text-gray-500">{order.date}</span>
+                        <span className="text-[11px] font-light text-gray-500">{order.date}</span>
                       </div>
                     </div>
-                    <span className="font-semibold text-gray-900 text-sm flex-shrink-0">{order.total}</span>
+                    <span className="font-semibold text-black text-sm flex-shrink-0">{order.total}</span>
                   </div>
 
                   {/* Bottom row — rate buttons + arrow */}

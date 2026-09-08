@@ -137,10 +137,14 @@ export default function CheckoutPage() {
       const order = await createOrder({
         items: orderItems,
         deliveryAddress: {
+          title: selectedAddr.title,
+          name: selectedAddr.name,
+          flat: selectedAddr.flat,
           street: selectedAddr.street,
           city: selectedAddr.city,
           state: selectedAddr.state,
-          zipCode: selectedAddr.zipCode
+          zipCode: selectedAddr.zipCode,
+          phone: selectedAddr.phone
         },
         couponCode: appliedCoupon ? appliedCoupon.code : undefined,
         paymentMethod: activePayment
@@ -180,7 +184,7 @@ export default function CheckoutPage() {
             <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all">
               <ChevronLeft className="w-6 h-6" strokeWidth={2} />
             </button>
-            <h1 className="text-[17px] font-medium text-[#0F172A] ml-1">Checkout</h1>
+            <h1 className="text-[17px] font-normal text-black ml-1">Checkout</h1>
           </div>
         </div>
 
@@ -198,8 +202,10 @@ export default function CheckoutPage() {
         {/* Desktop Page Header */}
         <div className="hidden md:flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4 px-1">
           <div>
-            <h1 className="text-2xl md:text-3xl font-medium text-gray-900">Checkout</h1>
-            <p className="text-sm text-gray-500 font-medium mt-1">Complete your order securely.</p>
+            <h1 className="text-2xl md:text-3xl font-normal text-black tracking-tight leading-tight">
+              Checkout
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-500 font-light mt-1 leading-relaxed">Complete your order securely and choose your delivery preference.</p>
           </div>
         </div>
 
@@ -214,7 +220,7 @@ export default function CheckoutPage() {
               className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 border border-gray-100 shadow-sm"
             >
               <div className="flex items-center justify-between mb-4 md:mb-6">
-                <h2 className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
+                <h2 className="text-lg md:text-xl font-normal text-black tracking-tight leading-tight flex items-center gap-2">
                   Delivery Address
                 </h2>
                 <button onClick={() => {
@@ -278,7 +284,7 @@ export default function CheckoutPage() {
                 transition={{ delay: 0.05 }}
                 className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 border border-gray-100 shadow-sm"
               >
-                <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-4">Meal Delivery Time</h2>
+                <h2 className="text-lg md:text-xl font-normal text-black tracking-tight leading-tight mb-4">Meal Delivery Time</h2>
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Select Preferred Time Slot</label>
@@ -314,7 +320,7 @@ export default function CheckoutPage() {
               transition={{ delay: 0.2 }}
               className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 border border-gray-100 shadow-sm"
             >
-              <h2 className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2 mb-4 md:mb-6">
+              <h2 className="text-lg md:text-xl font-normal text-black tracking-tight leading-tight flex items-center gap-2 mb-4 md:mb-6">
                 Payment Method
               </h2>
 
@@ -352,7 +358,7 @@ export default function CheckoutPage() {
             animate={{ opacity: 1, x: 0 }}
             className="bg-white rounded-2xl border border-gray-100 p-6 lg:p-8 lg:sticky lg:top-24 overflow-hidden relative"
           >
-            <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-6">Order Summary</h2>
+            <h2 className="text-lg md:text-xl font-normal text-black tracking-tight leading-tight mb-6">Order Summary</h2>
 
             {/* Mini Cart Items */}
             <div className="space-y-4 mb-6 pb-6 border-b border-gray-100 border-dashed">
@@ -362,8 +368,13 @@ export default function CheckoutPage() {
                 return (
                   <div key={item._id} className="flex gap-4 items-center">
                     <div className="w-12 h-12 md:w-14 md:h-14 bg-gray-50 rounded-lg relative overflow-hidden flex-shrink-0 border border-gray-100 flex items-center justify-center">
-                      {itemDetails.imageUrl ? (
-                        <Image src={itemDetails.imageUrl} alt={itemDetails.name} fill className="object-cover" />
+                      {(itemDetails.imageUrl || (itemDetails as any).images?.[0]) ? (
+                        <Image
+                          src={(itemDetails.imageUrl || (itemDetails as any).images?.[0]) as string}
+                          alt={itemDetails.name}
+                          fill
+                          className="object-cover"
+                        />
                       ) : (
                         <ShoppingCart className="w-4 h-4 text-gray-300" />
                       )}

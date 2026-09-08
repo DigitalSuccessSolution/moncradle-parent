@@ -3,18 +3,16 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-
-
-
 import { HeroSection } from "@/components/home/HeroSection/HeroSection";
 import { QuickActions } from "@/components/home/QuickActions/QuickActions";
+import { HowMoncradleWorks } from "@/components/home/HowMoncradleWorks/HowMoncradleWorks";
+import { HowItWorks } from "@/components/home/HowItWorks/HowItWorks";
 import { GrowthOverview } from "@/components/home/GrowthOverview/GrowthOverview";
-import { ProductRecommendations } from "@/components/home/ProductRecommendations/ProductRecommendations";
 import { MealRecommendations } from "@/components/home/MealRecommendations/MealRecommendations";
-import { SmartParentingBanner } from "@/components/home/SmartParentingBanner/SmartParentingBanner";
+import { ProductRecommendations } from "@/components/home/ProductRecommendations/ProductRecommendations";
+import { WhatMakesUsDifferent } from "@/components/home/WhatMakesUsDifferent/WhatMakesUsDifferent";
 import { ExpertConsultation } from "@/components/home/ExpertConsultation/ExpertConsultation";
 import { Articles } from "@/components/home/Articles/Articles";
-import { HealthRecords } from "@/components/home/HealthRecords/HealthRecords";
 import { SplashScreen } from "@/components/onboarding/SplashScreen";
 import { StaffPortals } from "@/components/layout/StaffPortals/StaffPortals";
 import { AuthScreen } from "@/components/auth/AuthScreen";
@@ -50,7 +48,7 @@ export default function HomePage() {
         // Prevent default exit by pushing state back
         window.history.pushState(null, "", window.location.pathname);
         backPressCount++;
-        toast("Press back again to exit", { 
+        toast("Press back again to exit", {
           position: 'bottom-center',
           style: {
             background: '#333',
@@ -119,7 +117,7 @@ export default function HomePage() {
   if (!isMounted || isLoading) return null;
 
   return (
-    <div className="min-h-screen bg-[var(--color-background)] font-sans overflow-x-hidden relative">
+    <div className="min-h-screen bg-[var(--color-background)] font-sans overflow-x-clip relative">
       <SplashScreen onComplete={() => setHasSeenSplash(true)} />
 
       {!isAuthenticated && hasSeenSplash && <AuthScreen />}
@@ -134,17 +132,32 @@ export default function HomePage() {
 
       <HeroSection />
 
-      <main className="max-w-[1400px] mx-auto px-4 md:px-8 py-6 md:py-12 space-y-8 md:space-y-16 pb-24 md:pb-12">
+      <main className="max-w-[1400px] mx-auto px-3.5 sm:px-4 md:px-8 py-3 sm:py-5 md:py-8 space-y-6 sm:space-y-8 md:space-y-12 pb-28 md:pb-12">
+        {/* 1. Quick Icon Actions */}
         <QuickActions />
-        {/* <HealthRecords /> */}
+
+        {/* 2. Visual Platform Explainer: How Moncradle Cares for Your Baby (With Real Images) */}
+        <HowMoncradleWorks />
+
+        {/* 3. Growth Velocity & Milestone Progress */}
         <GrowthOverview />
-        <ProductRecommendations />
+
+        {/* 4. Fresh Purees & Meals Recommendations */}
         <MealRecommendations />
 
-        <SmartParentingBanner />
+        {/* 5. Subscription & Delivery: How it Works (3 Steps) */}
+        <HowItWorks />
 
+        {/* 6. Curated Baby Essentials */}
+        <ProductRecommendations />
+
+        {/* 7. What Makes Moncradle Different (Product Lineup & Benefit Badges) */}
+        <WhatMakesUsDifferent />
+
+        {/* 8. Consult Top Pediatricians */}
         <ExpertConsultation />
 
+        {/* 9. Parenting Tips & Articles */}
         <Articles />
       </main>
 

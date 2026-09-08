@@ -16,10 +16,14 @@ export interface OrderItem {
 export interface CreateOrderPayload {
   items: OrderItem[];
   deliveryAddress?: {
+    title?: string;
+    name?: string;
+    flat?: string;
     street: string;
     city: string;
     state: string;
     zipCode: string;
+    phone?: string;
   };
   specialInstructions?: string;
   couponCode?: string;
@@ -52,7 +56,7 @@ export async function getOrderById(orderId: string) {
 export async function cancelOrder(orderId: string, reason?: string) {
   const response = await apiClient.patch(`/orders/${orderId}/status`, {
     status: 'cancelled',
-    cancellationReason: reason || 'Cancelled by user'
+    cancellationReason: reason || ''
   });
   return response.data;
 }

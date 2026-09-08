@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ChevronLeft, Sparkles, Layers, ShieldCheck, RefreshCw, Zap, HeartPulse, ChevronDown } from "lucide-react";
+import { ChevronLeft, Layers, ShieldCheck, RefreshCw, Zap, HeartPulse, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { getSubscriptions, getSubscriptionPlans, Subscription, SubscriptionPlan } from "@/lib/api/subscriptionsApi";
@@ -25,7 +25,7 @@ function EmptyState({ onExplore }: { onExplore: () => void }) {
           <Layers className="w-10 h-10 text-[var(--color-primary)]" strokeWidth={1.5} />
         </div>
         <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-[var(--color-secondary)]/20 flex items-center justify-center">
-          <Sparkles className="w-4 h-4 text-[var(--color-secondary)]" />
+          <ShieldCheck className="w-4 h-4 text-[var(--color-secondary)]" />
         </div>
       </div>
       <h3 className="text-lg font-semibold text-gray-900 mb-2">No active subscriptions</h3>
@@ -36,7 +36,7 @@ function EmptyState({ onExplore }: { onExplore: () => void }) {
         onClick={onExplore}
         className="flex items-center gap-2 bg-[var(--color-primary)] text-white font-semibold text-sm px-6 py-3 rounded-xl hover:opacity-90 active:scale-95 transition-all"
       >
-        <Sparkles className="w-4 h-4" />
+        <Layers className="w-4 h-4" />
         Explore Plans
       </button>
     </motion.div>
@@ -95,7 +95,7 @@ export default function SubscriptionsPage() {
             >
               <ChevronLeft className="w-6 h-6" strokeWidth={2} />
             </button>
-            <h1 className="text-[17px] font-medium text-[#0F172A] ml-1">Subscriptions</h1>
+            <h1 className="text-[17px] font-medium text-black ml-1 tracking-tight">Baby Subscriptions</h1>
           </div>
         </div>
 
@@ -121,11 +121,11 @@ export default function SubscriptionsPage() {
           className="hidden md:flex flex-col md:flex-row md:items-start justify-between gap-4 px-1"
         >
           <div>
-            <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">
-              Manage Subscriptions
+            <h1 className="text-2xl md:text-3xl font-normal text-black tracking-tight leading-tight">
+              Manage Baby Subscriptions
             </h1>
-            <p className="text-sm text-gray-500 font-medium mt-1">
-              View and manage your active plans, or discover new ones tailored for your baby.
+            <p className="text-xs sm:text-sm text-gray-500 font-light mt-1 leading-relaxed">
+              View and manage your active meal plans, or discover new ones tailored for your baby.
             </p>
           </div>
         </motion.div>
@@ -199,7 +199,7 @@ export default function SubscriptionsPage() {
                     className="col-span-full flex flex-col items-center justify-center py-16 px-4 text-center"
                   >
                     <div className="w-20 h-20 rounded-3xl bg-[var(--color-primary)]/10 flex items-center justify-center mx-auto mb-4">
-                      <Sparkles
+                      <Layers
                         className="w-9 h-9 text-[var(--color-primary)]"
                         strokeWidth={1.5}
                       />
@@ -226,9 +226,9 @@ export default function SubscriptionsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="mt-4"
+          className="mt-6"
         >
-          <h2 className="text-base md:text-lg font-semibold text-gray-900 mb-4 px-1">Why Subscribe?</h2>
+          <h2 className="text-lg sm:text-xl font-normal text-black tracking-tight mb-4 px-1">Why Subscribe?</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
               { icon: ShieldCheck, label: "Expert-Approved",  desc: "Every plan is reviewed by certified child nutritionists", color: "bg-emerald-50 text-emerald-600" },
@@ -247,8 +247,8 @@ export default function SubscriptionsPage() {
                   <Icon className="w-4 h-4" strokeWidth={1.8} />
                 </div>
                 <div>
-                  <p className="text-[13px] md:text-[15px] font-semibold text-gray-900 leading-tight">{label}</p>
-                  <p className="text-[11px] md:text-[13px] text-gray-500 mt-0.5 leading-relaxed">{desc}</p>
+                  <p className="text-[13px] md:text-[15px] font-normal text-black leading-tight">{label}</p>
+                  <p className="text-[11px] md:text-[13px] text-gray-500 font-light mt-0.5 leading-relaxed">{desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -262,7 +262,7 @@ export default function SubscriptionsPage() {
           transition={{ delay: 0.5 }}
           className="mt-2 pb-4"
         >
-          <h2 className="text-base md:text-lg font-semibold text-gray-900 mb-4 px-1">Frequently Asked Questions</h2>
+          <h2 className="text-lg sm:text-xl font-normal text-black tracking-tight mb-4 px-1">Frequently Asked Questions</h2>
           <div className="space-y-2">
             {faqs.length === 0 ? (
               <div className="text-center py-4 bg-white rounded-2xl border border-dashed border-gray-200">

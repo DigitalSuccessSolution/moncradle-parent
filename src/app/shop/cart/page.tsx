@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, Trash2, ShieldCheck, ShoppingCart, Loader2 } from "lucide-react";
+import { ChevronLeft, Trash2, ShieldCheck, ShoppingCart, Loader2, Utensils } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -13,7 +13,12 @@ import { CartItem } from "@/lib/api/cartApi";
 export default function CartPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const [mounted, setMounted] = useState(false);
   const { items: cartItems, status: cartStatus, error, totalCount: cartTotalCount } = useAppSelector(state => state.cart);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const isLoading = cartStatus === 'loading';
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -38,10 +43,16 @@ export default function CartPage() {
   };
 
   const getItemName = (item: CartItem) =>
-    item.productId?.name || item.mealId?.name || "Product";
+    item.productId?.name || item.mealId?.name || (item as any)?.name || "Item";
 
-  const getItemImg = (item: CartItem) =>
-    item.productId?.imageUrl || item.mealId?.imageUrl || "";
+  const getItemImg = (item: CartItem) => {
+    const detail = item.itemType === 'meal' ? item.mealId : item.productId;
+    const directImg = (detail as any)?.imageUrl || (detail as any)?.images?.[0] || (item as any)?.imageUrl || (item as any)?.img;
+    if (directImg && typeof directImg === 'string' && directImg.trim() !== '') {
+      return directImg;
+    }
+    return "";
+  };
 
   const getItemPrice = (item: CartItem) => item.priceAtAddition;
 
@@ -49,7 +60,7 @@ export default function CartPage() {
   const shipping = subtotal > 500 ? 0 : 50;
   const total = subtotal + shipping;
 
-  if (isLoading) {
+  if (!mounted || isLoading) {
     return (
       <div className="min-h-screen bg-[var(--color-background)] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
@@ -70,7 +81,7 @@ export default function CartPage() {
             <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all">
               <ChevronLeft className="w-6 h-6" strokeWidth={2} />
             </button>
-            <h1 className="text-[17px] font-medium text-[#0F172A] ml-1">My Cart</h1>
+            <h1 className="text-[17px] font-normal text-black ml-1">Shopping Cart</h1>
           </div>
           <button onClick={() => router.push('/shop/cart')} className="relative text-[#0F172A] active:scale-95 transition-transform mr-1">
             <ShoppingCart className="w-6 h-6" strokeWidth={2} />
@@ -96,8 +107,10 @@ export default function CartPage() {
         {/* Desktop Page Header */}
         <div className="hidden md:flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4 px-1">
           <div>
-            <h1 className="text-2xl md:text-3xl font-medium text-gray-900">My Cart</h1>
-            <p className="text-sm text-gray-500 font-medium mt-1">Review your items and proceed to checkout.</p>
+            <h1 className="text-2xl md:text-3xl font-normal text-black tracking-tight leading-tight">
+              Shopping Cart
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-500 font-light mt-1 leading-relaxed">Review your items and proceed to secure checkout.</p>
           </div>
           <div className="bg-[var(--pastel-orange)]/10 text-[var(--pastel-orange)] px-4 py-2 rounded-xl font-medium text-sm flex items-center gap-2 border shadow-sm" style={{ borderColor: 'var(--pastel-orange)' }}>
             <ShoppingCart className="w-4 h-4 fill-current" /> {cartItems.length} {cartItems.length === 1 ? 'Item' : 'Items'}
@@ -115,8 +128,8 @@ export default function CartPage() {
             <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100">
               <ShoppingCart className="w-8 h-8 text-gray-400" />
             </div>
-            <h2 className="text-xl font-medium text-gray-900 mb-2">Your cart is empty</h2>
-            <p className="text-gray-500 font-medium max-w-md mx-auto mb-6">Discover our premium collection of essentials for your baby!</p>
+            <h2 className="text-xl font-normal text-black mb-2">Your cart is empty</h2>
+            <p className="text-xs sm:text-sm text-gray-500 font-light max-w-md mx-auto mb-6">Discover our premium collection of essentials for your baby!</p>
             <div className="flex justify-center gap-3">
               <Link href="/shop" className="bg-[var(--color-primary)] hover:opacity-90 text-white font-medium py-2.5 px-6 rounded-md text-sm transition-opacity">
                 Explore Shop
@@ -140,13 +153,25 @@ export default function CartPage() {
                   >
                     {/* Image */}
                     <Link href={item.productId?._id ? `/shop/${item.productId._id}` : (item.mealId?._id ? `/nutrition/meal-plans/${item.mealId._id}` : "#")} className="flex-shrink-0">
-                      <div className="w-24 md:w-28 relative h-full min-h-[96px] bg-gray-50 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity flex items-center justify-center">
+                      <div className="w-22 h-22 sm:w-24 sm:h-24 md:w-28 md:h-28 relative bg-gray-50 rounded-xl overflow-hidden cursor-pointer hover:opacity-95 transition-opacity flex items-center justify-center border border-gray-100">
                         {getItemImg(item) ? (
-                          <Image src={getItemImg(item)} alt={getItemName(item)} fill className="object-cover" />
+                          <Image
+                            src={getItemImg(item)}
+                            alt={getItemName(item)}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 96px, 112px"
+                          />
                         ) : (
-                          <div className="flex flex-col items-center justify-center text-gray-400">
-                            <ShoppingCart className="w-6 h-6 mb-1 opacity-50" />
-                            <span className="text-[9px] font-semibold">No Image</span>
+                          <div className="flex flex-col items-center justify-center text-gray-300">
+                            {item.itemType === 'meal' ? (
+                              <Utensils className="w-6 h-6 mb-1 text-gray-300" />
+                            ) : (
+                              <ShoppingCart className="w-6 h-6 mb-1 text-gray-300" />
+                            )}
+                            <span className="text-[10px] font-medium text-gray-400">
+                              {item.itemType === 'meal' ? "Meal" : "Product"}
+                            </span>
                           </div>
                         )}
                       </div>
@@ -156,7 +181,7 @@ export default function CartPage() {
                     <div className="flex-1 flex flex-col min-w-0 py-1 md:py-2">
                       <div className="flex justify-between items-start gap-2">
                         <Link href={item.productId?._id ? `/shop/${item.productId._id}` : (item.mealId?._id ? `/nutrition/meal-plans/${item.mealId._id}` : "#")}>
-                          <h3 className="text-[15px] md:text-base font-medium text-gray-900 leading-snug line-clamp-2 hover:text-[var(--color-primary)] transition-colors cursor-pointer pr-1">
+                          <h3 className="text-[15px] md:text-base font-normal text-black leading-snug line-clamp-2 hover:text-[var(--color-primary)] transition-colors cursor-pointer pr-1">
                             {getItemName(item)}
                           </h3>
                         </Link>
@@ -237,7 +262,7 @@ export default function CartPage() {
 
             {/* Right: Order Summary */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 lg:sticky lg:top-24">
-              <h3 className="text-lg font-semibold text-gray-900 mb-5">Order Summary</h3>
+              <h3 className="text-lg font-normal text-black tracking-tight leading-tight mb-5">Order Summary</h3>
 
               <div className="space-y-3 text-sm font-semibold text-gray-500 mb-5">
                 <div className="flex justify-between"><span>Subtotal</span><span className="text-gray-900 font-medium">₹{subtotal}</span></div>

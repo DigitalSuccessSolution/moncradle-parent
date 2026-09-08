@@ -37,6 +37,9 @@ function mapProduct(p: Product) {
   };
 }
 
+const DEFAULT_CATEGORIES = ["All Products", "Feeding", "Diapers", "Skincare", "Clothing", "Toys", "Health", "Organic"];
+const DEFAULT_AGE_GROUPS = ["All Ages", "0-6 months", "6-12 months", "1-3 years", "3+ years"];
+
 let shopCache = {
   products: [] as any[],
   hasMore: true,
@@ -60,8 +63,8 @@ export default function ShopPage() {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Filter States
-  const [categories, setCategories] = useState<string[]>(["All Products"]);
-  const [ageGroups, setAgeGroups] = useState<string[]>([]);
+  const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
+  const [ageGroups, setAgeGroups] = useState<string[]>(DEFAULT_AGE_GROUPS);
   const [activeCategory, setActiveCategory] = useState(shopCache.activeCategory);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [sortBy, setSortBy] = useState(shopCache.sortBy);
@@ -174,10 +177,13 @@ export default function ShopPage() {
   // Fetch dynamic filters once on mount
   useEffect(() => {
     getProductFilters().then(res => {
-      if (res.data) {
-        const capitalizedCategories = res.data.categories.map((c: string) => c.charAt(0).toUpperCase() + c.slice(1));
-        setCategories(["All Products", ...capitalizedCategories]);
-        setAgeGroups(res.data.ageGroups);
+      const data = res?.data || res;
+      if (data && Array.isArray(data.categories) && data.categories.length > 0) {
+        const capitalizedCategories = data.categories.map((c: string) => c.charAt(0).toUpperCase() + c.slice(1));
+        setCategories(Array.from(new Set(["All Products", ...capitalizedCategories, ...DEFAULT_CATEGORIES])));
+      }
+      if (data && Array.isArray(data.ageGroups) && data.ageGroups.length > 0) {
+        setAgeGroups(Array.from(new Set([...data.ageGroups, ...DEFAULT_AGE_GROUPS])));
       }
     }).catch(console.error);
   }, []);
@@ -388,7 +394,7 @@ export default function ShopPage() {
             <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all">
               <ChevronLeft className="w-6 h-6" strokeWidth={2} />
             </button>
-            <h1 className="text-[17px] font-medium text-[#0F172A] ml-1">Shop</h1>
+            <h1 className="text-[17px] font-medium text-black ml-1 tracking-tight">Baby Shop</h1>
           </div>
           <button onClick={() => router.push('/shop/cart')} className="relative text-[#0F172A] active:scale-95 transition-transform mr-1">
             <ShoppingCart className="w-6 h-6" strokeWidth={2} />
@@ -419,8 +425,12 @@ export default function ShopPage() {
           className="hidden md:flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4 px-1"
         >
           <div>
-            <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">Shop</h1>
-            <p className="text-sm text-gray-500 font-medium mt-1">Premium nutrition and essentials for your baby.</p>
+            <h1 className="text-2xl md:text-3xl font-normal text-black tracking-tight leading-tight">
+              Curated Baby Essentials &amp; Shop
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-500 font-light mt-1 leading-relaxed">
+              100% certified toxin-free, pediatrician-approved baby nutrition and essentials.
+            </p>
           </div>
         </motion.div>
 
@@ -452,7 +462,7 @@ export default function ShopPage() {
         </motion.div>
 
         {/* Product Grid — plain div, no heavy animations to prevent scroll lag */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
           {isLoading && products.length === 0 ? (
             <div className="col-span-full py-20 flex justify-center items-center">
               <div className="flex flex-col items-center gap-4">

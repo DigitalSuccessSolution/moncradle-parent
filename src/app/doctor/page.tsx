@@ -5,16 +5,52 @@ import { useState, useEffect } from "react";
 import { apiClient } from "@/lib/apiClient";
 
 import { Button } from "@/components/ui/Button";
-import { Calendar as CalendarIcon, Video, Star, Clock, ChevronLeft, X, Shield, Award, MapPin, Bell } from "lucide-react";
+import { Calendar as CalendarIcon, Star, Clock, ChevronLeft, X, Shield, Award, MapPin, Bell } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import { useAppSelector } from "@/store/hooks";
 import { useAuth } from "@/context/AuthContext";
+import { getDoctorAvailabilityStatus } from "@/lib/api/doctorsApi";
 import toast from "react-hot-toast";
 
-const indianStates = ["All India", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Delhi", "Chandigarh"];
+const indianStates = [
+  "All India",
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chhattisgarh",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal",
+  "Delhi",
+  "Chandigarh",
+  "Jammu and Kashmir",
+  "Ladakh",
+  "Puducherry"
+];
 
 export default function DoctorPage() {
   const unreadNotificationsCount = useAppSelector(state => state.notifications.unreadCount);
@@ -49,24 +85,24 @@ export default function DoctorPage() {
 
   useEffect(() => {
     if (isAuthLoading) return;
-    
+
     if (isAuthenticated) {
-       import("@/lib/api/addressesApi").then(({ getAddresses }) => {
-          getAddresses().then(addresses => {
-             if (addresses && addresses.length > 0) {
-               const defaultAddress = addresses.find((a: any) => a.isDefault) || addresses[0];
-               if (defaultAddress && defaultAddress.state) {
-                 setSelectedLocation(defaultAddress.state);
-               }
-             }
-             setIsLocationInitialized(true);
-          }).catch((e) => {
-             console.error("Failed to fetch user state for doctor filtering:", e);
-             setIsLocationInitialized(true);
-          });
-       });
+      import("@/lib/api/addressesApi").then(({ getAddresses }) => {
+        getAddresses().then(addresses => {
+          if (addresses && addresses.length > 0) {
+            const defaultAddress = addresses.find((a: any) => a.isDefault) || addresses[0];
+            if (defaultAddress && defaultAddress.state) {
+              setSelectedLocation(defaultAddress.state);
+            }
+          }
+          setIsLocationInitialized(true);
+        }).catch((e) => {
+          console.error("Failed to fetch user state for doctor filtering:", e);
+          setIsLocationInitialized(true);
+        });
+      });
     } else {
-       setIsLocationInitialized(true);
+      setIsLocationInitialized(true);
     }
   }, [isAuthenticated, isAuthLoading]);
 
@@ -79,27 +115,45 @@ export default function DoctorPage() {
       try {
         let stateQuery = "";
         if (selectedLocation !== "All India") {
-           stateQuery = `?clinicAddress[regex]=${encodeURIComponent(selectedLocation)}&clinicAddress[options]=i`;
+          stateQuery = `?location=${encodeURIComponent(selectedLocation)}`;
         }
-        
+
         const response = await apiClient.get('/doctors' + stateQuery);
         if (response.data.success) {
-          const formattedDoctors = response.data.data.map((doc: any) => ({
-            id: doc.user?._id || doc._id,
-            name: doc.user?.name || "",
-            spec: doc.specialization || "",
-            exp: doc.experienceYears ? `${doc.experienceYears} yrs exp` : "",
-            rating: doc.rating ? doc.rating.toFixed(1) : "0.0",
-            reviews: doc.reviewsCount || 0,
-            slots: doc.isAvailable ? "Available Today" : "Unavailable",
-            img: doc.user?.avatar || "/images/doctor_profile.png",
-            languages: doc.languagesSpoken?.join(", ") || "",
-            education: (doc.qualifications?.length ? doc.qualifications : doc.degrees)?.join(", ") || "",
-            about: doc.about || "",
-            fee: doc.consultationFee || 0,
-            clinicName: doc.clinicName || "",
-            clinicAddress: doc.clinicAddress || ""
-          }));
+          const formattedDoctors = response.data.data.map((doc: any) => {
+            const rawClinic = doc.clinicAddress || "";
+            const extraParts = [doc.city, doc.state, doc.pincode].filter(Boolean);
+            const locParts: string[] = rawClinic ? [rawClinic] : [];
+            extraParts.forEach((part: string) => {
+              if (part && !rawClinic.toLowerCase().includes(part.toLowerCase())) {
+                locParts.push(part);
+              }
+            });
+            const fullAddress = locParts.length > 0 ? locParts.join(", ") : rawClinic;
+
+            const avail = getDoctorAvailabilityStatus(doc);
+
+            return {
+              id: doc.user?._id || doc._id,
+              name: doc.user?.name || "",
+              spec: doc.specialization || "",
+              exp: doc.experienceYears ? `${doc.experienceYears} yrs exp` : "",
+              rating: doc.rating ? doc.rating.toFixed(1) : "0.0",
+              reviews: doc.reviewsCount || 0,
+              slots: avail.status,
+              isToday: avail.isToday,
+              img: doc.user?.avatar || "/images/doctor_profile.png",
+              languages: doc.languagesSpoken?.join(", ") || "",
+              education: (doc.qualifications?.length ? doc.qualifications : doc.degrees)?.join(", ") || "",
+              about: doc.about || "",
+              fee: doc.consultationFee || 0,
+              clinicName: doc.clinicName || "",
+              clinicAddress: fullAddress,
+              city: doc.city || "",
+              state: doc.state || "",
+              pincode: doc.pincode || ""
+            };
+          });
           setDoctors(formattedDoctors);
         }
       } catch (error) {
@@ -151,17 +205,17 @@ export default function DoctorPage() {
                 <button onClick={() => router.back()} className="p-1 -ml-1 rounded-full hover:bg-gray-100 active:scale-95 transition-all shrink-0">
                   <ChevronLeft className="w-6 h-6" strokeWidth={2} />
                 </button>
-                <h1 className="text-[17px] font-semibold text-[#0F172A] ml-1">Find a Doctor</h1>
+                <h1 className="text-[17px] font-medium text-black ml-1 tracking-tight">Find a Doctor</h1>
               </div>
-              <button 
-                onClick={() => setShowLocationModal(true)} 
-                className="flex items-center gap-1 ml-8 mt-0.5 text-[12px] text-gray-500 hover:text-[var(--color-primary)] transition-colors text-left"
+              <button
+                onClick={() => setShowLocationModal(true)}
+                className="flex items-center gap-1 ml-8 mt-0.5 text-[12px] text-gray-500 font-light hover:text-[var(--color-primary)] transition-colors text-left"
               >
                 <MapPin className="w-3 h-3 text-[var(--color-primary)] shrink-0" />
                 <span className="truncate max-w-[180px] font-medium border-b border-dashed border-gray-300 pb-[1px]">{selectedLocation}</span>
               </button>
             </div>
-            
+
             <button onClick={() => router.push('/notifications')} className="relative p-2 -mr-2 mt-0.5 rounded-full hover:bg-gray-100 transition-colors cursor-pointer shrink-0">
               <Bell className="w-6 h-6 text-gray-800" />
               {unreadNotificationsCount > 0 && <span className="absolute top-1.5 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white shadow-sm"></span>}
@@ -192,16 +246,20 @@ export default function DoctorPage() {
         >
           <div>
             <div className="flex items-center gap-4">
-              <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">Find a Doctor</h1>
-              <button onClick={() => setShowLocationModal(true)} className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200 transition-colors shadow-sm mt-1">
-                <MapPin className="w-4 h-4 text-[var(--color-primary)]" />
-                {selectedLocation}
+              <h1 className="text-2xl md:text-3xl font-normal text-black tracking-tight leading-tight">
+                Find Top Pediatricians
+              </h1>
+              <button onClick={() => setShowLocationModal(true)} className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200 transition-colors shadow-2xs mt-1 cursor-pointer">
+                <MapPin className="w-3.5 h-3.5 text-[var(--color-primary)]" />
+                <span>{selectedLocation}</span>
               </button>
             </div>
-            <p className="text-sm text-gray-500 font-medium mt-1">Book a clinic consultation with top pediatric specialists.</p>
+            <p className="text-xs sm:text-sm text-gray-500 font-light mt-1 leading-relaxed">
+              Book an in-clinic consultation with verified child specialists and pediatricians.
+            </p>
           </div>
-          <div className="bg-[var(--pastel-green)]/10 text-[var(--pastel-green)] px-4 py-2 rounded-xl font-semibold text-sm flex items-center gap-2 border shadow-sm" style={{ borderColor: 'var(--pastel-green)' }}>
-            <Shield className="w-4 h-4" /> {doctors.length} Doctors
+          <div className="bg-[var(--pastel-green)]/10 text-[var(--pastel-green)] px-4 py-2 rounded-xl font-semibold text-xs flex items-center gap-2 border shadow-2xs" style={{ borderColor: 'var(--pastel-green)' }}>
+            <Shield className="w-4 h-4" /> <span>{doctors.length} Doctors Available</span>
           </div>
         </motion.div>
 
@@ -238,38 +296,72 @@ export default function DoctorPage() {
               <p className="text-gray-500 font-medium">No doctors available for this category.</p>
             </div>
           ) : filteredDoctors.map((doc, i) => (
-            <motion.div key={i} variants={itemVariants} className="bg-white rounded-xl shadow-sm p-5 border border-gray-100 hover:shadow-md hover:border-[var(--color-primary)]/30 transition-all group flex flex-col h-full cursor-pointer">
-              <div className="flex flex-col gap-3 h-full">
-
-                <div className="flex items-start gap-4">
-                  <div className="relative w-14 h-14 rounded-full overflow-hidden flex-shrink-0 border border-gray-100 bg-blue-50/50">
-                    <Image src={doc.img} alt={doc.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+            <motion.div
+              key={i}
+              variants={itemVariants}
+              className="bg-white rounded-2xl shadow-xs hover:shadow-md border border-slate-100/90 hover:border-[var(--color-primary)]/30 p-4 sm:p-5 transition-all group flex flex-col justify-between h-full cursor-pointer"
+            >
+              <div className="flex flex-col gap-3">
+                <div className="flex items-start gap-3.5">
+                  <div className="relative w-14 h-14 rounded-full overflow-hidden flex-shrink-0 border border-slate-100 bg-slate-50 shadow-xs">
+                    <Image
+                      src={doc.img}
+                      alt={doc.name}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
                   </div>
-                  <div className="flex-1 min-w-0 pt-0.5">
-                    <h3 className="font-semibold text-base text-gray-900 leading-tight truncate group-hover:text-[var(--color-primary)] transition-colors capitalize">{doc.name || "Doctor"}</h3>
-                    <p className="text-[11px] font-medium text-gray-500 mb-1.5 truncate min-h-[16px]">{doc.spec || "General Practice"}</p>
 
-                    <div className="flex items-center gap-1.5 flex-wrap mb-1 min-h-[22px]">
-                      <div className="flex items-center gap-1 bg-amber-50/50 border border-amber-100 px-1.5 py-0.5 rounded text-[10px] font-semibold text-amber-600">
-                        <Star className="w-3 h-3 fill-amber-500 text-amber-500" /> {doc.rating}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-1">
+                      <h3 className="font-normal text-[15px] sm:text-base text-black leading-tight truncate group-hover:text-[var(--color-primary)] transition-colors capitalize">
+                        {doc.name || "Doctor"}
+                      </h3>
+                      {doc.fee ? (
+                        <span className="font-semibold text-black text-sm whitespace-nowrap pl-1">₹{doc.fee}</span>
+                      ) : null}
+                    </div>
+
+                    <p className="text-xs font-light text-gray-500 mt-0.5 truncate">{doc.spec || "General Practice"}</p>
+
+                    {/* Badges: Rating, Exp, State (Only State) */}
+                    <div className="flex items-center gap-1.5 flex-wrap mt-2">
+                      <div className="flex items-center gap-1 bg-amber-50 border border-amber-200/60 px-1.5 py-0.5 rounded text-[10px] font-semibold text-amber-700">
+                        <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                        <span>{doc.rating}</span>
                       </div>
-                      {doc.exp && <span className="text-[10px] font-semibold text-gray-500 bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded">{doc.exp}</span>}
-                    </div>
-                    <div className="flex items-center gap-1 text-[11px] font-medium text-emerald-600 mt-1.5">
-                      <Clock className="w-3 h-3" /> {doc.slots}
+
+                      {doc.exp && (
+                        <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 border border-slate-200/60 px-1.5 py-0.5 rounded">
+                          {doc.exp}
+                        </span>
+                      )}
+
+                      {doc.state && (
+                        <span className="flex items-center gap-0.5 text-[10px] font-semibold text-[var(--color-primary)] bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 px-1.5 py-0.5 rounded max-w-[130px] truncate" title={doc.state}>
+                          <MapPin className="w-2.5 h-2.5 shrink-0 text-[var(--color-primary)]" />
+                          <span className="truncate">{doc.state}</span>
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                <div className="flex gap-2 mt-auto pt-3">
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => setSelectedDoctor(doc)}>
-                    Profile
-                  </Button>
-                  <Button variant="primary" size="sm" className="flex-1" leftIcon={<CalendarIcon className="w-3.5 h-3.5" />} onClick={(e) => handleBookClick(e, doc.id)}>
-                    Book
-                  </Button>
+                {/* Availability Status */}
+                <div className={`flex items-center gap-1.5 text-[11px] font-medium pt-0.5 ${doc.isToday ? 'text-emerald-600' : 'text-blue-600'}`}>
+                  <Clock className={`w-3.5 h-3.5 shrink-0 ${doc.isToday ? 'text-emerald-600' : 'text-blue-500'}`} />
+                  <span>{doc.slots}</span>
                 </div>
+              </div>
 
+              {/* Action Buttons */}
+              <div className="flex gap-2.5 mt-3.5 pt-3 border-t border-slate-100">
+                <Button variant="outline" size="sm" className="flex-1 text-xs font-semibold py-2 rounded-xl" onClick={() => setSelectedDoctor(doc)}>
+                  Profile
+                </Button>
+                <Button variant="primary" size="sm" className="flex-1 text-xs font-semibold py-2 rounded-xl" leftIcon={<CalendarIcon className="w-3.5 h-3.5" />} onClick={(e) => handleBookClick(e, doc.id)}>
+                  Book
+                </Button>
               </div>
             </motion.div>
           ))}
@@ -302,7 +394,7 @@ export default function DoctorPage() {
             >
               {/* Header */}
               <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-white sticky top-0 z-10">
-                <h2 className="text-lg font-semibold text-gray-900">Doctor Profile</h2>
+                <h2 className="text-lg font-normal text-black tracking-tight">Doctor Profile</h2>
                 <button
                   onClick={() => setSelectedDoctor(null)}
                   className="p-2 bg-gray-50 text-gray-500 rounded-full hover:bg-gray-100 transition-colors active:scale-95"
@@ -315,11 +407,11 @@ export default function DoctorPage() {
               <div className="p-6 overflow-y-auto space-y-6">
 
                 <div className="flex flex-col items-center text-center">
-                  <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-50 mb-4">
+                  <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-50 mb-4 border border-gray-100 shadow-2xs">
                     <Image src={selectedDoctor.img} alt={selectedDoctor.name} width={96} height={96} className="object-cover" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-1">{selectedDoctor.name}</h3>
-                  <p className="text-sm font-semibold text-[var(--color-primary)] mb-3">{selectedDoctor.spec}</p>
+                  <h3 className="text-xl font-normal text-black tracking-tight mb-1">{selectedDoctor.name}</h3>
+                  <p className="text-sm font-light text-[var(--color-primary)] mb-3">{selectedDoctor.spec}</p>
 
                   <div className="flex items-center justify-center gap-4 w-full mt-4">
                     <div className="flex-1 border-r border-gray-50">
@@ -366,9 +458,14 @@ export default function DoctorPage() {
                       <p className="text-sm font-semibold text-[var(--color-primary)]">₹{selectedDoctor.fee}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-0.5">Clinic Details</p>
+                      <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-0.5">Clinic & Location</p>
                       <p className="text-sm font-semibold text-gray-900">{selectedDoctor.clinicName || 'Online Consultation'}</p>
-                      {selectedDoctor.clinicAddress && <p className="text-xs text-slate-500 mt-0.5">{selectedDoctor.clinicAddress}</p>}
+                      {selectedDoctor.clinicAddress && (
+                        <p className="text-xs text-slate-600 mt-1 flex items-start gap-1.5 leading-relaxed">
+                          <MapPin className="w-3.5 h-3.5 shrink-0 text-[var(--color-primary)] mt-0.5" />
+                          <span>{selectedDoctor.clinicAddress}</span>
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -392,7 +489,7 @@ export default function DoctorPage() {
       <AnimatePresence>
         {showLocationModal && (
           <div className="fixed inset-0 z-[200] flex items-end md:items-center justify-center p-0 md:p-4">
-             <motion.div
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -413,15 +510,15 @@ export default function DoctorPage() {
                 </button>
               </div>
               <div className="p-4 overflow-y-auto space-y-1">
-                 {indianStates.map(state => (
-                    <button
-                      key={state}
-                      onClick={() => { setSelectedLocation(state); setShowLocationModal(false); }}
-                      className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-colors ${selectedLocation === state ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-gray-700 hover:bg-gray-50"}`}
-                    >
-                      {state}
-                    </button>
-                 ))}
+                {indianStates.map(state => (
+                  <button
+                    key={state}
+                    onClick={() => { setSelectedLocation(state); setShowLocationModal(false); }}
+                    className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-colors ${selectedLocation === state ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-gray-700 hover:bg-gray-50"}`}
+                  >
+                    {state}
+                  </button>
+                ))}
               </div>
             </motion.div>
           </div>

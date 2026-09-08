@@ -6,6 +6,7 @@ import { ChevronLeft, Camera, CheckCircle2, Baby, ChevronDown } from "lucide-rea
 
 
 import { getBabies, updateBaby, BabyProfile } from "@/lib/api/babiesApi";
+import { calculateBabyAgeMonths } from "@/lib/utils/babyAge";
 
 const COMMON_ALLERGIES = ["Milk", "Eggs", "Peanuts", "Tree Nuts", "Soy", "Wheat", "Fish", "Shellfish"];
 const COMMON_SYMPTOMS = ["Cold", "Cough", "Fever", "Teething", "Constipation", "Diarrhea", "Colic"];
@@ -89,13 +90,8 @@ export default function BabyEditProfilePage() {
       if (formData.gender) data.append("gender", formData.gender);
       if (formData.dateOfBirth) {
         data.append("dateOfBirth", formData.dateOfBirth);
-        // Calculate age in months
-        const birthDate = new Date(formData.dateOfBirth);
-        const today = new Date();
-        let months = (today.getFullYear() - birthDate.getFullYear()) * 12;
-        months -= birthDate.getMonth();
-        months += today.getMonth();
-        const ageInMonths = months <= 0 ? 0 : months;
+        // Calculate age in months accurately
+        const ageInMonths = calculateBabyAgeMonths(formData.dateOfBirth);
         data.append("ageInMonths", ageInMonths.toString());
       }
       if (formData.weight) data.append("weight", formData.weight.toString());

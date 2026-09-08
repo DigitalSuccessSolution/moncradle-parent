@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Search, Calendar, ChevronRight, ChevronLeft, Filter } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/apiClient';
+import { ArticleCard } from '@/components/articles/ArticleCard';
 
 export default function ArticlesPage() {
   const router = useRouter();
@@ -102,7 +103,7 @@ export default function ArticlesPage() {
             <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all">
               <ChevronLeft className="w-6 h-6 text-gray-800" strokeWidth={2} />
             </button>
-            <h1 className="text-[17px] font-medium text-gray-900 ml-1">Articles</h1>
+            <h1 className="text-[17px] font-medium text-black ml-1 tracking-tight">Parenting Articles</h1>
           </div>
         </div>
 
@@ -124,8 +125,12 @@ export default function ArticlesPage() {
           className="hidden md:flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4 px-1"
         >
           <div>
-            <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">Articles</h1>
-            <p className="text-sm text-gray-500 font-medium mt-1">Expert advice and parenting tips.</p>
+            <h1 className="text-2xl md:text-3xl font-normal text-black tracking-tight leading-tight">
+              Parenting Tips &amp; Articles
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-500 font-light mt-1 leading-relaxed">
+              Expert pediatric advice, wholesome recipes, and daily parenting knowledge.
+            </p>
           </div>
         </motion.div>
 
@@ -191,60 +196,12 @@ export default function ArticlesPage() {
             {articles.map((article, index) => {
               const isLast = index === articles.length - 1;
               return (
-                <Link 
+                <ArticleCard
+                  key={article._id || index}
                   ref={isLast ? lastArticleElementRef : null}
-                  key={article._id} 
-                  href={`/articles/${article.slug}`}
-                  className="block h-full"
-                >
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: (index % limit) * 0.05 }}
-                    className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full cursor-pointer group"
-                  >
-                <div className="w-full h-48 bg-gray-200 relative overflow-hidden shrink-0">
-                  {article.coverImage ? (
-                    <img 
-                      src={article.coverImage} 
-                      alt={article.title} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                      No Image
-                    </div>
-                  )}
-                  <div className="absolute top-3 left-3">
-                    <span className="px-3 py-1 bg-white/90 backdrop-blur-sm text-[var(--color-primary)] text-xs font-semibold rounded-full shadow-sm">
-                      {article.category}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="p-5 flex-1 flex flex-col">
-                  <h3 className="text-lg font-bold text-gray-900 leading-tight mb-2 group-hover:text-[var(--color-primary)] transition-colors line-clamp-2">
-                    {article.title}
-                  </h3>
-                  
-                  {/* Extract text snippet from HTML content */}
-                  <p className="text-sm text-gray-600 line-clamp-2 mb-4" 
-                    dangerouslySetInnerHTML={{ __html: article.content.substring(0, 150) + '...' }}>
-                  </p>
-                  
-                  <div className="mt-auto flex items-center justify-between pt-4 border-t border-gray-50">
-                    <div className="flex items-center text-xs text-gray-500 gap-1">
-                      <Calendar className="w-3 h-3" />
-                      {new Date(article.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </div>
-                    
-                    <span className="text-[var(--color-secondary)] text-sm font-medium flex items-center">
-                      Read more <ChevronRight className="w-4 h-4 ml-1" />
-                    </span>
-                  </div>
-                </div>
-              </motion.div>
-            </Link>
+                  article={article}
+                  index={index}
+                />
               );
             })}
           </>

@@ -568,7 +568,7 @@ export default function MealPlansHub() {
             <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all">
               <ChevronLeft className="w-6 h-6" strokeWidth={2} />
             </button>
-            <h1 className="text-[17px] font-medium text-[#0F172A] ml-1">Meal Plans</h1>
+            <h1 className="text-[17px] font-normal text-black ml-1">Meal Plans</h1>
           </div>
           <button onClick={() => router.push('/shop/cart')} className="relative text-[#0F172A] active:scale-95 transition-transform mr-1">
             <ShoppingCart className="w-6 h-6" strokeWidth={2} />
@@ -599,8 +599,12 @@ export default function MealPlansHub() {
           className="hidden md:flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4 px-1"
         >
           <div>
-            <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">Meal Plans</h1>
-            <p className="text-sm text-gray-500 font-medium mt-1">Nutritious meals tailored for your baby's age.</p>
+            <h1 className="text-2xl md:text-3xl font-normal text-black tracking-tight leading-tight">
+              Nutritious Baby Meal Plans
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-500 font-light mt-1 leading-relaxed">
+              Freshly prepared, doctor-approved balanced meal plans tailored for your baby's age and growth.
+            </p>
           </div>
         </motion.div>
 
@@ -665,8 +669,8 @@ export default function MealPlansHub() {
             animate="show"
             className="mt-8 md:mt-10 flex flex-col"
           >
-            <h3 className="text-[18px] md:text-xl font-semibold text-black leading-tight mb-8 md:mb-10 px-1">
-              Explore meals <span className="text-[var(--color-primary)]">({activeAge})</span>
+            <h3 className="text-[18px] md:text-xl font-normal text-black tracking-tight leading-tight mb-8 md:mb-10 px-1">
+              Explore Meals ({activeAge})
             </h3>
 
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3">
@@ -847,13 +851,17 @@ export default function MealPlansHub() {
                           disabled={isSavingMeal}
                           className="text-left bg-white border border-gray-100 rounded-lg overflow-hidden hover:border-[var(--color-primary)] hover:shadow-md transition-all duration-200 group disabled:opacity-50"
                         >
-                          <div className="relative h-24 bg-gray-50">
-                            <Image
-                              src={meal.imageUrl || meal.images?.[0] || "/images/meal_food.png"}
-                              alt={meal.name}
-                              fill
-                              className="object-cover group-hover:scale-105 transition-transform duration-300"
-                            />
+                          <div className="relative h-24 bg-gray-50 flex items-center justify-center">
+                            {(meal.imageUrl || meal.images?.[0]) ? (
+                              <Image
+                                src={(meal.imageUrl || meal.images?.[0]) as string}
+                                alt={meal.name}
+                                fill
+                                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                              />
+                            ) : (
+                              <Utensils className="w-8 h-8 text-gray-300" />
+                            )}
                             {isSavingMeal && (
                               <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
                                 <Loader2 className="w-5 h-5 text-[var(--color-primary)] animate-spin" />
@@ -916,13 +924,20 @@ export default function MealPlansHub() {
                 {/* Scrollable Body */}
                 <div className="overflow-y-auto no-scrollbar flex-1 pb-10">
                   {/* Image */}
-                  <div className="relative h-56 md:h-[340px] mx-4 md:mx-6 md:mt-6 rounded-2xl overflow-hidden bg-gray-100 mb-6 shadow-sm border border-gray-100/50">
-                    <Image
-                      src={selectedEntryDetail.meal?.imageUrl || selectedEntryDetail.meal?.images?.[0] || "/images/meal_food.png"}
-                      alt={selectedEntryDetail.meal?.name || "Meal"}
-                      fill
-                      className="object-cover"
-                    />
+                  <div className="relative h-56 md:h-[340px] mx-4 md:mx-6 md:mt-6 rounded-2xl overflow-hidden bg-gray-100 mb-6 shadow-sm border border-gray-100/50 flex items-center justify-center">
+                    {(selectedEntryDetail.meal?.imageUrl || selectedEntryDetail.meal?.images?.[0]) ? (
+                      <Image
+                        src={(selectedEntryDetail.meal?.imageUrl || selectedEntryDetail.meal?.images?.[0]) as string}
+                        alt={selectedEntryDetail.meal?.name || "Meal"}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50">
+                        <Utensils className="w-12 h-12 mb-2 text-gray-300" />
+                        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Fresh Meal</span>
+                      </div>
+                    )}
                     <button
                       onClick={() => { setSelectedEntryDetail(null); setIsEditingInstructions(false); }}
                       className="absolute top-3 right-3 w-8 h-8 bg-black/40 hover:bg-black/60 transition-colors rounded-full flex items-center justify-center backdrop-blur-md"
@@ -1162,7 +1177,7 @@ export default function MealPlansHub() {
                 </div>
                 <h3 className="text-xl font-bold text-center text-gray-900 mb-2">Skip this delivery?</h3>
                 <p className="text-center text-gray-500 text-sm mb-6 leading-relaxed">
-                  Are you sure you want to skip <span className="font-bold text-gray-700">{mealToSkip.meal?.name || "this meal"}</span>? 
+                  Are you sure you want to skip <span className="font-bold text-gray-700">{mealToSkip.meal?.name || "this meal"}</span>?
                   This delivery will be carried forward to the end of your subscription.
                 </p>
                 <div className="flex gap-3">
@@ -1193,3 +1208,4 @@ export default function MealPlansHub() {
     </div>
   );
 }
+

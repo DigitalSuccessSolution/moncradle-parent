@@ -30,7 +30,7 @@ export default function WishlistPage() {
         const productPromises = wishlistItems
           .filter(item => item.itemType === 'product')
           .map(item => getProductById(item.itemId).then((res: any) => res?.data || res).catch(() => null));
-          
+
         const mealPromises = wishlistItems
           .filter(item => item.itemType === 'meal')
           .map(item => getMealById(item.itemId).then((res: any) => res?.data || res).catch(() => null));
@@ -50,7 +50,7 @@ export default function WishlistPage() {
           reviews: p.numReviews || 0,
           stockQuantity: p.stockQuantity || 0
         })));
-        
+
         setMeals(fetchedMeals.filter(Boolean));
       } catch (err) {
         console.error("Failed to load wishlist details", err);
@@ -75,13 +75,13 @@ export default function WishlistPage() {
       await dispatch(addToCartAsync({ itemId: meal._id, itemType: "meal" })).unwrap();
     } catch { /* ignore */ }
   };
-  
+
   const handleIncrement = async (productId: string) => {
     const entry = cartMap[productId];
     if (!entry) { handleAddToCart(productId); return; }
     try {
       await dispatch(updateCartQuantityAsync({ cartItemId: entry.cartItemId, quantity: entry.qty + 1 })).unwrap();
-    } catch {}
+    } catch { }
   };
 
   const handleDecrement = async (productId: string) => {
@@ -93,7 +93,7 @@ export default function WishlistPage() {
       } else {
         await dispatch(updateCartQuantityAsync({ cartItemId: entry.cartItemId, quantity: entry.qty - 1 })).unwrap();
       }
-    } catch {}
+    } catch { }
   };
 
   const handleRemoveMeal = async (e: React.MouseEvent, mealId: string) => {
@@ -106,9 +106,9 @@ export default function WishlistPage() {
 
   return (
     <div className="min-h-screen bg-[var(--color-background)] font-sans pb-24 md:pb-0 relative">
-            
+
       <main className="max-w-[1200px] mx-auto px-4 md:px-8 py-4 md:py-8 space-y-6">
-        
+
         {/* Mobile Back Header */}
         <div className="md:hidden flex items-center justify-between px-4 py-3 -mx-4 -mt-4 sticky top-0 z-40 bg-white">
           <div className="flex items-center gap-2">
@@ -129,8 +129,8 @@ export default function WishlistPage() {
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center mb-2 -ml-3 md:ml-0">
-          <button 
-            onClick={() => router.back()} 
+          <button
+            onClick={() => router.back()}
             className="flex items-center gap-1 px-3 py-2 rounded-full text-gray-700 hover:bg-gray-100 hover:text-[var(--color-primary)] transition-colors"
           >
             <ChevronLeft className="w-6 h-6" />
@@ -151,20 +151,20 @@ export default function WishlistPage() {
 
         {loading ? (
           <div className="flex justify-center py-20">
-             <div className="w-8 h-8 border-4 border-gray-100 border-t-[var(--color-primary)] rounded-full animate-spin"></div>
+            <div className="w-8 h-8 border-4 border-gray-100 border-t-[var(--color-primary)] rounded-full animate-spin"></div>
           </div>
         ) : wishlistItems.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-lg border border-gray-100">
-             <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <HeartCrack className="w-8 h-8 text-rose-300" />
-             </div>
-             <h2 className="text-xl font-semibold text-gray-900 mb-2">Your wishlist is empty</h2>
-             <p className="text-gray-500 font-medium max-w-md mx-auto mb-6">Explore our collections and find something you love.</p>
-             <div className="flex justify-center gap-3">
-               <Link href="/shop" className="bg-[var(--color-primary)] hover:opacity-90 text-white font-semibold py-2.5 px-6 rounded-md text-sm transition-opacity">
-                 Explore Shop
-               </Link>
-             </div>
+            <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <HeartCrack className="w-8 h-8 text-rose-300" />
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Your wishlist is empty</h2>
+            <p className="text-gray-500 font-medium max-w-md mx-auto mb-6">Explore our collections and find something you love.</p>
+            <div className="flex justify-center gap-3">
+              <Link href="/shop" className="bg-[var(--color-primary)] hover:opacity-90 text-white font-semibold py-2.5 px-6 rounded-md text-sm transition-opacity">
+                Explore Shop
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="space-y-10">
@@ -173,9 +173,9 @@ export default function WishlistPage() {
                 <h2 className="text-lg font-semibold text-gray-900 mb-4 px-1">Saved Products</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
                   {products.map((product) => (
-                    <ProductCard 
-                      key={product.id} 
-                      product={product} 
+                    <ProductCard
+                      key={product.id}
+                      product={product}
                       cartQuantity={cartMap[product.id]?.qty || 0}
                       onAddToCart={(e) => { e.stopPropagation(); handleAddToCart(product.id); }}
                       onIncrement={(e) => { e.stopPropagation(); handleIncrement(product.id); }}
@@ -191,7 +191,7 @@ export default function WishlistPage() {
                 <h2 className="text-lg font-semibold text-gray-900 mb-4 px-1">Saved Meals</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
                   {meals.map((meal) => (
-                    <MealCard 
+                    <MealCard
                       key={meal._id}
                       meal={meal}
                       cartQuantity={cartMap[meal._id]?.qty || 0}
@@ -204,7 +204,7 @@ export default function WishlistPage() {
           </div>
         )}
       </main>
-      
-          </div>
+
+    </div>
   );
 }

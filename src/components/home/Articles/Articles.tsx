@@ -52,17 +52,21 @@ export function Articles() {
   return (
     <section>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 md:mb-8 gap-2">
-        <div className="min-w-0">
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-black leading-tight">Parenting Tips & Articles</h2>
-          <p className="text-sm text-gray-500 mt-2 hidden md:block font-light">Expert advice and insights for your parenting journey.</p>
+      <div className="flex items-center justify-between mb-3 sm:mb-5 md:mb-6 gap-2">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-lg sm:text-2xl md:text-3xl font-normal text-black tracking-tight leading-snug truncate sm:overflow-visible">
+            Parenting <span className="text-[var(--color-primary)]">Tips &amp; Guides</span>
+          </h2>
+          <p className="text-xs sm:text-sm md:text-base text-gray-500 font-light mt-0.5 hidden md:block">
+            Pediatrician-backed advice and insights for your parenting journey.
+          </p>
         </div>
-        <Link href="/articles" className="text-[11px] md:text-sm font-semibold md:font-medium text-[var(--color-primary)] flex items-center gap-1 group shrink-0 whitespace-nowrap">
+        <Link href="/articles" className="text-xs md:text-sm font-medium text-[var(--color-primary)] flex items-center gap-0.5 group shrink-0 whitespace-nowrap">
           <span className="relative pb-0.5">
             View All
             <span className="absolute bottom-0 left-0 w-full h-[1.5px] bg-[var(--color-primary)] origin-left scale-x-0 group-hover:scale-x-100 group-active:scale-x-0 transition-transform duration-300 ease-out rounded-full"></span>
           </span>
-          <ChevronRight className="w-3 h-3 md:w-4 md:h-4 group-hover:translate-x-1 transition-transform" />
+          <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
         </Link>
       </div>
 
@@ -70,31 +74,43 @@ export function Articles() {
         {displayArticles.map((article, i) => {
           const readTime = Math.max(2, Math.ceil((article.content?.length || 0) / 800));
           const date = new Date(article.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-          
+
           return (
-            <Link key={article._id || i} href={`/articles/${article.slug}`} className="group cursor-pointer w-[60vw] min-w-[60vw] snap-center sm:w-full sm:min-w-full md:w-auto md:min-w-0 shrink-0 bg-white rounded-lg border border-gray-200 flex flex-col overflow-hidden hover:border-[var(--color-primary)] transition-colors duration-300">
+            <Link 
+              key={article._id || i} 
+              href={`/articles/${article.slug}`} 
+              className="group cursor-pointer w-[65vw] min-w-[65vw] snap-center sm:w-full sm:min-w-full md:w-auto md:min-w-0 shrink-0 bg-white rounded-2xl border border-slate-100 shadow-xs hover:shadow-md flex flex-col overflow-hidden transition-all duration-300"
+            >
               {/* Image Container */}
-              <div className="w-full h-[160px] md:h-[180px] bg-[#F8FAFC] relative border-b border-gray-100 overflow-hidden">
-                <span className="absolute top-3 left-3 bg-white/90 backdrop-blur px-2.5 py-1 text-[10px] font-semibold text-black z-10 uppercase tracking-widest shadow-sm rounded-md">
+              <div className="w-full h-[150px] sm:h-[160px] md:h-[180px] bg-slate-50 relative overflow-hidden">
+                <span className="absolute top-3 left-3 bg-white/95 backdrop-blur-xs px-2.5 py-0.5 text-[10px] font-normal text-black z-10 uppercase tracking-wider shadow-2xs rounded-full border border-slate-100">
                   {article.category || "General"}
                 </span>
                 {article.coverImage ? (
-                  <img src={article.coverImage} alt={article.title} className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700 ease-out" />
+                  <img src={article.coverImage} alt={article.title} className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500 ease-out" />
                 ) : (
-                  <Image src="/images/hero_baby.png" alt="Fallback" fill className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out" />
+                  <Image src="/images/hero_baby.png" alt="Fallback" fill className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out" />
                 )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
               </div>
 
               {/* Content Container */}
-              <div className="p-3 md:p-4 flex flex-col flex-1">
-                <div className="flex items-center gap-2 mb-2 mt-1">
-                  <p className="text-[10px] md:text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{date}</p>
-                  <span className="w-1 h-1 rounded-full bg-gray-300"></span>
-                  <p className="text-[10px] md:text-[11px] font-semibold text-[var(--color-primary)] uppercase tracking-wide">{readTime} MIN READ</p>
+              <div className="p-3.5 sm:p-4 flex flex-col flex-1 justify-between gap-2">
+                <div>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <p className="text-[10px] sm:text-[11px] font-light text-gray-400 uppercase tracking-wider">{date}</p>
+                    <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                    <p className="text-[10px] sm:text-[11px] font-medium text-[var(--color-primary)] uppercase tracking-wider">{readTime} MIN READ</p>
+                  </div>
+                  <h4 className="text-xs sm:text-sm md:text-base font-normal text-black leading-snug group-hover:text-[var(--color-primary)] transition-colors line-clamp-2">
+                    {article.title}
+                  </h4>
                 </div>
-                <h4 className="text-sm md:text-base font-semibold text-black leading-snug group-hover:text-[var(--color-primary)] transition-colors line-clamp-2">
-                  {article.title}
-                </h4>
+
+                <div className="flex items-center text-xs font-semibold text-[var(--color-primary)] pt-1">
+                  <span>Read Article</span>
+                  <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                </div>
               </div>
             </Link>
           );

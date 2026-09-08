@@ -287,7 +287,7 @@ export default function TrackingPage() {
             <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all">
               <ChevronLeft className="w-6 h-6 text-[#0F172A]" strokeWidth={2} />
             </button>
-            <h1 className="text-[17px] font-semibold text-[#0F172A] ml-1">Daily Tracker</h1>
+            <h1 className="text-[17px] font-normal text-black ml-1">Daily Tracker</h1>
           </div>
           <div className="flex items-center gap-1">
             <button onClick={() => router.push('/notifications')} className="relative p-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors cursor-pointer group">
@@ -300,16 +300,18 @@ export default function TrackingPage() {
         {/* Desktop Header */}
         <div className="hidden md:flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4 px-1">
           <div>
-            <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">Baby Tracker</h1>
-            <p className="text-sm text-gray-500 font-medium mt-1">Keep an eye on sleep, feeding, and diaper changes.</p>
+            <h1 className="text-2xl md:text-3xl font-normal text-black tracking-tight leading-tight">
+              Baby Tracker
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-500 font-light mt-1 leading-relaxed">Keep an eye on sleep, feeding routines, and diaper changes.</p>
           </div>
         </div>
 
         {/* Ultra-Modern Horizontal Week Navigator */}
         <div className="mb-8 mt-2 px-1">
           <div className="flex items-center justify-between mb-3 px-2">
-            <h2 className="text-lg font-bold text-gray-900 tracking-wide">
-              {summaryDate.toDateString() === new Date().toDateString() ? "Today" : summaryDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            <h2 className="text-lg font-normal text-black tracking-tight leading-tight">
+              {summaryDate.toDateString() === new Date().toDateString() ? "Today's Activity" : summaryDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
             </h2>
             <div className="flex gap-2">
               <button 
@@ -423,7 +425,7 @@ export default function TrackingPage() {
 
         {/* Daily Summary Dashboard */}
         <div className="bg-white rounded-xl p-5 border border-gray-100">
-          <h2 className="text-sm font-semibold text-gray-800 uppercase tracking-wider mb-4 px-1">Summary</h2>
+          <h2 className="text-sm font-semibold text-gray-800 uppercase tracking-wider mb-4 px-1">Daily Summary</h2>
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 flex flex-col items-center justify-center text-center">
               <Moon className="w-5 h-5 text-[var(--pastel-indigo)] mb-2" />
@@ -445,7 +447,7 @@ export default function TrackingPage() {
 
         {/* Timeline Feed */}
         <div className="mt-8 px-1 pb-10">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Activity Timeline</h2>
+          <h2 className="text-lg font-normal text-black tracking-tight leading-tight mb-6">Activity Timeline</h2>
           
           {isLoading ? (
              <div className="flex justify-center py-10">

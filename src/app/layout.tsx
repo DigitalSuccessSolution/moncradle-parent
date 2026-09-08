@@ -52,7 +52,7 @@ export default function RootLayout({
           <ReduxProvider>
             <AuthProvider>
               <Header />
-              <div className="flex-1 overflow-y-auto overflow-x-hidden">
+              <div className="flex-1 overflow-y-auto overflow-x-clip">
                 {children}
                 <Footer />
               </div>

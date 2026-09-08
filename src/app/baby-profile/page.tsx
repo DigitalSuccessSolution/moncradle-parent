@@ -11,6 +11,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { getBabies, BabyProfile } from "@/lib/api/babiesApi";
+import { calculateBabyAgeMonths, formatBabyAge } from "@/lib/utils/babyAge";
 
 export default function BabyProfilePage() {
   const unreadNotificationsCount = useAppSelector(state => state.notifications.unreadCount);
@@ -51,7 +52,7 @@ export default function BabyProfilePage() {
             <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all">
               <ChevronLeft className="w-6 h-6" strokeWidth={2} />
             </button>
-            <h1 className="text-[17px] font-semibold text-[#0F172A]">Baby Profile</h1>
+            <h1 className="text-[17px] font-medium text-black ml-1 tracking-tight">Baby Profile</h1>
           </div>
           <div className="flex items-center gap-3 pr-1">
             <Link href="/notifications" className="relative text-[#0F172A] active:scale-95 transition-transform">
@@ -63,14 +64,14 @@ export default function BabyProfilePage() {
 
         {/* Desktop Header */}
         <div className="hidden md:flex items-center justify-between mb-8">
-          <h1 className="text-2xl md:text-3xl font-semibold text-gray-900 tracking-tight">Baby Profile</h1>
+          <h1 className="text-2xl md:text-3xl font-normal text-black tracking-tight leading-tight">Baby Profile</h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
 
           {/* Left Column - Profile Card */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="lg:col-span-1 space-y-6">
-            <div className="bg-white p-6 md:p-8 shadow-sm relative overflow-hidden group">
+            <div className="bg-white p-6 md:p-8 rounded-2xl border border-gray-100 shadow-xs relative overflow-hidden group">
                <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-gray-200/50 to-transparent rounded-bl-full opacity-30 pointer-events-none" />
                <Link href="/baby-profile/edit" className="absolute top-4 right-4 p-2.5 bg-white border border-gray-200 hover:bg-gray-100 rounded-full transition-all cursor-pointer text-gray-600 z-50 hover:scale-105 active:scale-95">
                   <Edit3 className="w-4 h-4" />
@@ -81,14 +82,16 @@ export default function BabyProfilePage() {
                     {baby?.avatar ? (
                       <img src={baby.avatar} alt="Baby Profile" className="w-full h-full object-cover absolute inset-0" />
                     ) : (
-                      <span className="text-4xl font-semibold text-[var(--color-primary)] opacity-50">{baby?.name?.charAt(0)?.toUpperCase() || "B"}</span>
+                      <span className="text-4xl font-normal text-[var(--color-primary)] opacity-50">{baby?.name?.charAt(0)?.toUpperCase() || "B"}</span>
                     )}
                  </div>
-                 <div>
-                   <h2 className="text-xl font-semibold text-gray-900 mb-1">{baby?.name || "Baby Profile"}</h2>
-                   <p className="text-sm text-gray-500 font-medium capitalize">{baby?.gender || "Not Specified"} • {baby?.ageInMonths !== undefined && baby?.ageInMonths !== null ? `${baby.ageInMonths} Months` : "Age N/A"}</p>
-                   <span className="inline-block mt-3 px-3 py-1 bg-white text-[var(--color-primary)] text-[10px] font-semibold tracking-widest uppercase rounded-md border border-gray-200">Primary Profile</span>
-                 </div>
+                  <div>
+                    <h2 className="text-xl font-normal text-black tracking-tight mb-1">{baby?.name || "Baby Profile"}</h2>
+                    <p className="text-xs sm:text-sm text-gray-500 font-light capitalize">
+                      {baby?.gender || "Not Specified"} • {baby ? `${calculateBabyAgeMonths(baby.dateOfBirth, baby.ageInMonths)} Months` : "Age N/A"}
+                    </p>
+                    <span className="inline-block mt-3 px-3 py-1 bg-white text-[var(--color-primary)] text-[10px] font-semibold tracking-widest uppercase rounded-md border border-gray-200">Primary Profile</span>
+                  </div>
                </div>
                
                <div className="grid grid-cols-2 gap-4 pt-5 border-t border-gray-200">
@@ -109,7 +112,7 @@ export default function BabyProfilePage() {
 
             {/* Vitals Grid */}
             <section>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Physical Vitals</h3>
+              <h3 className="text-lg font-normal text-black tracking-tight mb-4">Physical Vitals</h3>
               <div className="grid grid-cols-3 gap-4 md:gap-5">
                 <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm flex flex-col items-center justify-center text-center cursor-default">
                   <div className="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center mb-3">
@@ -139,7 +142,7 @@ export default function BabyProfilePage() {
 
             {/* Medical Info */}
             <section>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Medical Information</h3>
+              <h3 className="text-lg font-normal text-black tracking-tight mb-4">Medical Information</h3>
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 divide-y divide-gray-100 overflow-hidden">
                 
                 <div className="flex gap-4 p-5 md:p-6">

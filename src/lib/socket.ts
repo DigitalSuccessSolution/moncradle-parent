@@ -7,7 +7,7 @@ export const getSocket = (): Socket => {
   if (!socket) {
     const token = Cookies.get('token');
     
-    socket = io(process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://192.168.29.77:5000', {
+    socket = io(process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000', {
       auth: {
         token: token
       }
