@@ -10,11 +10,11 @@ import { HowItWorks } from "@/components/home/HowItWorks/HowItWorks";
 import { GrowthOverview } from "@/components/home/GrowthOverview/GrowthOverview";
 import { MealRecommendations } from "@/components/home/MealRecommendations/MealRecommendations";
 import { ProductRecommendations } from "@/components/home/ProductRecommendations/ProductRecommendations";
-import { WhatMakesUsDifferent } from "@/components/home/WhatMakesUsDifferent/WhatMakesUsDifferent";
+// import { WhatMakesUsDifferent } from "@/components/home/WhatMakesUsDifferent/WhatMakesUsDifferent";
 import { ExpertConsultation } from "@/components/home/ExpertConsultation/ExpertConsultation";
 import { Articles } from "@/components/home/Articles/Articles";
 import { SplashScreen } from "@/components/onboarding/SplashScreen";
-import { StaffPortals } from "@/components/layout/StaffPortals/StaffPortals";
+// import { StaffPortals } from "@/components/layout/StaffPortals/StaffPortals";
 import { AuthScreen } from "@/components/auth/AuthScreen";
 import { BabyProfileSetup } from "@/components/onboarding/BabyProfileSetup";
 import { ParentProfileSetup } from "@/components/onboarding/ParentProfileSetup";
@@ -152,7 +152,7 @@ export default function HomePage() {
         <ProductRecommendations />
 
         {/* 7. What Makes Moncradle Different (Product Lineup & Benefit Badges) */}
-        <WhatMakesUsDifferent />
+        {/* <WhatMakesUsDifferent /> */}
 
         {/* 8. Consult Top Pediatricians */}
         <ExpertConsultation />
@@ -161,7 +161,7 @@ export default function HomePage() {
         <Articles />
       </main>
 
-      <StaffPortals />
+      {/* <StaffPortals /> */}
     </div>
   );
 }
