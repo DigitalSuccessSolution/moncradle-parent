@@ -4,7 +4,7 @@ import { ChevronLeft, Trash2, ShieldCheck, ShoppingCart, Loader2, Utensils } fro
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { updateCartQuantityAsync, removeFromCartAsync } from "@/store/slices/cartSlice";
@@ -23,6 +23,27 @@ export default function CartPage() {
   const isLoading = cartStatus === 'loading';
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+
+  // Admin settings — defaults 0 until admin configures
+  const [baseFee, setBaseFee] = useState(0);
+  const [freeThreshold, setFreeThreshold] = useState(0);
+  const [gstRate, setGstRate] = useState(0);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+        const res = await fetch(`${API_URL}/settings`);
+        const data = await res.json();
+        if (data.success && data.data) {
+          if (data.data.base_delivery_fee) setBaseFee(parseFloat(data.data.base_delivery_fee));
+          if (data.data.free_delivery_threshold) setFreeThreshold(parseFloat(data.data.free_delivery_threshold));
+          if (data.data.gst_rate) setGstRate(parseFloat(data.data.gst_rate));
+        }
+      } catch (e) { /* use defaults */ }
+    };
+    fetchSettings();
+  }, []);
 
   const updateQuantity = async (cartItemId: string, newQty: number) => {
     if (newQty < 1) { setItemToDelete(cartItemId); return; }
@@ -57,8 +78,9 @@ export default function CartPage() {
   const getItemPrice = (item: CartItem) => item.priceAtAddition;
 
   const subtotal = cartItems.reduce((acc, item) => acc + getItemPrice(item) * item.quantity, 0);
-  const shipping = subtotal > 500 ? 0 : 50;
-  const total = subtotal + shipping;
+  const shipping = freeThreshold > 0 && subtotal < freeThreshold ? baseFee : 0;
+  const tax = parseFloat(((subtotal * gstRate) / 100).toFixed(2));
+  const total = subtotal + shipping + tax;
 
   if (!mounted || isLoading) {
     return (
@@ -255,7 +277,7 @@ export default function CartPage() {
               ) : (
                 <div className="flex items-center gap-3 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
                   <ShieldCheck className="w-5 h-5 text-blue-400 flex-shrink-0" />
-                  <p className="text-sm font-medium text-blue-700">Add ₹{500 - subtotal} more for free shipping</p>
+                  <p className="text-sm font-medium text-blue-700">Add ₹{Math.round(freeThreshold - subtotal)} more for free shipping</p>
                 </div>
               )}
             </div>
@@ -265,12 +287,15 @@ export default function CartPage() {
               <h3 className="text-lg font-normal text-black tracking-tight leading-tight mb-5">Order Summary</h3>
 
               <div className="space-y-3 text-sm font-semibold text-gray-500 mb-5">
-                <div className="flex justify-between"><span>Subtotal</span><span className="text-gray-900 font-medium">₹{subtotal}</span></div>
+                <div className="flex justify-between"><span>Subtotal</span><span className="text-gray-900 font-medium">₹{subtotal.toFixed(2)}</span></div>
                 <div className="flex justify-between">
                   <span>Shipping</span>
                   <span className="font-medium text-gray-900">{shipping === 0 ? <span className="text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded text-xs">Free</span> : `₹${shipping}`}</span>
                 </div>
-                <div className="flex justify-between"><span>Tax</span><span className="text-gray-900 font-medium">₹0</span></div>
+                <div className="flex justify-between">
+                  <span>GST {gstRate > 0 ? `(${gstRate}%)` : ''}</span>
+                  <span className="text-gray-900 font-medium">{tax > 0 ? `₹${tax}` : <span className="text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded text-xs">Incl.</span>}</span>
+                </div>
               </div>
 
 
@@ -281,7 +306,7 @@ export default function CartPage() {
                   <p className="text-sm font-medium text-gray-500">Total</p>
                   <p className="text-[10px] text-gray-400">Incl. of all taxes</p>
                 </div>
-                <span className="text-3xl font-bold text-[#122B54]">₹{total}</span>
+                <span className="text-3xl font-bold text-[#122B54]">₹{total.toFixed(2)}</span>
               </div>
 
               <Link href="/shop/checkout" className="group w-full bg-[var(--color-primary)] text-white py-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 hover:bg-[var(--color-primary-light)] transition-all shadow-md">

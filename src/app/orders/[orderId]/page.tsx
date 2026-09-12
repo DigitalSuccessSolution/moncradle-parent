@@ -340,13 +340,29 @@ export default function OrderDetailPage() {
               )}
             </div>
             <div className="pt-3 border-t border-gray-100 flex justify-between text-gray-600">
-              <span>Item Total</span>
-              <span className="font-medium flex items-center"><IndianRupee className="w-3 h-3" />{order.totalAmount}</span>
+              <span>Item Subtotal</span>
+              <span className="font-medium flex items-center"><IndianRupee className="w-3 h-3" />{order.totalAmount - (order.shippingFee || 0) - (order.taxAmount || 0)}</span>
             </div>
             <div className="flex justify-between text-gray-600">
               <span>Delivery Fee</span>
-              <span className="font-medium text-green-600">FREE</span>
+              {(order.shippingFee || 0) === 0 ? (
+                <span className="font-bold text-green-600">FREE</span>
+              ) : (
+                <span className="font-medium flex items-center"><IndianRupee className="w-3 h-3" />{order.shippingFee}</span>
+              )}
             </div>
+            {(order.taxAmount || 0) > 0 && (
+              <div className="flex justify-between text-gray-600">
+                <span>GST</span>
+                <span className="font-medium flex items-center"><IndianRupee className="w-3 h-3" />{order.taxAmount}</span>
+              </div>
+            )}
+            {(order.discountAmount || 0) > 0 && (
+              <div className="flex justify-between text-emerald-600">
+                <span>Discount {order.couponCode ? `(${order.couponCode})` : ''}</span>
+                <span className="font-medium">-<IndianRupee className="w-3 h-3 inline" />{order.discountAmount}</span>
+              </div>
+            )}
             <div className="pt-3 border-t border-gray-100 flex justify-between font-bold text-lg text-gray-900">
               <span>Grand Total</span>
               <span className="flex items-center text-[var(--color-primary)]"><IndianRupee className="w-4 h-4" />{order.totalAmount}</span>

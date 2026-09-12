@@ -24,6 +24,10 @@ export interface CreateOrderPayload {
     state: string;
     zipCode: string;
     phone?: string;
+    location?: {
+      type: 'Point';
+      coordinates: number[];
+    };
   };
   specialInstructions?: string;
   couponCode?: string;

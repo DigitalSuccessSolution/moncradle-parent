@@ -4,13 +4,12 @@
 
 import { MapPin, Plus, CheckCircle2, ChevronLeft, Wallet, CreditCard, Banknote, Edit2, ShieldCheck, Tag, ShoppingCart, Lock } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchCartAsync } from "@/store/slices/cartSlice";
-import { useEffect } from "react";
 import { createOrder, OrderItem } from "@/lib/api/ordersApi";
 import { applyCoupon } from "@/lib/api/couponApi";
 import { clearCart } from "@/lib/api/cartApi";
@@ -47,6 +46,20 @@ export default function CheckoutPage() {
   useEffect(() => {
     dispatch(fetchCartAsync());
     fetchUserAddresses();
+    // Fetch admin settings for shipping and GST
+    const fetchSettings = async () => {
+      try {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+        const res = await fetch(`${API_URL}/settings`);
+        const data = await res.json();
+        if (data.success && data.data) {
+          if (data.data.base_delivery_fee) setBaseFee(parseFloat(data.data.base_delivery_fee));
+          if (data.data.free_delivery_threshold) setFreeThreshold(parseFloat(data.data.free_delivery_threshold));
+          if (data.data.gst_rate) setGstRate(parseFloat(data.data.gst_rate));
+        }
+      } catch (e) { /* use defaults */ }
+    };
+    fetchSettings();
   }, [dispatch]);
 
   const fetchUserAddresses = async () => {
@@ -84,9 +97,15 @@ export default function CheckoutPage() {
   const [activePayment, setActivePayment] = useState("cod");
   const [globalTimeSlot, setGlobalTimeSlot] = useState<string>('Breakfast');
 
-  const shipping = subtotal > 500 ? 0 : 50;
+  // Admin settings state — defaults 0 until admin configures
+  const [baseFee, setBaseFee] = useState(0);
+  const [freeThreshold, setFreeThreshold] = useState(0);
+  const [gstRate, setGstRate] = useState(0);
+
+  const shipping = freeThreshold > 0 && subtotal < freeThreshold ? baseFee : 0;
+  const tax = parseFloat(((subtotal * gstRate) / 100).toFixed(2));
   const discount = Math.round(appliedCoupon ? appliedCoupon.discount : 0);
-  const total = Math.round(subtotal + shipping - discount);
+  const total = Math.round(subtotal + shipping + tax - discount);
   const displaySubtotal = Math.round(subtotal);
 
   const handleApplyCoupon = async () => {
@@ -144,7 +163,8 @@ export default function CheckoutPage() {
           city: selectedAddr.city,
           state: selectedAddr.state,
           zipCode: selectedAddr.zipCode,
-          phone: selectedAddr.phone
+          phone: selectedAddr.phone,
+          location: selectedAddr.location
         },
         couponCode: appliedCoupon ? appliedCoupon.code : undefined,
         paymentMethod: activePayment
@@ -450,8 +470,12 @@ export default function CheckoutPage() {
               </div>
 
               <div className="flex justify-between items-center text-sm md:text-base">
-                <span className="text-gray-500 font-medium">Tax</span>
-                <span className="font-bold text-gray-900">₹0</span>
+                <span className="text-gray-500 font-medium">GST {gstRate > 0 ? `(${gstRate}%)` : ''}</span>
+                {tax > 0 ? (
+                  <span className="font-bold text-gray-900">₹{tax}</span>
+                ) : (
+                  <span className="font-bold text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded text-xs uppercase tracking-wider">Incl.</span>
+                )}
               </div>
 
               {discount > 0 && (

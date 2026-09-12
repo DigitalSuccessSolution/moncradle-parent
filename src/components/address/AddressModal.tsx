@@ -6,6 +6,7 @@ import { X, MapPin, CheckCircle2, Info } from "lucide-react";
 import Swal from "sweetalert2";
 import { Button } from "@/components/ui/Button";
 import { Address } from "@/lib/api/addressesApi";
+import { MapPicker } from "./MapPicker";
 
 const FloatingInput = ({ label, id, ...props }: any) => (
   <div className="relative w-full">
@@ -65,6 +66,12 @@ export function AddressModal({ isOpen, onClose, onSave, initialData, isFirstAddr
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
+  
+  // Default map center (e.g. Indore)
+  const DEFAULT_CENTER: [number, number] = [22.7196, 75.8577];
+  
+  // Local state for Leaflet map position [lat, lng]
+  const [mapPosition, setMapPosition] = useState<[number, number]>(DEFAULT_CENTER);
 
   useEffect(() => {
     if (isOpen) {
@@ -82,6 +89,9 @@ export function AddressModal({ isOpen, onClose, onSave, initialData, isFirstAddr
           isDefault: initialData.isDefault || false,
           location: initialData.location
         });
+        if (initialData.location && initialData.location.coordinates && initialData.location.coordinates.length === 2) {
+          setMapPosition([initialData.location.coordinates[1], initialData.location.coordinates[0]]);
+        }
       } else {
         setFormData({ 
           title: "Home", 
@@ -96,6 +106,7 @@ export function AddressModal({ isOpen, onClose, onSave, initialData, isFirstAddr
           isDefault: isFirstAddress, 
           location: undefined 
         });
+        setMapPosition(DEFAULT_CENTER);
       }
     }
   }, [isOpen, initialData, isFirstAddress]);
@@ -129,11 +140,13 @@ export function AddressModal({ isOpen, onClose, onSave, initialData, isFirstAddr
                 coordinates: [lng, lat]
               }
             });
+            setMapPosition([lat, lng]);
           } else {
              setFormData({
                 ...formData,
                 location: { type: 'Point', coordinates: [lng, lat] }
              });
+             setMapPosition([lat, lng]);
           }
         } catch (error) {
           console.error("Reverse geocoding error:", error);
@@ -141,6 +154,7 @@ export function AddressModal({ isOpen, onClose, onSave, initialData, isFirstAddr
             ...formData,
             location: { type: 'Point', coordinates: [lng, lat] }
           });
+          setMapPosition([lat, lng]);
         }
 
         setIsFetchingLocation(false);
@@ -162,6 +176,14 @@ export function AddressModal({ isOpen, onClose, onSave, initialData, isFirstAddr
     if (formData.phone.length !== 10) {
       Swal.fire("Error", "Phone number must be exactly 10 digits.", "error");
       return;
+    }
+
+    if (!formData.location) {
+      // Use current mapPosition if available
+      formData.location = {
+        type: 'Point',
+        coordinates: [mapPosition[1], mapPosition[0]] // [lng, lat]
+      };
     }
     
     setIsSubmitting(true);
@@ -264,15 +286,27 @@ export function AddressModal({ isOpen, onClose, onSave, initialData, isFirstAddr
                   fullWidth 
                   onClick={handleGetLocation} 
                   disabled={isFetchingLocation}
-                  leftIcon={formData.location ? <CheckCircle2 className="w-4.5 h-4.5" /> : <MapPin className="w-4.5 h-4.5" />}
-                  className={`rounded-full transition-all duration-300 ${
-                    formData.location 
-                      ? "border-emerald-500 bg-emerald-50 text-emerald-700 hover:bg-emerald-100" 
-                      : "border-gray-200 text-gray-700 hover:bg-gray-50"
-                  }`}
+                  leftIcon={<MapPin className="w-4.5 h-4.5" />}
+                  className="rounded-lg transition-all duration-300 border-gray-200 text-gray-700 hover:bg-gray-50 mb-3"
                 >
-                  {isFetchingLocation ? "Fetching location..." : formData.location ? "Location Captured" : "Use Current Location"}
+                  {isFetchingLocation ? "Detecting..." : "Detect Current Location"}
                 </Button>
+
+                <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-50 p-1">
+                  <p className="text-xs text-gray-500 font-medium px-2 py-1 mb-1 flex items-center gap-1.5">
+                    <Info className="w-3.5 h-3.5" /> Drag the map to place the pin at your exact delivery spot.
+                  </p>
+                  <MapPicker 
+                    position={mapPosition} 
+                    onPositionChange={(pos) => {
+                      setMapPosition(pos);
+                      setFormData({
+                        ...formData,
+                        location: { type: 'Point', coordinates: [pos[1], pos[0]] }
+                      });
+                    }} 
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">

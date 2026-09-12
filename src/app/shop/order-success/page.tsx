@@ -39,18 +39,15 @@ export default function OrderSuccessPage() {
 
   useEffect(() => {
     if (!statusChecked) return;
-    const timer = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) { 
-          clearInterval(timer); 
-          router.replace(isSubscription ? "/nutrition/meal-plans?tab=calendar" : "/orders"); 
-          return 0; 
-        }
-        return prev - 1;
-      });
+    if (countdown <= 0) {
+      router.replace(isSubscription ? "/nutrition/meal-plans?tab=calendar" : "/orders");
+      return;
+    }
+    const timer = setTimeout(() => {
+      setCountdown(prev => prev - 1);
     }, 1000);
-    return () => clearInterval(timer);
-  }, [router, statusChecked]);
+    return () => clearTimeout(timer);
+  }, [countdown, router, statusChecked, isSubscription]);
 
   return (
     <div className="min-h-screen bg-[var(--color-background)] flex items-center justify-center px-4">
@@ -72,19 +69,7 @@ export default function OrderSuccessPage() {
                 : "Your order has been placed. We will notify you when it is out for delivery."}
           </p>
           
-          {!isFailed && !isSubscription && (
-            <div className="bg-[var(--color-background)] rounded-2xl p-4 mb-6 border border-gray-100">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[var(--color-primary)]/10 flex items-center justify-center">
-                  <Package className="w-5 h-5 text-[var(--color-primary)]" />
-                </div>
-                <div className="text-left">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Estimated Delivery</p>
-                  <p className="text-sm font-bold text-gray-900">3-5 Business Days</p>
-                </div>
-              </div>
-            </div>
-          )}
+
           {!isFailed && isSubscription && (
             <div className="bg-[var(--color-background)] rounded-2xl p-4 mb-6 border border-gray-100">
               <div className="flex items-center gap-3">
